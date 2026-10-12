@@ -167,30 +167,77 @@ function question(){
 function selectLevel(level){
  if(!LEVELS[level])return;
  state.activeLevel=level;
- save=state.progress[level];
- store();updateLevelSelector();
+ if(!picturesForLevel(level).some(p=>p.id===state.selectedPictures[level])){
+   state.selectedPictures[level]=defaultPictureForLevel(level).id;
+ }
+ syncProgress();store();updateLevelSelector();
+}
+function selectPicture(id){
+ if(!picturesForLevel(state.activeLevel).some(p=>p.id===id))return;
+ state.selectedPictures[state.activeLevel]=id;
+ syncProgress();store();updateLevelSelector();
+}
+function renderPicturePicker(){
+ const picker=$("picturePicker"),pictures=picturesForLevel(state.activeLevel);
+ picker.replaceChildren();
+ $("picturePickerStatus").textContent=pictures.length+
+   (pictures.length===1?" picture available":" pictures available");
+ for(const [index,picture] of pictures.entries()){
+   const isSelected=activePicture().id===picture.id;
+   const p=state.progress[progressKey(state.activeLevel,picture.id)]||blank();
+   const card=document.createElement("button");
+   card.type="button";card.className="picture-option"+(isSelected?" selected":"");
+   card.setAttribute("aria-pressed",String(isSelected));
+   card.setAttribute("aria-label",picture.mystery+", "+
+     (p.completed?picture.name+" completed":p.done+" of "+questionCount(picture)+" rows finished"));
+   const icon=document.createElement("span");
+   icon.className="picture-option-icon";icon.setAttribute("aria-hidden","true");
+   icon.textContent=p.completed?"✦":"?";
+   const contents=document.createElement("span");contents.className="picture-option-copy";
+   const title=document.createElement("strong");
+   title.textContent=picture.mystery;
+   const caption=document.createElement("small");
+   caption.textContent=p.completed?picture.name+" — completed":
+     p.done?p.done+" / "+questionCount(picture)+" rows finished":
+     "A new mystery picture";
+   contents.append(title,caption);
+   const status=document.createElement("span");status.className="picture-option-status";
+   status.textContent=p.completed?"✓":isSelected?"●":"○";
+   card.append(icon,contents,status);
+   card.addEventListener("click",()=>selectPicture(picture.id));
+   picker.append(card);
+ }
 }
 function updateLevelSelector(){
- document.querySelectorAll("[data-level]").forEach(b=>{
-   const chosen=b.dataset.level===state.activeLevel;
-   b.classList.toggle("selected",chosen);
-   b.setAttribute("aria-pressed",String(chosen));
+ document.querySelectorAll("[data-level]").forEach(button=>{
+   const chosen=button.dataset.level===state.activeLevel;
+   button.classList.toggle("selected",chosen);
+   button.setAttribute("aria-pressed",String(chosen));
  });
- const count=save.done;
- $("levelProgress").textContent=save.completed?"Artwork finished in this level":count?count+"/14 rows completed":"Fresh picture";
+ const picture=activePicture(),total=questionCount(picture),count=save.done;
+ $("levelProgress").textContent=save.completed?"Picture complete":
+   count?count+" / "+total+" rows completed":"Ready to start";
  $("levelDescription").textContent=LEVELS[state.activeLevel].detail;
- $("introGridSize").textContent=state.activeLevel==="mirror"?CAT_HALF_WIDTH+" × 16":"16 × 16";
- $("introArtCaption").textContent=state.activeLevel==="mirror"?"A picture in progress":"Solve to paint";
+ $("introGridSize").textContent=pictureWidth(picture)+" × "+picture.height;
+ $("introArtCaption").textContent="A picture in progress";
+ $("pictureSummary").textContent=total+
+   " picture rows • About 15–20 minutes • No login needed";
+ renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
- $("startButton").innerHTML=save.completed?"View completed picture ↗":count?"Continue drawing ↗":"Start drawing ↗";
+ $("startButton").innerHTML=save.completed?"View completed picture ↗":
+   count?"Continue drawing ↗":"Start drawing ↗";
 }
 function chooseLevel(){
- clearRevealTimers();
- show("introScreen");updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
+ clearRevealTimers();show("introScreen");
+ updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
  if(save.completed){finish();return;}
- if(skip){save.tutorialDone=true;save.tutorial=2;store();}
+ if(skip){
+   save.tutorialDone=true;
+   save.tutorial=tutorialFor(state.activeLevel).length;
+   store();
+ }
  show("playScreen");question();window.scrollTo({top:0,behavior:"instant"});
 }
 function feedback(msg,correct=false){const e=$("feedback");e.className="feedback"+(correct?" success":"");e.textContent=msg;}
@@ -205,7 +252,7 @@ function renderOptions(){
 // The number line has only conventional mathematical markings.
 // Its visible limits depend on the picture's chosen window, never on a
 // hidden pixel boundary or any extra endpoint added to the inequality.
-const visibleAxis=()=>state.activeLevel==="mirror"?CAT_WINDOW:{min:AXIS_MIN,max:AXIS_MAX};
+const visibleAxis=()=>pictureAxis(activePicture());
 const coord=n=>{
  const {min,max}=visibleAxis();
  return 26+(n-min)*608/(max-min);
@@ -316,7 +363,8 @@ function setDirection(direction){
  if(locked)return;
  if(direction==="between"){
    if(draft.direction==="between")return;
-   const lower=Math.min(AXIS_MAX-1,Math.max(AXIS_MIN,draft.at));
+   const {min,max}=visibleAxis();
+   const lower=Math.min(max-1,Math.max(min,draft.at));
    setDraft({direction,lower,upper:lower+1,lowerIncluded:false,
      upperIncluded:false,at:lower,included:false});
  }else{
@@ -389,7 +437,7 @@ function check(){
  save.attempts+=attempts;
  store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
  $("checkButton").hidden=true;$("nextButton").hidden=false;
- $("nextButton").textContent=save.done===14?"Reveal the artwork ✦":"Next row →";
+ $("nextButton").textContent=save.done===questionCount(activePicture())?"Reveal the artwork ✦":"Next row →";
  $("nextButton").focus();
 }
 function hint(){
