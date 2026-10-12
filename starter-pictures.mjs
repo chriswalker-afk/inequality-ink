@@ -22,11 +22,16 @@ export const STARTER_PICTURES=Object.freeze([
   make({
     id:"mirror-star-starter",name:"Little Star",clue:"Twinkle Time",
     description:"Six quick rays become one shining star.",family:"half",step:1,width:6,
-    rows:[[4,5],[2,5],[0,5],[1,5],[3,5],[4,5]],
+    // Row arrays are top-to-bottom in SVG space. The mirrored half's
+    // INNER edge is local column 0; column 5 is the outside edge.
+    // Centre-anchored upper rays form the star's top point, a full
+    // middle row forms its horizontal arms, and the outer-anchored
+    // lower rays produce its two separated bottom points.
+    rows:[[0,0],[0,1],[0,5],[0,4],[3,5],[4,5]],
     base:"#f5c45d",edge:"#d88c4d",back:background("#e5ebfa","#f5f7ff","#d4e1f5"),
     detailStages:["glimmer","shine"],
-    details:[[2,2,"#fff2aa","glimmer"],[3,3,"#fff5c1","glimmer"],
-      [3,4,"#ffe69a","shine"]]
+    details:[[5,1,"#fff2aa","glimmer"],[4,2,"#fff5c1","glimmer"],
+      [3,3,"#ffe69a","shine"],[4,4,"#ffeba2","shine"]]
   }),
   make({
     id:"mirror-heart-step",name:"Little Heart",clue:"Heart in a Hurry",
