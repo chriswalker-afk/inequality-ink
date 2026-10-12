@@ -133,7 +133,8 @@ function select(level,index){
   const button=levels.find(el=>el.dataset.level===level);
   button.click();
   const options=$("picturePicker").children;
-  assert.equal(options.length,2,"Every mode should offer two pictures");
+  assert.equal(options.length,level==="mirror"?4:5,
+    "Each difficulty should list all of its available mystery pictures");
   options[index].click();
 }
 function complete(level,index,id){
@@ -161,10 +162,17 @@ function complete(level,index,id){
   assert.equal($("introScreen").hidden,false);
 }
 
-test("Student can complete a new mirror picture and a new algebra picture independently",()=>{
-  assert.equal($("picturePicker").children.length,2);
+test("Student can complete seven distinct picture/difficulty journeys independently",()=>{
+  assert.equal($("picturePicker").children.length,4);
   complete("mirror",1,"heart-glow");
   complete("solve",1,"rocket-launch");
+  // Five new picture definitions must work end-to-end, including read,
+  // draw and solve questions, the final art reveal, and independent saves.
+  complete("mirror",2,"coral-crab");
+  complete("mirror",3,"twilight-owl");
+  complete("full",2,"flower-pot");
+  complete("solve",3,"enchanted-potion");
+  complete("mixed",4,"ice-cream-treat");
   select("mirror",1);
   assert.ok($("levelProgress").textContent.includes("complete"),
     "Switching pictures lost heart progress");
@@ -176,6 +184,10 @@ test("Student can complete a new mirror picture and a new algebra picture indepe
   const saved=JSON.parse(globalThis.localStorage.getItem("inequality-ink-v5"));
   assert.ok(saved.progress["mirror:heart-glow"].completed);
   assert.ok(saved.progress["solve:rocket-launch"].completed);
+  for(const key of [
+    "mirror:coral-crab","mirror:twilight-owl","full:flower-pot",
+    "solve:enchanted-potion","mixed:ice-cream-treat"
+  ])assert.ok(saved.progress[key]?.completed,"Missing saved completion: "+key);
   assert.ok(!saved.progress["mirror:cat-cameo"]?.completed);
 });
 
@@ -184,5 +196,10 @@ test("Previously completed progress is not overwritten by visiting another level
   const saved=JSON.parse(globalThis.localStorage.getItem("inequality-ink-v5"));
   assert.equal(saved.progress["mirror:heart-glow"].done,14);
   assert.equal(saved.progress["solve:rocket-launch"].done,14);
+  assert.equal(saved.progress["mirror:coral-crab"].done,14);
+  assert.equal(saved.progress["mirror:twilight-owl"].done,14);
+  assert.equal(saved.progress["full:flower-pot"].done,14);
+  assert.equal(saved.progress["solve:enchanted-potion"].done,14);
+  assert.equal(saved.progress["mixed:ice-cream-treat"].done,14);
   assert.equal(saved.selectedPictures.full,"mushroom-mystery");
 });

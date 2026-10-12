@@ -9,20 +9,22 @@ import {
 } from "./picture-engine.mjs";
 import {identicalSolution,isInInterval} from "./model.mjs";
 
-test("Four authored pictures validate automatically against their mathematical modes",()=>{
+test("All nine authored pictures validate automatically against their mathematical modes",()=>{
  const reports=validatePictureLibrary();
  assert.deepEqual(reports.map(r=>r.id),
-   ["cat-cameo","heart-glow","mushroom-mystery","rocket-launch"]);
+   ["cat-cameo","heart-glow","mushroom-mystery","rocket-launch",
+    "coral-crab","twilight-owl","flower-pot","enchanted-potion","ice-cream-treat"]);
  for(const report of reports){
    assert.equal(report.rows,14);
    assert.ok(report.width>=8);
    assert.ok(report.modes.length>0);
  }
  assert.deepEqual(picturesForLevel("mirror").map(p=>p.id),
-   ["cat-cameo","heart-glow"]);
+   ["cat-cameo","heart-glow","coral-crab","twilight-owl"]);
  for(const level of ["full","solve","mixed"]){
    assert.deepEqual(picturesForLevel(level).map(p=>p.id),
-     ["mushroom-mystery","rocket-launch"]);
+     ["mushroom-mystery","rocket-launch","flower-pot",
+      "enchanted-potion","ice-cream-treat"]);
  }
  assert.equal(defaultPictureForLevel("mirror").id,"cat-cameo");
  assert.equal(defaultPictureForLevel("solve").id,"mushroom-mystery");
@@ -116,4 +118,71 @@ test("Invalid picture definitions are rejected with helpful diagnostics",()=>{
  assert.throws(()=>validatePicture({...p,id:"bad",details:[[-1,0,"#ffaaaa","eyes"]]}),
    /invalid detail/);
  assert.throws(()=>makePictureQuestion(p,0,0,"solve"),/does not support/);
+});
+
+
+test("Five new pictures are registered with exactly the intended modes and dimensions",()=>{
+  const expected=[
+    ["coral-crab","half",10,20,["mirror"]],
+    ["twilight-owl","half",9,18,["mirror"]],
+    ["flower-pot","full",16,16,["full","solve","mixed"]],
+    ["enchanted-potion","full",16,16,["full","solve","mixed"]],
+    ["ice-cream-treat","full",16,16,["full","solve","mixed"]]
+  ];
+  assert.equal(PICTURE_LIBRARY.length,9);
+  assert.equal(picturesForLevel("mirror").length,4);
+  for(const mode of ["full","solve","mixed"])
+    assert.equal(picturesForLevel(mode).length,5);
+  for(const [id,family,halfWidth,fullWidth,levels] of expected){
+    const picture=pictureById(id);
+    assert.equal(picture.family,family);
+    assert.equal(pictureWidth(picture),halfWidth);
+    assert.equal(fullPictureWidth(picture),fullWidth);
+    assert.deepEqual(picture.levels,levels);
+    assert.equal(questionCount(picture),14);
+    assert.ok(picture.detailStages.length>=4,
+      id+" should have an appropriately layered colour finale");
+    assert.ok(pictureFinalDetails(picture).length>=25,
+      id+" needs visually meaningful finishing details");
+  }
+  const combinations=PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0);
+  assert.equal(combinations,19);
+});
+test("New Mirror Mode pictures balance both ray directions and open/closed circles",()=>{
+  for(const id of ["coral-crab","twilight-owl"]){
+    const picture=pictureById(id);
+    const questions=Array.from({length:14},(_,i)=>
+      makePictureQuestion(picture,i,0,"mirror"));
+    const left=questions.filter(q=>q.answer.direction==="left").length;
+    const right=questions.filter(q=>q.answer.direction==="right").length;
+    const open=questions.filter(q=>!q.answer.included).length;
+    const closed=questions.filter(q=>q.answer.included).length;
+    const uniqueRuns=new Set(picture.rows.map(([from,to])=>from+","+to));
+    assert.ok(left>=5&&right>=5,id+" has unbalanced ray directions");
+    assert.ok(open>=5&&closed>=5,id+" has unbalanced circle types");
+    assert.ok(uniqueRuns.size>=6,id+" repeats too many identical rows");
+    for(const q of questions){
+      assert.ok(q.answer.at>=picture.window.min&&
+        q.answer.at<=picture.window.max);
+    }
+  }
+});
+test("New full pictures offer distinct widths, varied endpoints, and solve/mixed replays",()=>{
+  for(const id of ["flower-pot","enchanted-potion","ice-cream-treat"]){
+    const picture=pictureById(id);
+    const widths=new Set(picture.rows.map(([lo,hi])=>hi-lo+1));
+    assert.ok(widths.size>=6,id+" lacks useful interval variety");
+    const solve=Array.from({length:14},(_,i)=>
+      makePictureQuestion(picture,i,0,"solve"));
+    assert.ok(solve.every(q=>q.mode==="solve"));
+    assert.ok(solve.some(q=>q.transformed.a<0),
+      id+" should include at least one sign-reversing inequality");
+    const mixed=Array.from({length:14},(_,i)=>
+      makePictureQuestion(picture,i,0,"mixed"));
+    assert.ok(mixed.some(q=>q.artMode==="mirror"));
+    assert.ok(mixed.some(q=>q.artMode==="full"));
+    assert.ok(mixed.some(q=>q.mode==="solve"));
+    assert.ok(mixed.some(q=>q.mode==="draw"));
+    assert.ok(mixed.some(q=>q.mode==="read"));
+  }
 });

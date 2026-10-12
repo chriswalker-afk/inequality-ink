@@ -2,6 +2,19 @@
 
 Inequality Ink builds its exercises from pixel-art **silhouette data**, not from a hand-written list of questions. New pictures are declared in [pictures.mjs](pictures.mjs); the engine validates their row shapes and generates the maths. The student only sees ordinary number lines.
 
+## Current library: nine pictures
+
+The gallery currently contains **four Mirror Mode pictures** and **five full-picture designs**. The full designs are independently available in Full Picture, Solve & Paint and Mixed Challenge, giving **19 picture–difficulty combinations** overall.
+
+| Mode family | Pictures (picker order) | Mathematical focus |
+| --- | --- | --- |
+| One-sided rays / Mirror | Cat Cameo, Heart Glow, **Coral Crab**, **Twilight Owl** | Genuine left- and right-pointing rays, open and closed circles, smaller picture-specific windows |
+| Double-ended intervals / Full, Solve and Mixed | Mushroom Mystery, Rocket Launch, **Blooming Flower**, **Enchanted Potion**, **Ice Cream Treat** | Different interval widths and linear transformations; symmetry also permits reflected rays in Mixed |
+
+The new sprites are intentionally different both visually and mathematically. Crab and Owl use a roughly even balance of left and right rays with different endpoints; Flower, Potion and Ice Cream include at least six distinct row widths. Each has its own final colour palette, background and animated finishing details.
+
+When adding future illustrations, avoid long runs of identical-width intervals unless repetition is an intentional learning objective. For Mirror Mode, aim for both ray directions and both endpoint types. The test suite checks these design-quality criteria for the five newest sprites.
+
 ## 1. Choose a mathematical picture family
 
 **Half picture (Mirror Mode):** Work with one finite display window (e.g. `min:-4, max:4`, giving 8 integer-labelled pixel columns). Each row of the *half*-silhouette must be a single block touching its **left or right edge**. The engine generates a real one-sided ray to paint that run. The unbounded inequality is marked exactly; canvas clipping is never shown as a second endpoint. When finished, this half is reflected over a vertical axis, then coloured and illustrated.
