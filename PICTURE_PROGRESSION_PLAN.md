@@ -303,4 +303,4 @@ A student choosing any of the five modes sees a clear **five-picture journey**, 
 
 ---
 
-**Implementation note:** This document is an **approved-scope proposal for review**, not a claim that new sprites, sorting, unlocking or row-count changes have already been coded. The present game should continue operating unchanged until the development phases are implemented and tested.
+**Implementation note:** This document is a **working implementation proposal for review**, not a claim that new sprites, sorting, unlocking or row-count changes have already been coded. The present game should continue operating unchanged until the development phases are implemented and tested.
