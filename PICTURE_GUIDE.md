@@ -62,7 +62,7 @@ Open `PICTURE_DEFINITIONS` in [pictures.mjs](pictures.mjs). Copy the structure o
 | --- | --- |
 | `id` | Unique lowercase hyphenated slug; used for progress and PNG filename |
 | `name` | The true picture name, revealed on completion |
-| `mystery` | The non-spoiler label in the picture picker, e.g. `Mystery 03` |
+| `clue` | A playful, non-spoiler title such as `To the Moon`; shown in the picture picker and activity heading until completion |
 | `description` | Short non-spoiler metadata |
 | `family` | `"half"` or `"full"` |
 | `levels` | Half: `["mirror"]`; full: any combination of `"full"`, `"solve"`, `"mixed"` |
@@ -74,6 +74,8 @@ Open `PICTURE_DEFINITIONS` in [pictures.mjs](pictures.mjs). Copy the structure o
 | `background` | Hex `base`, `light`, `shade`, `sparkle` colours for the completed artwork |
 | `detailStages` | Ordered labels, e.g. `["eyes","mouth"]` |
 | `details` | List of `[x,y,"#rrggbb","stage",height]` decorative marks in the **finished full picture**; height defaults to 1 |
+
+**Keep the surprise:** The `clue` is the *visible* title; the `name` is the actual image name and appears only after a student completes that picture. Avoid numbered labels (e.g. “Mystery 01”) and direct spoilers. Clues should be short, distinctive and unique within each mode. Saved progress is linked to `id`, not `clue` or `name`, so a clue may be revised later without resetting students' work.
 
 All example picture definitions live in one place: no JavaScript functions are needed inside the picture data.
 
