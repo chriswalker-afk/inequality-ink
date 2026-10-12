@@ -3,3 +3,36 @@
 @media(max-width:740px){.course-tag{display:none}.app{padding:10px 12px}.topbar{padding-bottom:12px}.intro-grid{grid-template-columns:1fr;gap:10px;padding:28px 0}.intro-copy h1{font-size:3.4rem}.intro-art{max-width:400px;margin:auto}.game-grid{grid-template-columns:1fr}.canvas-stage{padding:13px}.canvas-stage svg{max-width:280px}.play-heading{align-items:start}.play-heading h1{font-size:1.8rem}.reset-button{padding:9px;font-size:.7rem}.panel{padding:16px}.game-foot{flex-direction:column}.question-footer{flex-wrap:wrap}.question-footer .footer-actions{margin-left:auto}.finish-card{padding:20px}.intro-lead{font-size:1rem}}
 @media(max-width:380px){.endpoint-grid{gap:6px}.endpoint-card{padding:6px}.endpoint-stepper{gap:3px}.endpoint-stepper button{flex-basis:25px}.circle-buttons button{font-size:.64rem}.top-button{padding:9px;font-size:.68rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Level choice: one continuous picture, four mathematically distinct pathways. */
+.level-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:24px 0 10px}
+.level-heading #levelProgress{font-size:.75rem;color:#6d798b;font-weight:700}
+.level-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;max-width:590px}
+.level-card{min-width:0;display:flex;align-items:center;gap:11px;position:relative;padding:14px 12px;
+  text-align:left;background:#fffdfb;border:2px solid #e3dfd9;border-radius:13px;color:#314159;
+  transition:border-color .16s,background .16s,transform .16s}
+.level-card:hover{transform:translateY(-2px);background:#fff}
+.level-card.selected{border-color:#518a8b;background:#eef9f3;box-shadow:0 2px 0 #b8d8d1}
+.level-card>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.level-card b{font-size:.82rem;line-height:1.2}
+.level-card small{font-size:.68rem;font-weight:550;color:#7c8390;line-height:1.3}
+.level-icon{flex:none;width:32px;height:32px;background:#f3ece4;color:#b76c60;display:grid;place-items:center;font-size:1.15rem;border-radius:8px}
+.level-card.selected .level-icon{background:#d6efe4;color:#377e70}
+.level-badge{position:absolute;top:-8px;right:7px;border-radius:9px;padding:3px 7px;background:#eabe75;font-size:.55rem;letter-spacing:.04em;color:#655032;font-weight:900}
+.level-description{font-size:.79rem;line-height:1.55;color:#6f7e86;margin:10px 0 18px;max-width:590px;min-height:35px}
+.play-heading-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.mirror-notice{display:flex;gap:10px;align-items:center;background:#eaf5f1;border:1px solid #cce7dc;border-radius:12px;
+  color:#416f65;padding:12px;margin:15px 0 0;font-size:.77rem;line-height:1.5;font-weight:700}
+.mirror-symbol{flex:none;font-size:1.3rem}
+.mirror-explainer{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;padding:10px 12px;border-radius:12px;
+  background:#eff7f3;border:1px solid #d3eade;color:#5a716c;font-size:.78rem;line-height:1.55}
+.mirror-explainer b{color:#3e7166;font-size:.72rem;letter-spacing:.06em}
+.finish-level-label{text-transform:uppercase;letter-spacing:.1em;font-weight:800;font-size:.71rem!important;color:#9c7965!important}
+@keyframes inkPop{0%{opacity:0;transform:translateY(.7px) scaleY(.3)}75%{opacity:1}100%{opacity:1;transform:translateY(0) scaleY(1)}}
+.ink-new-primary{transform-box:fill-box;transform-origin:center;animation:inkPop .24s ease-out both}
+.ink-new-reflection{transform-box:fill-box;transform-origin:center;animation:inkPop .27s ease-out .43s both}
+.ink-new-full{transform-box:fill-box;transform-origin:center;animation:inkPop .24s ease-out both}
+@media(min-width:741px) and (max-width:1000px){.level-grid{grid-template-columns:1fr 1fr}.level-card{padding:10px 8px;gap:6px}.level-card b{font-size:.72rem}.level-card small{font-size:.62rem}.level-icon{width:27px;height:27px}}
+@media(max-width:740px){.intro-grid{align-items:start}.level-grid{grid-template-columns:1fr 1fr}.level-card{padding:12px 8px;gap:6px}.level-card b{font-size:.76rem}.level-card small{font-size:.65rem}.level-icon{width:27px;height:27px}.play-heading-actions{flex-direction:column}.play-heading-actions .button{width:100%}}
+@media(max-width:400px){.level-grid{grid-template-columns:1fr}.level-card{padding:10px}.level-description{min-height:auto}}
+@media(prefers-reduced-motion:reduce){.ink-new-primary,.ink-new-reflection,.ink-new-full{animation:none!important}}

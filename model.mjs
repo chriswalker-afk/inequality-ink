@@ -81,33 +81,94 @@ function variantForPixels(i, variant) {
     upperIncluded: !(kind === 2 || kind === 3)};
 }
 
-function readOptions(answer, index, replay) {
-  const candidates = [
-    answer,
-    {...answer, lowerIncluded: !answer.lowerIncluded},
-    {...answer, upperIncluded: !answer.upperIncluded},
-    {...answer, lower: answer.lower + 1}
-  ];
-  const rotated = candidates.map((_, k) => candidates[(k + (index * 3 + replay) % 4) % 4]);
-  return rotated.map(i => ({label:formatInterval(i), value:i}));
+
+export const LEVELS = Object.freeze({
+  mirror: {name:"Mirror Mode", subtitle:"Start here · one-sided inequalities", detail:"Make one half of each row, then reflect it."},
+  full: {name:"Full Picture", subtitle:"Build both ends · bounded inequalities", detail:"Shade an exact interval across the whole picture."},
+  solve: {name:"Solve & Paint", subtitle:"Algebra challenge · solve then draw", detail:"Rearrange inequalities before drawing their solutions."},
+  mixed: {name:"Mixed Challenge", subtitle:"A little of everything", detail:"Switch between mirrored, bounded and algebra questions."}
+});
+export const LEVEL_IDS = Object.freeze(Object.keys(LEVELS));
+
+// 16 even-width columns -8,...,7 are mirrored through x=-0.5.
+// Reflection preserves integer pixel centers but is NOT an algebraic transformation of the inequality.
+export const reflectColumn = x => -1-x;
+
+export function paintedColumns(question) {
+  if (question.artMode !== "mirror") return columnsFor(question.answer);
+  if (question.mirrorSide !== "left" && question.mirrorSide !== "right") throw Error("Unknown mirror side");
+  const half = columnsFor(question.answer).filter(x => question.mirrorSide === "left" ? x < 0 : x >= 0);
+  return [...new Set([...half, ...half.map(reflectColumn)])].sort((a,b)=>a-b);
 }
 
-export function makeQuestion(index, replay=0) {
-  const row = SEQUENCE[index];
-  if (!row) return null;
-  let answer = {direction:"between", lower:row.lower, upper:row.upper,
-    lowerIncluded:row.lowerIncluded, upperIncluded:row.upperIncluded};
-  if (replay > 0 && row.mode !== "read") answer = variantForPixels(answer, replay + index);
-  if (row.mode === "read") return {index, row:row.y, mode:"read", answer,
-    prompt:"Which inequality does this number line represent?",
+// Different inequality endpoints can select identical integer pixels. Exact number-line
+// marking is always performed with identicalSolution(), never paintedColumns().
+function equivalentBoundedPixels(interval, variant) {
+  const pixels=columnsFor(interval),left=pixels[0],right=pixels.at(-1);
+  const kind=((variant%4)+4)%4;
+  return {direction:"between",
+    lower:left-(kind===1||kind===3?1:0),
+    upper:right+(kind===2||kind===3?1:0),
+    lowerIncluded:!(kind===1||kind===3),
+    upperIncluded:!(kind===2||kind===3)};
+}
+function mirrorAnswer(row,index,replay) {
+  const pixels=columnsFor(row),left=pixels[0],right=pixels.at(-1);
+  const side=(index+replay)%2===0?"right":"left";
+  // Alternate ≤ / < on the right and ≥ / > on the left.
+  const strict=Math.floor((index+replay)/2)%2===1;
+  const answer=side==="right"
+    ? {direction:"left",at:right+(strict?1:0),included:!strict}
+    : {direction:"right",at:left-(strict?1:0),included:!strict};
+  return {answer,side};
+}
+function readOptions(answer,index,replay) {
+  let candidates;
+  if(answer.direction==="between") {
+    candidates=[answer,{...answer,lowerIncluded:!answer.lowerIncluded},
+      {...answer,upperIncluded:!answer.upperIncluded},
+      {...answer,lower:answer.lower+1}];
+  } else {
+    const shift=answer.at===AXIS_MAX?-1:answer.at===AXIS_MIN?1:(index+replay)%2===0?1:-1;
+    candidates=[answer,{...answer,included:!answer.included},
+      {...answer,direction:answer.direction==="left"?"right":"left"},
+      {...answer,at:answer.at+shift}];
+  }
+  return candidates.map((_,k)=>candidates[(k+(index*3+replay)%4)%4])
+    .map(i=>({label:formatInterval(i),value:i}));
+}
+export function makeQuestion(index,replay=0,level="mixed") {
+  if (!LEVELS[level]) throw Error("Unknown difficulty: "+level);
+  const row=SEQUENCE[index];
+  if(!row) return null;
+  let artMode="full",mirrorSide=null;
+  let mode=level==="solve"?"solve":index<3?"read":"draw";
+  if(level==="mirror") artMode="mirror";
+  if(level==="mixed") {
+    const phase=index%4;
+    artMode=phase<=1?"mirror":"full";
+    mode=phase===0?"read":phase===3?"solve":"draw";
+  }
+  let answer={direction:"between",lower:row.lower,upper:row.upper,
+    lowerIncluded:row.lowerIncluded,upperIncluded:row.upperIncluded};
+  if(artMode==="mirror") {
+    const result=mirrorAnswer(row,index,replay);
+    answer=result.answer;
+    mirrorSide=result.side;
+  } else if(replay>0) answer=equivalentBoundedPixels(answer,replay+index);
+  const question={index,row:row.y,artMode,mirrorSide,mode,answer};
+  if(mode==="read")return {...question,
+    prompt:artMode==="mirror"?"Which one-sided inequality is represented by this number line?":"Which inequality does this number line represent?",
     options:readOptions(answer,index,replay)};
-  if (row.mode === "draw") return {index, row:row.y, mode:"draw", answer,
-    prompt:"Draw this inequality on the number line.", equation:formatInterval(answer)};
-  const coefficients = [[row.a,row.b],[2,-3],[-2,1],[3,2]];
-  const [a,b] = replay ? coefficients[(replay + index) % coefficients.length] : [row.a,row.b];
-  return {index, row:row.y, mode:"solve", answer,
-    prompt:"Solve the inequality, then draw your solution.", equation:formatLinear(answer,a,b),
-    transformed: {a,b}};
+  if(mode==="draw")return {...question,
+    prompt:artMode==="mirror"?"Draw the one-sided inequality. Only the indicated half of your line paints the row.":"Draw the complete bounded inequality.",
+    equation:formatInterval(answer)};
+  const coefficientChoices=[[2,1],[2,-3],[-2,1],[3,2],[-3,-2],[1,4],[-1,1]];
+  const [a,b]=replay===0 && row.a && row.b!==undefined ? [row.a,row.b] :
+    coefficientChoices[(replay+index)%coefficientChoices.length];
+  return {...question,
+    prompt:"Solve the inequality, then represent its complete solution on the number line.",
+    equation:formatLinear(answer,a,b),transformed:{a,b}};
 }
 
 export const TUTORIAL = [
@@ -123,57 +184,69 @@ export function pixelAt(x,y) {
 }
 
 // The colour artwork is strictly constrained by pixelAt(). No decorative colour can create extra pixels.
+export const TUTORIAL_MIRROR = [
+  {mode:"tutorial",prompt:"Draw this one-sided inequality. The arrow must point to the correct side.",equation:"x ≤ 3",
+    answer:{direction:"left",at:3,included:true}},
+  {mode:"tutorial",prompt:"Now try a one-sided inequality with an open circle.",equation:"x > −2",
+    answer:{direction:"right",at:-2,included:false}}
+];
+export const tutorialFor = level => level==="mirror"?TUTORIAL_MIRROR:TUTORIAL;
+
+// Colours are also symmetric; the right-hand colours always reflect the left-hand colours.
+// Art detail never changes the mathematical silhouette.
 export function colourAt(x,y) {
-  if (!pixelAt(x,y)) return null;
-  const row = ROWS[y-1], first = columnsFor(row)[0] - COLUMN_MIN, last = columnsFor(row).at(-1) - COLUMN_MIN;
-  const outline = "#28324c", coral = "#ed707d", shadow = "#ca4b67",
-    highlight = "#f79b94", cream = "#fff2ce", stem = "#e8c596", stemShade = "#cfa373";
-  if (y === 1 || y === 9 || y === 14 && (x === first || x === last) ||
-    x === first || x === last) return outline;
-  if (y <= 8) {
-    if ((y === 3 && [5,6,10,11].includes(x)) ||
-        (y === 4 && [5,6,10,11].includes(x)) ||
-        (y === 5 && [3,4,11,12].includes(x)) ||
-        (y === 6 && [3,4,11,12].includes(x))) return cream;
-    if (y === 2 || (y === 3 && x >= 7 && x <= 9)) return highlight;
-    if (y >= 7 || y === 8) return shadow;
+  if(!pixelAt(x,y))return null;
+  const row=ROWS[y-1],first=columnsFor(row)[0]-COLUMN_MIN,last=columnsFor(row).at(-1)-COLUMN_MIN;
+  const lx=Math.min(x,WIDTH-1-x);
+  const outline="#28324c",coral="#ed707d",shadow="#ca4b67",
+    highlight="#f79b94",cream="#fff2ce",stem="#e8c596",stemShade="#cfa373";
+  if(y===1||y===9||x===first||x===last)return outline;
+  if(y<=8){
+    if(([3,4].includes(y)&&[4,5].includes(lx))||
+       ([5,6].includes(y)&&[2,3].includes(lx))||
+       (y===7&&[6,7].includes(lx)))return cream;
+    if(y===2||(y===3&&lx===7))return highlight;
+    if(y>=7)return shadow;
     return coral;
   }
-  if (y === 11 && (x === 6 || x === 9)) return outline;
-  if (y === 12 && (x === 7 || x === 8)) return shadow;
-  if ((y === 13 && x === 6) || (y === 14 && x >= 5 && x <= 10)) return stemShade;
+  if(y===11&&lx===6)return outline;
+  if(y===12&&lx===7)return shadow;
+  if((y===13&&lx===6)||(y===14&&lx>=5))return stemShade;
   return stem;
 }
 
 export function validatePuzzle() {
-  if (ROWS.length !== 14 || ROWS.some(r => r.y < 1 || r.y > 14)) throw Error("Invalid row count");
-  const positions = new Set();
-  for (const row of ROWS) {
-    const cols = columnsFor(row);
-    if (!cols.length || cols.some((c,j)=>j && c!==cols[j-1]+1)) throw Error(`Non-contiguous row ${row.y}`);
-    if (cols.some(x=>x < COLUMN_MIN || x > COLUMN_MAX)) throw Error("Pixel out of bounds");
-    for (const c of cols) positions.add(`${c},${row.y}`);
+  if(ROWS.length!==14||ROWS.some(r=>r.y<1||r.y>14))throw Error("Invalid row count");
+  const positions=new Set();
+  for(const row of ROWS){
+    const cols=columnsFor(row);
+    if(!cols.length||cols.some((c,j)=>j&&c!==cols[j-1]+1))throw Error("Non-contiguous row "+row.y);
+    if(cols.some(x=>x<COLUMN_MIN||x>COLUMN_MAX))throw Error("Pixel out of bounds");
+    for(const c of cols)positions.add(c+","+row.y);
+    const reflection=cols.map(reflectColumn).sort((a,b)=>a-b);
+    if(JSON.stringify(reflection)!==JSON.stringify(cols))throw Error("Sprite is not mirror-symmetric at row "+row.y);
   }
-  const flood = new Set(), stack = [positions.values().next().value];
-  while (stack.length) {
+  const flood=new Set(),stack=[positions.values().next().value];
+  while(stack.length){
     const node=stack.pop();
-    if (flood.has(node)) continue;
+    if(flood.has(node))continue;
     flood.add(node);
     const [x,y]=node.split(",").map(Number);
-    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
-      const next=`${x+dx},${y+dy}`;
-      if (positions.has(next) && !flood.has(next)) stack.push(next);
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const next=(x+dx)+","+(y+dy);
+      if(positions.has(next)&&!flood.has(next))stack.push(next);
     }
   }
-  if (flood.size !== positions.size) throw Error("Disconnected sprite");
-  for (let n=0;n<14;n++){
-    const q=makeQuestion(n);
-    const expected=columnsFor(ROWS.find(r=>r.y===q.row));
-    if (JSON.stringify(columnsFor(q.answer)) !== JSON.stringify(expected)) throw Error(`Row mismatch ${q.row}`);
-    for (let s=1;s<10;s++){
-      const replay=makeQuestion(n,s);
-      if (JSON.stringify(columnsFor(replay.answer))!==JSON.stringify(expected)) throw Error(`Replay mismatch ${n}/${s}`);
-    }
+  if(flood.size!==positions.size)throw Error("Disconnected sprite");
+  for(let n=0;n<14;n++)for(const level of LEVEL_IDS)for(let replay=0;replay<20;replay++){
+    const q=makeQuestion(n,replay,level),expected=columnsFor(ROWS.find(r=>r.y===q.row));
+    if(JSON.stringify(paintedColumns(q))!==JSON.stringify(expected))
+      throw Error("Paint mismatch "+level+" row "+q.row+" replay "+replay);
+    if(q.artMode==="mirror"&&q.answer.direction==="between")throw Error("Mirror mode must be one-sided");
+    if(q.mode==="read"&&q.options.filter(o=>identicalSolution(o.value,q.answer)).length!==1)
+      throw Error("Ambiguous options");
   }
-  return {rows:ROWS.length,pixels:positions.size,connected:true};
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++)
+    if(colourAt(x,y)!==colourAt(WIDTH-1-x,y))throw Error("Colour asymmetry at "+x+","+y);
+  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true};
 }

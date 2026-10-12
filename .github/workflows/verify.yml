@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: "22"
       - name: Validate mathematical questions and pixel art
-        run: node --test model.test.mjs
+        run: node --test *.test.mjs
       - name: Check JavaScript syntax
         run: |
           node --check app.mjs
