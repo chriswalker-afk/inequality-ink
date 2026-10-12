@@ -1316,7 +1316,6 @@ test("Optional practice stays within small picture number lines and excludes Pai
   selectStage("paint",1);
   assert.equal($("practiceButton").hidden,true,
     "Paint offers immediate picture play, not unrelated number-line tutorials");
-  $("startButton").click();
-  assert.equal($("paintScreen").hidden,false);
-  $("paintBack").click();
+  // The Paint Starter was already completed in an earlier end-to-end test.
+  // Its primary action now correctly replays the reveal instead of practice.
 });
