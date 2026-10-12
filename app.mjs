@@ -78,6 +78,7 @@ function cancelPaintTimers(){
 }
 let screen="intro", q=null, draft=null, selected="left", chosen=null,
   locked=false, hintsShown=0, attempts=0, assisted=false, drag=null;
+let practiceOnly=false,practiceIndex=0;
 let rowAdvanceTimer=null;
 const livePreviewLayers=new Map();
 let previewFlashTimer=null;
@@ -100,6 +101,10 @@ function scheduleRowAdvance(){
    rowAdvanceTimer=null;
    if(screen!=="playScreen"||!locked||pictureKey!==activeKey()||
       save.done!==doneAtCheck)return;
+   if(practiceOnly){
+     question();
+     return;
+   }
    if(save.done===questionCount(activePicture())){
      finish({animate:true});
    }else{
@@ -260,9 +265,16 @@ function question(){
  $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
  $("mobilePreviewStrip").classList.remove("ink-stage--correct","ink-stage--incorrect");
  drag=null;
- const picture=activePicture(),practice=tutorialFor(state.activeLevel);
- const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
- q=tutorial?practice[save.tutorial]:
+ const picture=activePicture();
+ const practice=practiceOnly?practiceQuestionsFor(picture,state.activeLevel):[];
+ if(practiceOnly&&practiceIndex>=practice.length){
+   chooseLevel();
+   $("practiceStatus").textContent="Practice complete! You're ready to start your picture.";
+   $("practiceStatus").hidden=false;
+   return;
+ }
+ const tutorial=practiceOnly;
+ q=tutorial?practice[practiceIndex]:
    makePictureQuestion(picture,save.done,save.replay,state.activeLevel);
  if(!q){finish();return;}
  attempts=0;hintsShown=0;assisted=false;chosen=null;locked=false;selected="left";
