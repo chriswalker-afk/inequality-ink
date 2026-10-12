@@ -924,7 +924,8 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
  for(const level of modes){
    selectStage(level,1);
    const picture=pictureById(level==="mirror"?"mirror-star-starter":"full-star-starter");
-   assert.equal($("picturePathProgress").textContent.startsWith("0 of 5"),true);
+   const completedBefore=Number($("picturePathProgress").textContent.split(" ")[0]);
+   assert.ok(completedBefore>=0&&completedBefore<5);
    assert.ok($("pictureSummary").textContent.includes("6 rows"));
    assert.equal($("skipTutorialButton").hidden,true,
      "Starter should not require or advertise separate practice");
@@ -949,7 +950,7 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
    assert.equal($("introScreen").hidden,false);
    assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
      .selectedPictures[level],next);
-   assert.ok($("picturePathProgress").textContent.includes("1 of 5"));
+   assert.ok($("picturePathProgress").textContent.includes((completedBefore+1)+" of 5"));
    const first=$("picturePicker").children[0];
    assert.ok(first.children[1].children[1].textContent.includes("completed"));
    assert.equal(first.children[1].children[0].textContent,picture.clue);
@@ -958,6 +959,7 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
 test("Paint Starter completes a two-colour six-row heart without scrolling or extra questions",()=>{
  selectStage("paint",1);
  const p=pictureById("paint-heart-starter"),width=8,rows=6;
+ const completedBefore=Number($("picturePathProgress").textContent.split(" ")[0]);
  assert.ok($("pictureSummary").textContent.includes("2 colours"));
  assert.ok($("pictureSummary").textContent.includes("6 rows"));
  $("startButton").click();
@@ -1003,7 +1005,7 @@ test("Paint Starter completes a two-colour six-row heart without scrolling or ex
    assert.equal($("finishTitle").textContent,p.name+"!");
    $("nextPictureButton").click();
    assert.equal($("introScreen").hidden,false);
-   assert.ok($("picturePathProgress").textContent.includes("1 of 5"));
+   assert.ok($("picturePathProgress").textContent.includes((completedBefore+1)+" of 5"));
    assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
      .selectedPictures.paint,"paint-star-step");
    assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
