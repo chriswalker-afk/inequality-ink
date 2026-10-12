@@ -7,8 +7,10 @@ import {
  pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
 } from "./picture-engine.mjs";
 import {makePaintQuestion,paintTarget,checkPaintRow} from "./paint-engine.mjs";
+import {initWorkingPad} from "./working-space.mjs";
 validatePictureLibrary();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
+const workingPad=initWorkingPad(document);
 const KEY="inequality-ink-v5", PREVIOUS_KEY="inequality-ink-v4";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false,paintDraft:[]});
 const defaultSelection=()=>Object.fromEntries(LEVEL_IDS.map(level=>[level,defaultPictureForLevel(level).id]));
@@ -266,7 +268,7 @@ function question(){
  attempts=0;hintsShown=0;assisted=false;chosen=null;locked=false;selected="left";
  draft={direction:picture.family==="half"?"right":"between",
    lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
- $("workingArea").value="";
+ workingPad.reset();
  const {min,max}=visibleAxis();
  for(const side of ["left","right"]){
    $(side+"Value").min=min;$(side+"Value").max=max;
