@@ -329,9 +329,9 @@ function check(){
   save.tutorial++;if(save.tutorial>=2)save.tutorialDone=true;
  }else{
   feedback(q.artMode==="mirror-half"
-    ?"Exactly right! This ray paints one row of your half-cat. The other half stays hidden until the finale."
+    ?"Correct! Another row of your mystery picture is complete."
     :q.artMode==="mirror"
-      ?"Correct! The reflected part completes this Mixed Challenge row."
+      ?"Correct! Another row is complete."
       :"Beautifully done! Your exact interval has painted this row.",true);
   if(attempts===1 && !assisted)save.firstTry++;
   save.done++;
@@ -349,13 +349,13 @@ function hint(){
  const final=formatInterval(q.answer);
  let msg;
  if(hintsShown===1){
-   if(q.artMode==="mirror-half")msg="Represent a full one-sided ray with the correct arrow. Only the canvas edge limits the pixels, never the inequality itself.";
+   if(q.artMode==="mirror-half")msg="Check the direction of the arrow. Does the inequality include its endpoint?";
    else if(q.artMode==="mirror")msg="Work out whether this one-sided solution points left or right.";
    else msg=q.mode==="solve"?"Rearrange all three parts. When dividing by a negative number, reverse both inequality signs."
      :q.mode==="read"?"Open circles exclude endpoints; closed circles include them."
      :"Identify both endpoints and consider whether each is included.";
  }else if(hintsShown===2){
-   if(q.artMode==="mirror-half")msg="Choose the correct arrow, endpoint number and circle. Do not add another circle at the canvas edge.";
+   if(q.artMode==="mirror-half")msg="A filled circle means equality is included; an open circle means it is excluded. Check the endpoint number too.";
    else if(q.artMode==="mirror")msg="Check both the arrow direction and the circle type.";
    else msg=q.mode==="solve"?"Isolate x in the middle, then check both boundaries."
      :q.mode==="read"?"Compare both endpoints and both circle types with your options."
@@ -363,7 +363,7 @@ function hint(){
  }else {
    assisted=true;
    msg="Answer: "+(q.mode==="solve"?q.equation+" simplifies to ":"")+final+
-     (q.artMode==="mirror-half"?". Only the part of this ray inside the right-hand canvas is drawn.":q.artMode==="mirror"?". This mixed question uses a reflected half.":".");
+     ("." );
  }
  $("hintPanel").hidden=false;$("hintPanel").textContent=msg;
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
@@ -378,6 +378,7 @@ function clearRevealTimers(){
 function later(callback,delay){revealTimers.push(setTimeout(callback,delay));}
 function drawCatPanel(svg,left=false){
   svg.replaceChildren();
+  svg.setAttribute("viewBox","0 0 "+CAT_HALF_WIDTH+" "+HEIGHT);
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_HALF_WIDTH;x++){
     const halfX=left?CAT_HALF_WIDTH-1-x:x;
     const filled=catHalfPixelAt(halfX,y);
@@ -393,10 +394,10 @@ function renderFinishedArt(){
   }
   const svg=$("finishedArt");
   svg.replaceChildren();
-  svg.setAttribute("viewBox","0 0 16 16");
+  svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
   svg.classList.remove("half-canvas");
   svg.setAttribute("aria-label","A fully symmetrical coloured cat face, reflected from its right half.");
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
     const filled=catPixelAt(x,y);
     mk("rect",{x,y,width:1,height:1,
       fill:filled?catColourAt(x,y):"#e9e5df",
@@ -412,33 +413,37 @@ function playCatReveal(){
   stage.className="cat-flip-stage";
   shell.classList.remove("is-revealing","is-colouring");
   art.hidden=true;stage.hidden=false;
-  $("catFlipStatus").textContent="Your finished half-cat…";
+  $("catFlipStatus").textContent="Your completed drawing…";
   $("replayReveal").hidden=true;
   // Reduced-motion users get the complete accessible artwork without any flip.
   if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+    $("finishTitle").textContent="Cat Cameo!";
+    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
     stage.hidden=true;
     art.hidden=false;
     $("replayReveal").hidden=false;
     return;
   }
   later(()=>{
-    $("catFlipStatus").textContent="Watch your drawing unfold!";
+    $("catFlipStatus").textContent="Watch your picture unfold!";
     stage.classList.add("is-flipping");
   },550);
   later(()=>{
     stage.classList.add("is-revealed");
-    $("catFlipStatus").textContent="The whole cat! Still monochrome…";
+    $("catFlipStatus").textContent="The complete picture — still monochrome…";
   },1850);
   later(()=>{
     shell.classList.add("is-revealing");
     art.hidden=false;
     void art.getBoundingClientRect();
     shell.classList.add("is-colouring");
-    $("catFlipStatus").textContent="Now add the colours!";
+    $("catFlipStatus").textContent="And now… colour!";
   },2390);
   later(()=>{
     $("replayReveal").hidden=false;
     $("catFlipStatus").textContent="Cat Cameo — complete!";
+    $("finishTitle").textContent="Cat Cameo!";
+    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
   },3500);
 }
 function finish({animate=false}={}){
@@ -446,7 +451,7 @@ function finish({animate=false}={}){
   save.completed=true;store();show("finishScreen");
   const cat=state.activeLevel==="mirror";
   $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
-  $("finishTitle").textContent=cat?"Your cat is complete!":"You painted it!";
+  $("finishTitle").textContent=cat?(animate?"The big reveal!":"Cat Cameo!"):"You painted it!";
   $("finishedArtShell").classList.remove("is-revealing","is-colouring");
   $("catFlipStage").hidden=true;
   $("finishedArt").hidden=false;
@@ -455,7 +460,7 @@ function finish({animate=false}={}){
   $("firstTryStat").textContent=save.firstTry+"/14";
   $("hintsStat").textContent=save.hints;
   $("finishNote").textContent=cat
-    ?"Fourteen one-sided inequalities built a half-cat. Reflection made it whole!"
+    ?(animate?"Every inequality is complete. Watch your picture come together.":"Your drawing became a colourful, symmetrical cat!")
     :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
      :"The whole picture is complete. Every mistake you corrected was part of the learning.";
   if(cat&&animate)playCatReveal();
