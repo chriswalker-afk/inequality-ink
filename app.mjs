@@ -288,22 +288,22 @@ function question(){
  document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button")
    .forEach(el=>el.disabled=false);
  document.querySelector('[data-direction="between"]').hidden=picture.family==="half";
- $("questionStep").textContent=tutorial?"LET'S PRACTISE":
+ $("questionStep").textContent=tutorial?"PRACTICE "+(practiceIndex+1)+" OF "+practice.length:
    "ROW "+(save.done+1)+" OF "+questionCount(picture);
- $("questionHeading").textContent=tutorial?"Learn the controls":
+ $("questionHeading").textContent=tutorial?"Practise number lines":
    q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":
    q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
- $("modeTag").textContent=tutorial?"TUTORIAL":q.mode.toUpperCase();
+ $("modeTag").textContent=tutorial?"PRACTICE":q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
  $("equationText").textContent=q.equation||"";
  $("readArea").hidden=q.mode!=="read";$("drawArea").hidden=q.mode==="read";
  $("workingShell").hidden=q.mode!=="solve";
  $("checkButton").hidden=false;
  $("checkButton").disabled=false;
- $("checkButton").textContent="Check & paint →";
+ $("checkButton").textContent=tutorial?"Check practice →":"Check & paint →";
  $("hintButton").disabled=false;$("hintButton").textContent="✳ Give me a hint";
- $("skipPractice").hidden=!tutorial;
+ $("exitPracticeButton").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
  $("canvasTip").textContent="✦ Light squares preview your answer. Orange means try again; green means correct.";
@@ -321,11 +321,13 @@ function selectLevel(level){
  if(!picturesForLevel(level).some(p=>p.id===state.selectedPictures[level])){
    state.selectedPictures[level]=defaultPictureForLevel(level).id;
  }
+ $("practiceStatus").hidden=true;
  syncProgress();store();updateLevelSelector();
 }
 function selectPicture(id){
  if(!picturesForLevel(state.activeLevel).some(p=>p.id===id))return;
  state.selectedPictures[state.activeLevel]=id;
+ $("practiceStatus").hidden=true;
  syncProgress();store();updateLevelSelector();
 }
 function renderPicturePicker(){
@@ -430,10 +432,9 @@ function updateLevelSelector(){
    " rows"+(step===1?" · Quick win":"")+" · No login needed";
  renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
- $("startButton").innerHTML=save.completed?"View completed picture ↗":
-   count?"Continue "+(state.activeLevel==="paint"?"painting":"drawing")+" ↗":
-   state.activeLevel==="paint"?"Start painting ↗":"Start drawing ↗";
- $("skipTutorialButton").hidden=state.activeLevel==="paint"||step===1;
+ $("startButton").textContent=save.completed?"View completed picture ↗":
+   count?"Continue picture ↗":"Start picture ↗";
+ $("practiceButton").hidden=state.activeLevel==="paint";
 }
 function chooseLevel(){
  cancelPaintTimers();
