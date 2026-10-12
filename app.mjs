@@ -202,7 +202,7 @@ function flashCorrectThenCommit(){
    }
  },reduced?130:340);
 }
-function initProgress({animate=false}={}){
+function initProgress({animate=false,redraw=true}={}){
  const total=questionCount(activePicture());
  $("progressMarkers").replaceChildren();
  for(let n=0;n<total;n++){
@@ -219,10 +219,12 @@ function initProgress({animate=false}={}){
    "Practice — canvas unchanged":"Current row: "+q?.row;
  $("canvasProgress").setAttribute("aria-label",
    save.done+" of "+total+" picture rows finished");
- sprite($("pixelCanvas"),{completed:save.done,animate});
+ if(redraw)sprite($("pixelCanvas"),{completed:save.done,animate});
 }
 function question(){
  cancelRowAdvance();
+ cancelPreviewFlash();
+ $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
  drag=null;
  const picture=activePicture(),practice=tutorialFor(state.activeLevel);
  const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
@@ -258,13 +260,13 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
- $("canvasTip").textContent="✦ Keep solving inequalities to complete the mystery picture.";
+ $("canvasTip").textContent="✦ Light squares preview your answer. Orange means try again; green means correct.";
  $("playEyebrow").textContent=picture.mystery.toUpperCase()+
    " / "+LEVELS[state.activeLevel].name.toUpperCase();
  $("playTitle").firstChild.textContent="Mystery Picture";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
- else setDraft(draft);
+ else setDraft(draft,{preview:false});
  initProgress();
 }
 function selectLevel(level){
@@ -351,7 +353,7 @@ function renderOptions(){
  q.options.forEach((opt,i)=>{
   const b=document.createElement("button");b.type="button";b.textContent=String.fromCharCode(65+i)+". "+opt.label;
   b.classList.toggle("selected",chosen===i);b.disabled=locked;
-  b.onclick=()=>{chosen=i;renderOptions();};host.append(b);
+  b.onclick=()=>{chosen=i;renderOptions();previewStudentAnswer(opt.value);};host.append(b);
  });
 }
 // The number line has only conventional mathematical markings.
@@ -458,6 +460,7 @@ function toggleEndpoint(side,{restoreFocus=false}={}){
  selected=side;
  syncInputs();
  renderLine($("drawLine"),draft);
+ previewStudentAnswer(draft);
  if(restoreFocus)$("drawLine")
    .querySelector?.('[data-endpoint="'+side+'"]')?.focus?.({preventScroll:true});
 }
@@ -502,8 +505,12 @@ function setEndpoint(which,n){
   if(which==="left"){draft.lower=Math.min(n,draft.upper-1);}else{draft.upper=Math.max(n,draft.lower+1);}
  }else draft.at=n;
  selected=which;syncInputs();renderLine($("drawLine"),draft);
+ previewStudentAnswer(draft);
 }
-function setDraft(d){draft={...d};syncInputs();renderLine($("drawLine"),draft);}
+function setDraft(d,{preview=true}={}){
+ draft={...d};syncInputs();renderLine($("drawLine"),draft);
+ if(preview)previewStudentAnswer(draft);
+}
 function syncInputs(){
  for(const side of ["left","right"]){
   const isLeft=side==="left", isBetween=draft.direction==="between";
@@ -551,6 +558,7 @@ for(const side of ["left","right"]){
   if(draft.direction==="between")draft[side==="left"?"lowerIncluded":"upperIncluded"]=included;
   else draft.included=included;
   selected=side;syncInputs();renderLine($("drawLine"),draft);
+  previewStudentAnswer(draft);
  };
 }
 function misconception(){
@@ -577,6 +585,7 @@ function check(){
  if(!correct){
    if(q.mode==="read")feedback("Not quite. Check the endpoints and which circles are filled.");
    else feedback(misconception());
+   flashWrongPreview();
    return;
  }
  locked=true;$("hintButton").disabled=true;
@@ -598,7 +607,12 @@ function check(){
  }
  if(assisted||hintsShown)save.hints+=hintsShown;
  save.attempts+=attempts;
- store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
+ store();
+ // Save correct progress immediately, but allow the student's preview to
+ // flash green before we replace it with the accepted slate-blue ink.
+ initProgress({animate:false,redraw:q.mode==="tutorial"});
+ if(q.mode!=="tutorial")flashCorrectThenCommit();
+ updateLevelSelector();
  $("checkButton").disabled=true;
  $("checkButton").textContent=q.mode==="tutorial"?"✓ Correct — continuing…":
    save.done===questionCount(activePicture())?"✓ Correct — revealing…":"✓ Correct — next row…";
