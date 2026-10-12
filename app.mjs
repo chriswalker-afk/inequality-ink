@@ -466,216 +466,199 @@ function hint(){
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
  $("hintButton").disabled=hintsShown===3;
 }
-// Mirror Mode never reflects during play; the finished half-cat unfolds only now.
+// Finished artwork is rendered from each picture's registry definition.
+// The mathematical pixels stay unchanged while colour, background and
+// independently staged finishing details appear only at completion.
 let revealTimers=[];
 function clearRevealTimers(){
-  for(const timer of revealTimers)clearTimeout(timer);
-  revealTimers=[];
+ for(const timer of revealTimers)clearTimeout(timer);
+ revealTimers=[];
 }
-function later(callback,delay){revealTimers.push(setTimeout(callback,delay));}
-function drawCatPanel(svg,left=false){
-  svg.replaceChildren();
-  svg.setAttribute("viewBox","0 0 "+CAT_HALF_WIDTH+" "+HEIGHT);
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_HALF_WIDTH;x++){
-    const halfX=left?CAT_HALF_WIDTH-1-x:x;
-    const filled=catHalfPixelAt(halfX,y);
-    mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
-      stroke:"#f7f3ed","stroke-width":0.035},svg);
-  }
+function later(fn,delay){revealTimers.push(setTimeout(fn,delay));}
+function drawHalfPanel(svg,left=false){
+ const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
+ svg.replaceChildren();
+ svg.setAttribute("viewBox","0 0 "+width+" "+height);
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const local=left?width-1-x:x,filled=picturePixelAt(picture,local,y);
+   mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
+     stroke:"#f7f3ed","stroke-width":0.035},svg);
+ }
 }
-// Decorations are independent of both the mathematical silhouette and its
-// base-colour layer. The same final details appear in an animation, a reload,
-// reduced-motion mode, and a downloaded PNG.
-function appendFinalDetails(svg,artwork){
-  for(const stage of detailStagesFor(artwork)){
-    const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
-    for(const detail of finalDetailsFor(artwork)){
-      if(detail.group!==stage)continue;
-      const height=detail.height;
-      mk("rect",{x:detail.x,y:detail.y+(1-height)/2,width:1,height,
-        fill:detail.color,"shape-rendering":"crispEdges"},group);
-    }
-  }
+function appendFinalDetails(svg,picture){
+ for(const stage of pictureDetailStages(picture)){
+   const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
+   for(const mark of pictureFinalDetails(picture)){
+     if(mark.group!==stage)continue;
+     mk("rect",{x:mark.x,y:mark.y+(1-mark.height)/2,
+       width:1,height:mark.height,fill:mark.color,
+       "shape-rendering":"crispEdges"},group);
+   }
+ }
 }
 function resetFinalDetails(){
-  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
-    group.style.transition="none";
-    group.setAttribute("opacity","0");
-  });
+ $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(g=>{
+   g.style.transition="none";g.setAttribute("opacity","0");
+ });
 }
 function revealAllDetails(){
-  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
-    group.style.transition="none";
-    group.setAttribute("opacity","1");
-  });
+ $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(g=>{
+   g.style.transition="none";g.setAttribute("opacity","1");
+ });
 }
-function scheduleDetailReveal(artwork,onComplete){
-  const stages=detailStagesFor(artwork);
-  stages.forEach((stage,i)=>{
-    later(()=>{
-      const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
-        .find(element=>element.getAttribute("data-detail-stage")===stage);
-      if(!group)return;
-      group.style.transition="opacity .37s ease-out";
-      group.setAttribute("opacity","1");
-    },i*370);
-  });
-  later(onComplete,stages.length*370+280);
+function scheduleDetailReveal(picture,onComplete){
+ const stages=pictureDetailStages(picture);
+ stages.forEach((stage,index)=>{
+   later(()=>{
+     const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
+       .find(g=>g.getAttribute("data-detail-stage")===stage);
+     if(!group)return;
+     group.style.transition="opacity .37s ease-out";
+     group.setAttribute("opacity","1");
+   },index*370);
+ });
+ later(onComplete,stages.length*370+280);
 }
 function renderFinishedArt(){
-  const svg=$("finishedArt"),cat=state.activeLevel==="mirror";
-  if(!cat){
-    sprite(svg,{colour:true,completed:14});
-    svg.setAttribute("aria-label","A full-colour mushroom with spots, expressive eyes and a smiling face.");
-  }else{
-    svg.replaceChildren();
-    svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
-    svg.classList.remove("half-canvas");
-    svg.setAttribute("aria-label","A symmetrical ginger pixel-art cat with eyes, ears, nose and whiskers.");
-    for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
-      const filled=catPixelAt(x,y);
-      mk("rect",{x,y,width:1,height:1,
-        fill:filled?catColourAt(x,y):finishedBackgroundAt("cat",x,y),
-        stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
-    }
-  }
-  appendFinalDetails(svg,cat?"cat":"mushroom");
+ const picture=activePicture(),width=fullPictureWidth(picture),
+   height=pictureHeight(picture),svg=$("finishedArt");
+ svg.replaceChildren();svg.classList.remove("half-canvas");
+ svg.setAttribute("viewBox","0 0 "+width+" "+height);
+ svg.setAttribute("aria-label","Completed pixel art: "+picture.name+
+   ", with a coloured background and illustrated finishing details.");
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const filled=picturePixelAt(picture,x,y,{full:true});
+   mk("rect",{x,y,width:1,height:1,
+     fill:filled?pictureColourAt(picture,x,y,{full:true}):
+       pictureBackgroundAt(picture,x,y),
+     stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
+ }
+ appendFinalDetails(svg,picture);
 }
-function playMushroomReveal(){
-  if(state.activeLevel==="mirror")return;
-  clearRevealTimers();
-  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
-  $("catFlipStage").hidden=true;
-  $("finishedArt").hidden=false;
-  resetFinalDetails();
-  $("replayReveal").hidden=true;
-  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
-    revealAllDetails();
-    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
-    $("replayReveal").hidden=false;
-    return;
-  }
-  $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
-  later(()=>scheduleDetailReveal("mushroom",()=>{
-    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
-    $("replayReveal").hidden=false;
-  }),600);
+function revealComplete(){
+ const picture=activePicture();
+ $("finishTitle").textContent=picture.name+"!";
+ $("finishNote").textContent="A completed picture, full of colour and finishing touches.";
+ $("replayReveal").hidden=false;
 }
-function playCatReveal(){
-  if(state.activeLevel!=="mirror")return;
-  clearRevealTimers();
-  const stage=$("catFlipStage"),shell=$("finishedArtShell"),art=$("finishedArt");
-  drawCatPanel($("catFlipLeft"),true);
-  drawCatPanel($("catFlipRight"),false);
-  stage.className="cat-flip-stage";
-  shell.classList.remove("is-revealing","is-colouring");
-  resetFinalDetails();
-  art.hidden=true;stage.hidden=false;
-  $("catFlipStatus").textContent="Your completed drawing…";
-  $("replayReveal").hidden=true;
-  // Reduced-motion users get the complete accessible artwork without any flip.
-  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
-    $("finishTitle").textContent="Cat Cameo!";
-    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
-    stage.hidden=true;
-    art.hidden=false;
-    revealAllDetails();
-    $("replayReveal").hidden=false;
-    return;
-  }
-  later(()=>{
-    $("catFlipStatus").textContent="Watch your picture unfold!";
-    stage.classList.add("is-flipping");
-  },550);
-  later(()=>{
-    stage.classList.add("is-revealed");
-    $("catFlipStatus").textContent="The complete picture — still monochrome…";
-  },1850);
-  later(()=>{
-    shell.classList.add("is-revealing");
-    art.hidden=false;
-    void art.getBoundingClientRect();
-    shell.classList.add("is-colouring");
-    $("catFlipStatus").textContent="And now… colour!";
-  },2390);
-  later(()=>{
-    $("catFlipStatus").textContent="One more thing… the little details!";
-    scheduleDetailReveal("cat",()=>{
-      $("replayReveal").hidden=false;
-      $("catFlipStatus").textContent="Eyes, nose and whiskers — Cat Cameo complete!";
-      $("finishTitle").textContent="Cat Cameo!";
-      $("finishNote").textContent="Your picture now has its final details: bright eyes, pink ears, a nose and whiskers.";
-    });
-  },3500);
+function playFullReveal(){
+ const picture=activePicture();
+ if(picture.family!=="full")return;
+ clearRevealTimers();
+ $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+ $("catFlipStage").hidden=true;
+ $("finishedArt").hidden=false;
+ resetFinalDetails();
+ $("replayReveal").hidden=true;
+ if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+   revealAllDetails();revealComplete();return;
+ }
+ $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
+ later(()=>scheduleDetailReveal(picture,revealComplete),600);
+}
+function playMirrorReveal(){
+ const picture=activePicture();
+ if(picture.family!=="half")return;
+ clearRevealTimers();
+ const stage=$("catFlipStage"),shell=$("finishedArtShell"),art=$("finishedArt");
+ drawHalfPanel($("catFlipLeft"),true);
+ drawHalfPanel($("catFlipRight"),false);
+ const panels=stage.querySelector(".cat-flip-panels");
+ panels.style.aspectRatio=fullPictureWidth(picture)+" / "+pictureHeight(picture);
+ stage.className="cat-flip-stage";
+ shell.classList.remove("is-revealing","is-colouring");
+ resetFinalDetails();
+ art.hidden=true;stage.hidden=false;
+ $("catFlipStatus").textContent="Your completed drawing…";
+ $("replayReveal").hidden=true;
+ if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+   stage.hidden=true;art.hidden=false;
+   revealAllDetails();revealComplete();return;
+ }
+ later(()=>{
+   $("catFlipStatus").textContent="Watch your picture unfold!";
+   stage.classList.add("is-flipping");
+ },550);
+ later(()=>{
+   stage.classList.add("is-revealed");
+   $("catFlipStatus").textContent="The complete picture — still monochrome…";
+ },1850);
+ later(()=>{
+   shell.classList.add("is-revealing");
+   art.hidden=false;
+   void art.getBoundingClientRect();
+   shell.classList.add("is-colouring");
+   $("catFlipStatus").textContent="And now… colour!";
+ },2390);
+ later(()=>{
+   $("catFlipStatus").textContent="One more thing… the little details!";
+   scheduleDetailReveal(picture,()=>{
+     $("catFlipStatus").textContent="Masterpiece complete!";
+     revealComplete();
+   });
+ },3500);
 }
 function finish({animate=false}={}){
-  clearRevealTimers();
-  save.completed=true;store();show("finishScreen");
-  const cat=state.activeLevel==="mirror";
-  $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
-  $("finishTitle").textContent=cat?(animate?"The big reveal!":"Cat Cameo!"):"You painted it!";
-  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
-  $("catFlipStage").hidden=true;
-  $("finishedArt").hidden=false;
-  $("replayReveal").hidden=animate;
-  renderFinishedArt();
-  $("firstTryStat").textContent=save.firstTry+"/14";
-  $("hintsStat").textContent=save.hints;
-  $("finishNote").textContent=cat
-    ?(animate?"Every inequality is complete. Watch your picture come together.":"Your drawing became a colourful, symmetrical cat!")
-    :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
-     :"The whole picture is complete. Every mistake you corrected was part of the learning.";
-  if(animate){
-    if(cat)playCatReveal();
-    else playMushroomReveal();
-  }else{
-    // Reloaded/completed games show the entire finished illustration.
-    revealAllDetails();
-  }
-  window.scrollTo({top:0,behavior:"instant"});
+ clearRevealTimers();
+ const picture=activePicture();
+ save.completed=true;store();show("finishScreen");
+ $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
+ $("finishTitle").textContent=animate?"The big reveal!":picture.name+"!";
+ $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+ $("catFlipStage").hidden=true;
+ $("finishedArt").hidden=false;
+ $("replayReveal").hidden=animate;
+ renderFinishedArt();
+ $("firstTryStat").textContent=save.firstTry+"/"+questionCount(picture);
+ $("hintsStat").textContent=save.hints;
+ $("finishNote").textContent=animate?
+   "Your answers have built the picture. Watch it come to life!":
+   "You've completed "+picture.name+".";
+ if(animate){
+   if(picture.family==="half")playMirrorReveal();
+   else playFullReveal();
+ }else revealAllDetails();
+ window.scrollTo({top:0,behavior:"instant"});
 }
 function restart(){
  clearRevealTimers();
- if(!confirm("Start a new picture? Your current row progress will be reset."))return;
+ if(!confirm("Start this picture again? Your progress on other pictures will be kept."))return;
  const replay=(save.replay||0)+1;
- state.progress[state.activeLevel]=blank();
- save=state.progress[state.activeLevel];
- Object.assign(save,{replay,tutorial:2,tutorialDone:true});
+ state.progress[activeKey()]=blank();
+ syncProgress();
+ Object.assign(save,{replay,tutorial:tutorialFor(state.activeLevel).length,tutorialDone:true});
  store();start();
 }
 function saveArt(){
-  const sprite=$("finishedArt").cloneNode(true);
-  const width=state.activeLevel==="mirror"?CAT_FULL_WIDTH:WIDTH,scale=40;
-  sprite.removeAttribute("hidden");
-  sprite.setAttribute("xmlns",SVG);
-  sprite.setAttribute("width",width*scale);
-  sprite.setAttribute("height",HEIGHT*scale);
-  // A saved image is always finished, even if exported during the reveal.
-  sprite.querySelectorAll("[data-detail-stage]").forEach(group=>{
-    group.style.transition="none";
-    group.setAttribute("opacity","1");
-  });
-  const xml=new XMLSerializer().serializeToString(sprite);
-  const url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
-  const img=new Image();
-  img.onload=()=>{
-    const canvas=document.createElement("canvas");
-    canvas.width=width*scale;canvas.height=HEIGHT*scale;
-    const ctx=canvas.getContext("2d");
-    ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    URL.revokeObjectURL(url);
-    canvas.toBlob(blob=>{
-      if(!blob)return;
-      const link=document.createElement("a"),a=URL.createObjectURL(blob);
-      link.href=a;
-      link.download=state.activeLevel==="mirror"?"inequality-ink-cat-cameo.png":"inequality-ink-mushroom.png";
-      link.click();
-      setTimeout(()=>URL.revokeObjectURL(a),1000);
-    },"image/png");
-  };
-  img.onerror=()=>URL.revokeObjectURL(url);
-  img.src=url;
+ const picture=activePicture(),width=fullPictureWidth(picture),
+   height=pictureHeight(picture),scale=40;
+ const sprite=$("finishedArt").cloneNode(true);
+ sprite.removeAttribute("hidden");
+ sprite.setAttribute("xmlns",SVG);
+ sprite.setAttribute("width",width*scale);
+ sprite.setAttribute("height",height*scale);
+ sprite.querySelectorAll("[data-detail-stage]").forEach(g=>{
+   g.style.transition="none";g.setAttribute("opacity","1");
+ });
+ const xml=new XMLSerializer().serializeToString(sprite),
+   url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
+ const img=new Image();
+ img.onload=()=>{
+   const canvas=document.createElement("canvas");
+   canvas.width=width*scale;canvas.height=height*scale;
+   const ctx=canvas.getContext("2d");ctx.imageSmoothingEnabled=false;
+   ctx.drawImage(img,0,0,canvas.width,canvas.height);
+   URL.revokeObjectURL(url);
+   canvas.toBlob(blob=>{
+     if(!blob)return;
+     const link=document.createElement("a"),objectUrl=URL.createObjectURL(blob);
+     link.href=objectUrl;link.download="inequality-ink-"+picture.id+".png";
+     link.click();
+     setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+   },"image/png");
+ };
+ img.onerror=()=>URL.revokeObjectURL(url);
+ img.src=url;
 }
 document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
