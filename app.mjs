@@ -334,18 +334,38 @@ function renderLine(svg,interval,readonly=false){
    }
  }
  const circle=(x,closed,side)=>{
-   const g=mk("g",{},group);
+   const endpointLabel=side==="left"?"Left":"Right";
+   const value=interval.direction==="between"?
+     (side==="left"?interval.lower:interval.upper):interval.at;
+   const groupAttrs=readonly?{}:{
+     role:"button",tabindex:0,"data-endpoint":side,
+     "aria-pressed":String(closed),
+     "aria-label":endpointLabel+" endpoint "+fmt(value)+", "+
+       (closed?"closed":"open")+". Tap or press Enter to toggle. Drag to move."
+   };
+   const g=mk("g",groupAttrs,group);
    mk("circle",{cx:x,cy:axisY,r:readonly?10:11,
      fill:closed?"#538ca2":"#ffffff",stroke:"#538ca2","stroke-width":3},g);
    if(!readonly){
-     const e=mk("circle",{cx:x,cy:axisY,r:18,fill:"transparent",
+     const hit=mk("circle",{cx:x,cy:axisY,r:20,fill:"transparent",
        stroke:selected===side?"#8ebbac":"none","stroke-width":2},g);
-     e.style.cursor="grab";
-     e.addEventListener("pointerdown",ev=>{
-       if(locked)return;
-       selected=side;drag=true;
-       svg.setPointerCapture(ev.pointerId);
-       ev.preventDefault();syncInputs();renderLine(svg,draft);
+     hit.style.cursor="pointer";
+     g.addEventListener("pointerdown",event=>{
+       if(locked||(event.pointerType==="mouse"&&event.button!==0))return;
+       // Pointer capture stays on the stable SVG even while the circles redraw.
+       drag={pointerId:event.pointerId,side,
+         startX:event.clientX,startY:event.clientY,moved:false};
+       selected=side;
+       syncInputs();
+       svg.setPointerCapture?.(event.pointerId);
+       event.preventDefault();
+     });
+     g.addEventListener("keydown",event=>{
+       if(locked||event.repeat)return;
+       if(event.key==="Enter"||event.key===" "){
+         event.preventDefault();
+         toggleEndpoint(side,{restoreFocus:true});
+       }
      });
    }
  };
@@ -353,16 +373,54 @@ function renderLine(svg,interval,readonly=false){
  if(hasRight)circle(rightX,isBetween?interval.upperIncluded:interval.included,
    isBetween?"right":"left");
  if(!readonly){
-   const info=mk("text",{x:330,y:124,"text-anchor":"middle",fill:"#9ba2ae","font-size":13},group);
-   info.textContent="Tap a tick or drag a circle to change your answer";
+   const info=mk("text",{x:330,y:124,"text-anchor":"middle",
+     fill:"#9ba2ae","font-size":13},group);
+   info.textContent="Tap a circle to open/close; drag to move; tap a tick to reposition";
  }
 }
-$("drawLine").addEventListener("pointermove",ev=>{
- if(drag&&!locked)setEndpoint(selected,nearest(ev,$("drawLine")));
-});
-for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
- $("drawLine").addEventListener(eventName,()=>drag=false);
+// Distinguish a quick tap/click from a drag. The threshold is measured in
+// CSS pixels so the action feels the same on touchscreens and desktops.
+const CIRCLE_DRAG_THRESHOLD=9;
+function toggleEndpoint(side,{restoreFocus=false}={}){
+ if(locked||!draft)return;
+ if(draft.direction==="between"){
+   const key=side==="left"?"lowerIncluded":"upperIncluded";
+   draft[key]=!draft[key];
+ }else{
+   draft.included=!draft.included;
+ }
+ selected=side;
+ syncInputs();
+ renderLine($("drawLine"),draft);
+ if(restoreFocus)$("drawLine")
+   .querySelector?.('[data-endpoint="'+side+'"]')?.focus?.({preventScroll:true});
 }
+$("drawLine").addEventListener("pointermove",event=>{
+ const gesture=drag;
+ if(!gesture||locked||event.pointerId!==gesture.pointerId)return;
+ const distance=Math.hypot(event.clientX-gesture.startX,
+   event.clientY-gesture.startY);
+ if(distance>CIRCLE_DRAG_THRESHOLD)gesture.moved=true;
+ if(gesture.moved)setEndpoint(gesture.side,nearest(event,$("drawLine")));
+});
+$("drawLine").addEventListener("pointerup",event=>{
+ const gesture=drag;
+ if(!gesture||event.pointerId!==gesture.pointerId)return;
+ drag=null;
+ const distance=Math.hypot(event.clientX-gesture.startX,
+   event.clientY-gesture.startY);
+ if(gesture.moved||distance>CIRCLE_DRAG_THRESHOLD){
+   setEndpoint(gesture.side,nearest(event,$("drawLine")));
+ }else{
+   toggleEndpoint(gesture.side);
+ }
+});
+$("drawLine").addEventListener("pointercancel",event=>{
+ if(drag?.pointerId===event.pointerId)drag=null;
+});
+$("drawLine").addEventListener("lostpointercapture",event=>{
+ if(drag?.pointerId===event.pointerId)drag=null;
+});
 function nearest(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
  const transformed=pt.matrixTransform(svg.getScreenCTM().inverse());
