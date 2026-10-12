@@ -8,13 +8,13 @@ A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundatio
 
 | Difficulty | Mathematics | Pictures included |
 | --- | --- | --- |
-| **Mirror Mode** | One-sided inequalities. Each correct ray paints one row of a half-image. The completed half-image unfolds across a vertical axis at the end. | Mystery 01: **Cat Cameo**; 02: **Heart Glow**; 03: **Coral Crab**; 04: **Twilight Owl** |
-| **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | Mystery 01: **Mushroom Mystery**; 02: **Rocket Launch**; 03: **Blooming Flower**; 04: **Enchanted Potion**; 05: **Ice Cream Treat** |
+| **Mirror Mode** | One-sided inequalities. Each correct ray paints one row of a half-image. The completed half-image unfolds across a vertical axis at the end. | **Whisker Wink**; **Full of Feeling**; **Seaside Sidestep**; **Night Watch** |
+| **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | **Woodland Wonder**; **Blast Off**; **In Full Bloom**; **Bubbling Brew**; **Sweet Scoop** |
 | **Solve & Paint** | Solve compound inequalities (including reversing signs with negative coefficients), then draw the exact interval. | All five full pictures |
 | **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | All five full pictures |
-| **Paint by Inequalities** | Read 2–4 colour inequalities per row and directly paint the integer-labelled squares. Only the current row can be edited; correct rows lock with their numbers removed. | **Rainbow Rocket**, **Blooming Garden**, **Friendly Robot** |
+| **Paint by Inequalities** | Read 2–4 colour inequalities per row and directly paint the integer-labelled squares. Only the current row can be edited; correct rows lock with their numbers removed. | **To the Moon**, **Petal Parade**, **Beep Beep Buddy** |
 
-The library now contains **twelve unique pictures** offering **22 picture/difficulty combinations**. The selector uses non-spoiler labels (*Mystery 01*, *Mystery 02*, etc.) until each picture is completed. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+The library now contains **twelve unique pictures** offering **22 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
 
 ### Five additional pictures (October 2026)
 
@@ -117,7 +117,7 @@ A new puzzle is a single additional object in the `PICTURE_DEFINITIONS` array in
 {
   id: "a-unique-id",
   name: "Secret final picture name",
-  mystery: "Mystery 03",
+  clue: "A playful clue, not the final picture name",
   family: "half",                   // or "full"
   levels: ["mirror"],               // full pictures: ["full","solve","mixed"]
   window: {min: -4, max: 4},       // pixel columns are -4 to 3

@@ -34,6 +34,39 @@ test("All twelve authored pictures validate automatically against their mathemat
  assert.equal(defaultPictureForLevel("solve").id,"mushroom-mystery");
  assert.throws(()=>pictureById("nonexistent"),/Unknown picture/);
 });
+test("Every picture has a unique playful clue which hides its final name",()=>{
+  const expected={
+    "cat-cameo":"Whisker Wink",
+    "heart-glow":"Full of Feeling",
+    "coral-crab":"Seaside Sidestep",
+    "twilight-owl":"Night Watch",
+    "mushroom-mystery":"Woodland Wonder",
+    "rocket-launch":"Blast Off",
+    "flower-pot":"In Full Bloom",
+    "enchanted-potion":"Bubbling Brew",
+    "ice-cream-treat":"Sweet Scoop",
+    "paint-rocket":"To the Moon",
+    "paint-flower":"Petal Parade",
+    "paint-robot":"Beep Beep Buddy"
+  };
+  assert.equal(Object.keys(expected).length,PICTURE_LIBRARY.length);
+  for(const picture of PICTURE_LIBRARY){
+    assert.equal(picture.clue,expected[picture.id]);
+    assert.ok(picture.clue!==picture.name);
+    assert.doesNotMatch(picture.clue,/mystery\s*\d+/i);
+    assert.ok(picture.clue.length<=35);
+    assert.equal(picture.mystery,undefined,"Do not retain old numbered labels");
+  }
+  for(const level of ["mirror","full","solve","mixed","paint"]){
+    const clues=picturesForLevel(level).map(p=>p.clue.toLowerCase());
+    assert.equal(new Set(clues).size,clues.length,
+      "Clue names must be unique within each mode");
+  }
+  const cat=pictureById("cat-cameo");
+  assert.throws(()=>validatePicture({...cat,clue:"Mystery 01"}),/clue must/);
+  assert.throws(()=>validatePicture({...cat,clue:cat.name}),/clue must/);
+  assert.throws(()=>validatePicture({...cat,clue:""}),/clue must/);
+});
 test("New pictures can have different number-line windows and separate dimensions",()=>{
  const cat=pictureById("cat-cameo"),heart=pictureById("heart-glow");
  const mushroom=pictureById("mushroom-mystery"),rocket=pictureById("rocket-launch");

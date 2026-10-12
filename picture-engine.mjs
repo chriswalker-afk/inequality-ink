@@ -241,6 +241,12 @@ function connected(picture,full=false){
 const validColour=s=>typeof s==="string"&&/^#[0-9a-f]{6}$/i.test(s);
 export function validatePicture(picture){
   if(!picture||!/^[-a-z0-9]+$/.test(picture.id))throw Error("Invalid picture id");
+  if(typeof picture.name!=="string"||!picture.name.trim())
+    throw Error(picture.id+": missing final picture name");
+  if(typeof picture.clue!=="string"||picture.clue.trim().length<3||
+     picture.clue.length>35||/\bmystery\s*\d+\b/i.test(picture.clue)||
+     picture.clue.trim().toLowerCase()===picture.name.trim().toLowerCase())
+    throw Error(picture.id+": clue must be a short, non-numbered, non-spoiler title");
   if(!["half","full"].includes(picture.family))throw Error(picture.id+": invalid family");
   if(!Number.isInteger(picture.height)||picture.height<4||picture.height>48)
     throw Error(picture.id+": invalid height");
@@ -335,5 +341,14 @@ export function validatePicture(picture){
 }
 export function validatePictureLibrary(){
   if(PICTURES_BY_ID.size!==PICTURE_LIBRARY.length)throw Error("Duplicate picture IDs");
+  const labels=new Map();
+  for(const picture of PICTURE_LIBRARY){
+    for(const level of picture.levels){
+      const key=level+":"+picture.clue.toLowerCase();
+      if(labels.has(key))throw Error(
+        picture.id+": duplicate clue title in "+level+" (also "+labels.get(key)+")");
+      labels.set(key,picture.id);
+    }
+  }
   return PICTURE_LIBRARY.map(validatePicture);
 }
