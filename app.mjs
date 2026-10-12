@@ -62,7 +62,8 @@ const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let screen="intro", q=null, draft=null, selected="left", chosen=null,
   locked=false, hintsShown=0, attempts=0, assisted=false, drag=null;
 let rowAdvanceTimer=null;
-let livePreviewLayer=null,previewFlashTimer=null;
+const livePreviewLayers=new Map();
+let previewFlashTimer=null;
 function cancelPreviewFlash(){
  if(previewFlashTimer!==null){clearTimeout(previewFlashTimer);previewFlashTimer=null;}
 }
@@ -138,8 +139,9 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
      stroke:"#6ca69b","stroke-width":.13,
      "stroke-dasharray":".32 .25",opacity:.95},svg);
  }
- if(svg===$("pixelCanvas")){
-   livePreviewLayer=mk("g",{"class":"ink-live-preview","aria-hidden":"true"},svg);
+ if(svg===$("pixelCanvas")||svg===$("mobilePixelCanvas")){
+   livePreviewLayers.set(svg,mk("g",{"class":"ink-live-preview",
+     "aria-hidden":"true"},svg));
  }
 
 }
@@ -152,18 +154,22 @@ function setPreviewPhase(phase){
  stage.classList.remove("ink-stage--incorrect","ink-stage--correct");
  if(phase==="incorrect"||phase==="correct")
    stage.classList.add("ink-stage--"+phase);
- if(livePreviewLayer)
-   livePreviewLayer.setAttribute("class","ink-live-preview ink-live-preview--"+phase);
+ $("mobilePreviewStrip").classList.remove("ink-stage--incorrect","ink-stage--correct");
+ if(phase==="incorrect"||phase==="correct")
+   $("mobilePreviewStrip").classList.add("ink-stage--"+phase);
+ for(const layer of livePreviewLayers.values())
+   layer.setAttribute("class","ink-live-preview ink-live-preview--"+phase);
 }
 function drawLivePreview(candidate,phase="ghost"){
- if(!livePreviewLayer)return;
- livePreviewLayer.replaceChildren();
+ if(!livePreviewLayers.size)return;
+ for(const layer of livePreviewLayers.values())layer.replaceChildren();
  setPreviewPhase(phase);
  if(!candidate||!q?.pictureId||q.mode==="tutorial")return;
  const picture=activePicture();
  for(const value of picturePaintedValues(picture,q,candidate)){
-   mk("rect",{x:value-picture.window.min,y:q.row,width:1,height:1,
-     "class":"ink-preview-pixel","shape-rendering":"crispEdges"},livePreviewLayer);
+   for(const layer of livePreviewLayers.values())
+     mk("rect",{x:value-picture.window.min,y:q.row,width:1,height:1,
+       "class":"ink-preview-pixel","shape-rendering":"crispEdges"},layer);
  }
 }
 function previewStudentAnswer(candidate){
@@ -198,7 +204,9 @@ function flashCorrectThenCommit(){
    if(locked&&q===currentQuestion&&screen==="playScreen"&&
       pictureKey===activeKey()&&save.done===doneAtCheck){
      sprite($("pixelCanvas"),{completed:save.done,animate:!reduced});
+     sprite($("mobilePixelCanvas"),{completed:save.done,animate:!reduced});
      $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
+     $("mobilePreviewStrip").classList.remove("ink-stage--correct","ink-stage--incorrect");
    }
  },reduced?130:340);
 }
@@ -219,12 +227,16 @@ function initProgress({animate=false,redraw=true}={}){
    "Practice — canvas unchanged":"Current row: "+q?.row;
  $("canvasProgress").setAttribute("aria-label",
    save.done+" of "+total+" picture rows finished");
- if(redraw)sprite($("pixelCanvas"),{completed:save.done,animate});
+ if(redraw){
+   sprite($("pixelCanvas"),{completed:save.done,animate});
+   sprite($("mobilePixelCanvas"),{completed:save.done,animate});
+ }
 }
 function question(){
  cancelRowAdvance();
  cancelPreviewFlash();
  $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
+ $("mobilePreviewStrip").classList.remove("ink-stage--correct","ink-stage--incorrect");
  drag=null;
  const picture=activePicture(),practice=tutorialFor(state.activeLevel);
  const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
