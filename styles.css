@@ -39,10 +39,10 @@
 
 
 /* Cat Cameo: only the right half is built during play. Never mirror individual rows. */
-.canvas-stage svg.half-canvas{max-width:192px;max-height:390px}
-.intro-sprite.half-canvas{max-width:172px}
+.canvas-stage svg.half-canvas{max-width:225px;max-height:390px}
+.intro-sprite.half-canvas{max-width:190px}
 .cat-flip-stage{width:100%;position:relative}
-.cat-flip-panels{display:flex;width:100%;aspect-ratio:1;perspective:760px;transform-style:preserve-3d;position:relative}
+.cat-flip-panels{display:flex;width:100%;aspect-ratio:5 / 4;perspective:760px;transform-style:preserve-3d;position:relative}
 .finished-art-shell .cat-flip-left,.finished-art-shell .cat-flip-right{
   width:50%;height:100%;flex:0 0 50%;display:block;image-rendering:pixelated;
   shape-rendering:crispEdges;backface-visibility:visible;
