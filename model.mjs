@@ -121,7 +121,7 @@ export const CAT_HALF_ROWS=Object.freeze([
   [12,0,3,"left",false], // x <= 3
   [13,0,2,"left",true],  // x < 3
   [14,0,1,"left",false]  // x <= 1
-].map(([y,from,to,direction,strict])=>Object.freeze({y,from,to,direction,strict}))));
+].map(([y,from,to,direction,strict])=>Object.freeze({y,from,to,direction,strict})));
 export const CAT_SEQUENCE=Object.freeze([...CAT_HALF_ROWS].reverse());
 export const catHalfColumns=interval=>Array.from({length:CAT_HALF_WIDTH},(_,i)=>i)
   .filter(x=>isInInterval(x,interval));
