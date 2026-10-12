@@ -8,12 +8,24 @@ A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundatio
 
 | Difficulty | Mathematics | Pictures included |
 | --- | --- | --- |
-| **Mirror Mode** | One-sided inequalities. Each correct ray paints one row of a half-image. The completed half-image unfolds across a vertical axis at the end. | Mystery 01: **Cat Cameo** (10-column half-picture); Mystery 02: **Heart Glow** (8-column half-picture) |
-| **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | Mystery 01: **Mushroom Mystery**; Mystery 02: **Rocket Launch** |
-| **Solve & Paint** | Solve compound inequalities (including reversing signs with negative coefficients), then draw the exact interval. | Both full pictures |
-| **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | Both full pictures |
+| **Mirror Mode** | One-sided inequalities. Each correct ray paints one row of a half-image. The completed half-image unfolds across a vertical axis at the end. | Mystery 01: **Cat Cameo**; 02: **Heart Glow**; 03: **Coral Crab**; 04: **Twilight Owl** |
+| **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | Mystery 01: **Mushroom Mystery**; 02: **Rocket Launch**; 03: **Blooming Flower**; 04: **Enchanted Potion**; 05: **Ice Cream Treat** |
+| **Solve & Paint** | Solve compound inequalities (including reversing signs with negative coefficients), then draw the exact interval. | All five full pictures |
+| **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | All five full pictures |
 
-The picture selector intentionally says *Mystery 01* or *Mystery 02* until a picture is completed. Each picture and difficulty has **independently saved progress**. Students can switch to a different picture and return without losing their previous work.
+The library now contains **nine unique pictures** offering **19 picture/difficulty combinations**. The selector uses non-spoiler labels (*Mystery 01*, *Mystery 02*, etc.) until each picture is completed. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+
+### Five additional pictures (October 2026)
+
+The five new pictures were authored as independent mathematical silhouettes, with separate symmetric colours, backgrounds and animated finishing details:
+
+- **Coral Crab** — 10-column Mirror Mode half-image; claws, eyes, cheeks, feet and a seaside background
+- **Twilight Owl** — 9-column Mirror Mode half-image; ear tufts, big eyes, beak, wings, feet and a night-sky background
+- **Blooming Flower** — a full, 16-column symmetrical flower and pot; petal highlights, golden centre, leaves and pot pattern
+- **Enchanted Potion** — a full, 16-column symmetrical bottle; coloured magical liquid, glass highlights, bubbles and sparkle details
+- **Ice Cream Treat** — a full, 16-column symmetrical sundae cone; cherry, sauce, colourful sprinkles and waffle pattern
+
+**Educational variety:** Crab and Owl each generate a roughly balanced mix of left- and right-pointing rays and open/closed endpoint questions. The three full pictures have varied widths, and all support Full Picture, Solve & Paint (including negative linear coefficients) and Mixed Challenge. Automated tests check that their generated questions paint precisely the intended picture across many replay variations.
 
 ## Reusable picture engine
 
@@ -24,7 +36,7 @@ The game no longer needs a separate question-writing routine or illustration ren
 - **`picture-engine.mjs`** — reusable picture-independent mathematical engine: question creation, replay variants, integer-column sampling, mirror symmetry, colouring, connectivity and content validation.
 - **`app.mjs`** — one shared browser interface for selecting, playing, saving and revealing any picture.
 - **`styles.css`**, **`index.html`** — responsive UI and reveal animations.
-- **`picture-engine.test.mjs`**, **`model.test.mjs`**, **`static.test.mjs`** — regression tests, run by GitHub Actions.
+- **`picture-engine.test.mjs`**, **`model.test.mjs`**, **`static.test.mjs`**, **`app-smoke.test.mjs`** — mathematical, interface and complete simulated-student play-through tests, run by GitHub Actions.
 
 Picture-specific artistic data is kept in `pictures.mjs`. Adding another picture no longer means modifying the marking code or duplicating the reveal animation.
 
