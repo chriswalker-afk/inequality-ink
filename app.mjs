@@ -1,24 +1,57 @@
-import {WIDTH,HEIGHT,AXIS_MIN,AXIS_MAX,ROWS,SEQUENCE,TUTORIAL,makeQuestion,columnsFor,identicalSolution,formatInterval,fmt,pixelAt,colourAt,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,identicalSolution,formatInterval,fmt,pixelAt,colourAt,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
-const KEY="inequality-ink-v1";
+const KEY="inequality-ink-v2", LEGACY_KEY="inequality-ink-v1";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false});
-let save=blank();
-try { const p=JSON.parse(localStorage.getItem(KEY)); if(p && Number.isInteger(p.done) && p.done>=0 && p.done<=14 && Number.isInteger(p.tutorial) && p.tutorial>=0 && p.tutorial<=2) save={...blank(),...p};}catch{}
+const defaults=()=>({activeLevel:"mirror",progress:Object.fromEntries(LEVEL_IDS.map(id=>[id,blank()]))});
+let state=defaults();
+try{
+ const old=JSON.parse(localStorage.getItem(KEY));
+ if(old && LEVELS[old.activeLevel] && old.progress && typeof old.progress==="object"){
+   state.activeLevel=old.activeLevel;
+   for(const id of LEVEL_IDS){
+     const p=old.progress[id];
+     if(p && Number.isInteger(p.done) && p.done>=0 && p.done<=14 &&
+        Number.isInteger(p.tutorial) && p.tutorial>=0 && p.tutorial<=2){
+       state.progress[id]={...blank(),...p};
+     }
+   }
+ }else {
+   // The original single-difficulty release becomes the saved Mixed Challenge run.
+   const legacy=JSON.parse(localStorage.getItem(LEGACY_KEY));
+   if(legacy && Number.isInteger(legacy.done) && legacy.done>=0 && legacy.done<=14){
+     state.progress.mixed={...blank(),...legacy};
+   }
+ }
+}catch{}
+let save=state.progress[state.activeLevel];
+const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let screen="intro", q=null, draft=null, selected="left", chosen=null, locked=false, hintsShown=0, attempts=0, assisted=false, drag=false;
-const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(save))}catch{}};
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
-function sprite(svg,{completed=0,colour=false,intro=false}={}){
+function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
  svg.replaceChildren();
- for(let y=0;y<16;y++)for(let x=0;x<16;x++){
-   const active=pixelAt(x,y), solved=intro ? active && y>=7 : active && (colour || SEQUENCE.findIndex(r=>r.y===y)<completed);
+ const newRow=animate && q?.row;
+ for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
+   const active=pixelAt(x,y);
+   const solved=intro ? active && y>=7 :
+     active && (colour || SEQUENCE.findIndex(r=>r.y===y)<completed);
    const fill=solved?(colour?colourAt(x,y):"#64738e"):(intro&&active?"#d0d6dd":"#e9e5df");
-   mk("rect",{x,y,width:1,height:1,fill,stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035},svg);
+   const attrs={x,y,width:1,height:1,fill,stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
+   if(animate && solved && y===newRow && !colour){
+     attrs.class=q.artMode==="mirror"
+       ? ((q.mirrorSide==="right" ? x>=WIDTH/2 : x<WIDTH/2)?"ink-new-primary":"ink-new-reflection")
+       :"ink-new-full";
+   }
+   mk("rect",attrs,svg);
+ }
+ if(!intro && !colour && q?.artMode==="mirror"){
+   mk("line",{x1:WIDTH/2,x2:WIDTH/2,y1:0,y2:HEIGHT,stroke:"#6ca69b",
+     "stroke-width":.13,"stroke-dasharray":".32 .25",opacity:.95},svg);
  }
 }
 sprite($("introPixelArt"),{intro:true});
-function initProgress(){
+function initProgress({animate=false}={}){
  $("progressMarkers").replaceChildren();
  for(let n=0;n<14;n++){const el=document.createElement("span");if(n<save.done)el.classList.add("done");$("progressMarkers").append(el);}
  $("progressText").textContent=save.done+" of 14";
@@ -26,20 +59,22 @@ function initProgress(){
  $("progressFill").style.width=(save.done/14*100)+"%";
  $("phaseText").textContent=q?.mode==="read"?"READ THE LINE":q?.mode==="solve"?"SOLVE & DRAW":q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
  $("activeRowText").textContent=q?.mode==="tutorial"?"Practice — canvas unchanged":"Current row: "+q?.row;
- sprite($("pixelCanvas"),{completed:save.done});
+ sprite($("pixelCanvas"),{completed:save.done,animate});
 }
 function question(){
- const tutorial=!save.tutorialDone && save.tutorial<2;
- q=tutorial?TUTORIAL[save.tutorial]:makeQuestion(save.done,save.replay);
+ const practice=tutorialFor(state.activeLevel);
+ const tutorial=!save.tutorialDone && save.tutorial<practice.length;
+ q=tutorial?practice[save.tutorial]:makeQuestion(save.done,save.replay,state.activeLevel);
  if(!q){finish();return;}
  attempts=0;hintsShown=0;assisted=false;chosen=null;locked=false;selected="left";
- draft={direction:q.answer.direction||"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
+ // No prefilled direction or endpoints: the student must construct the solution.
+ draft={direction:"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
  $("workingArea").value="";
  document.querySelectorAll(".endpoint-card button,.direction-chooser button").forEach(e=>e.disabled=false);
- $("questionStep").textContent=tutorial?"LET'S PRACTISE":`ROW ${save.done+1} OF 14`;
- $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":"Draw the interval";
+ $("questionStep").textContent=tutorial?"LET'S PRACTISE":("ROW "+(save.done+1)+" OF 14");
+ $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror"?"Draw one side":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
- $("modeTag").textContent=tutorial?"TUTORIAL":q.mode.toUpperCase();
+ $("modeTag").textContent=tutorial?"TUTORIAL":q.artMode==="mirror"?"MIRROR "+q.mode.toUpperCase():q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
  $("equationText").textContent=q.equation||"";
  $("readArea").hidden=q.mode!=="read";$("drawArea").hidden=q.mode==="read";
@@ -49,9 +84,41 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
+ const mirrored=q.artMode==="mirror";
+ $("mirrorExplainer").hidden=!mirrored;
+ $("mirrorNotice").hidden=!mirrored;
+ if(mirrored){
+   const side=q.mirrorSide==="right"?"RIGHT":"LEFT";
+   $("mirrorSideLabel").textContent=side+" HALF OF PIXELS FIRST";
+   $("mirrorNoticeText").textContent=(side==="RIGHT"?"Right":"Left")+" half comes from your inequality. The other half will be its reflection.";
+ }
+ $("canvasTip").textContent=mirrored?"✦ Your whole ray is marked; only its highlighted half draws the pixels.":"✦ Your entire correct interval draws the row.";
+ $("playEyebrow").textContent="MYSTERY 01 / "+LEVELS[state.activeLevel].name.toUpperCase();
+ $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
- else{setDraft({...draft,direction:q.answer.direction||"between"});}
+ else setDraft(draft);
  initProgress();
+}
+function selectLevel(level){
+ if(!LEVELS[level])return;
+ state.activeLevel=level;
+ save=state.progress[level];
+ store();updateLevelSelector();
+}
+function updateLevelSelector(){
+ document.querySelectorAll("[data-level]").forEach(b=>{
+   const chosen=b.dataset.level===state.activeLevel;
+   b.classList.toggle("selected",chosen);
+   b.setAttribute("aria-pressed",String(chosen));
+ });
+ const count=save.done;
+ $("levelProgress").textContent=save.completed?"Artwork finished in this level":count?count+"/14 rows completed":"Fresh picture";
+ $("levelDescription").textContent=LEVELS[state.activeLevel].detail+
+   (state.activeLevel==="mirror"?" The complete one-sided number line is still marked exactly.":"");
+ $("startButton").innerHTML=save.completed?"View completed picture ↗":count?"Continue drawing ↗":"Start drawing ↗";
+}
+function chooseLevel(){
+ show("introScreen");updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
  if(save.completed){finish();return;}
