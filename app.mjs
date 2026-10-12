@@ -89,6 +89,8 @@ function question(){
  // No prefilled direction or endpoints: the student must construct the solution.
  draft={direction:state.activeLevel==="mirror"?"right":"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
  $("workingArea").value="";
+ const {min,max}=visibleAxis();
+ for(const side of ["left","right"]){$(side+"Value").min=min;$(side+"Value").max=max;}
  document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button").forEach(e=>e.disabled=false);
  document.querySelector('[data-direction="between"]').hidden=state.activeLevel==="mirror";
  $("questionStep").textContent=tutorial?"LET'S PRACTISE":("ROW "+(save.done+1)+" OF 14");
@@ -151,20 +153,17 @@ function renderOptions(){
   b.onclick=()=>{chosen=i;renderOptions();};host.append(b);
  });
 }
-const coord=n=>26+(n-AXIS_MIN)*((660-52)/(AXIS_MAX-AXIS_MIN));
+// The number line has only conventional mathematical markings.
+// Its visible limits depend on the picture's chosen window, never on a
+// hidden pixel boundary or any extra endpoint added to the inequality.
+const visibleAxis=()=>state.activeLevel==="mirror"?CAT_WINDOW:{min:AXIS_MIN,max:AXIS_MAX};
+const coord=n=>{
+ const {min,max}=visibleAxis();
+ return 26+(n-min)*608/(max-min);
+};
 function renderLine(svg,interval,readonly=false){
  svg.replaceChildren();
  const group=mk("g",{},svg),axisY=66;
- if(q?.artMode==="mirror"){
-   const right=q.mirrorSide==="right";
-   const x0=right?coord(-.5):26,x1=right?634:coord(-.5);
-   mk("rect",{x:x0,y:23,width:x1-x0,height:66,rx:5,fill:"#e9f5ef"},group);
-   mk("line",{x1:coord(-.5),x2:coord(-.5),y1:25,y2:80,stroke:"#7baeaa",
-      "stroke-width":1.6,"stroke-dasharray":"4 4"},group);
-   const note=mk("text",{x:(x0+x1)/2,y:18,"text-anchor":"middle",
-      fill:"#458478","font-size":13,"font-weight":750},group);
-   note.textContent=right?"RIGHT HALF FOR PIXELS":"LEFT HALF FOR PIXELS";
- }
  mk("line",{x1:26,x2:634,y1:axisY,y2:axisY,stroke:"#7c899b","stroke-width":2},group);
  const isBetween=interval.direction==="between",
    hasLeft=isBetween||interval.direction==="right",
@@ -174,19 +173,29 @@ function renderLine(svg,interval,readonly=false){
  let from=hasLeft?leftX:26,to=hasRight?rightX:634;
  if(interval.direction==="left")from=26;
  if(interval.direction==="right")to=634;
- if(from<=to)mk("line",{x1:from,x2:to,y1:axisY,y2:axisY,stroke:"#538ca2","stroke-width":7,"stroke-linecap":"round"},group);
- if(interval.direction==="left")mk("path",{d:"M 26 66 l 14 -8 M 26 66 l 14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
- if(interval.direction==="right")mk("path",{d:"M 634 66 l -14 -8 M 634 66 l -14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
- for(let n=AXIS_MIN;n<=AXIS_MAX;n++){
+ if(from<=to)mk("line",{x1:from,x2:to,y1:axisY,y2:axisY,
+   stroke:"#538ca2","stroke-width":7,"stroke-linecap":"round"},group);
+ if(interval.direction==="left")
+   mk("path",{d:"M 26 66 l 14 -8 M 26 66 l 14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
+ if(interval.direction==="right")
+   mk("path",{d:"M 634 66 l -14 -8 M 634 66 l -14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
+ const {min,max}=visibleAxis();
+ for(let n=min;n<=max;n++){
    const x=coord(n);
    mk("line",{x1:x,x2:x,y1:60,y2:72,stroke:"#768497","stroke-width":1.8},group);
-   const t=mk("text",{x,y:96,"text-anchor":"middle",fill:"#58647a","font-size":15,"font-weight":600},group);
+   const t=mk("text",{x,y:96,"text-anchor":"middle",fill:"#58647a",
+     "font-size":15,"font-weight":600},group);
    t.textContent=fmt(n);
    if(!readonly){
      const tick=mk("rect",{x:x-13,y:35,width:26,height:65,fill:"transparent",
-       "data-number":n,role:"button","aria-label":"Move selected endpoint to "+n,tabindex:-1},group);
+       role:"button","aria-label":"Move selected endpoint to "+n,tabindex:0},group);
      tick.style.cursor="pointer";
      tick.addEventListener("click",()=>setEndpoint(selected,n));
+     tick.addEventListener("keydown",event=>{
+       if(event.key==="Enter"||event.key===" "){
+         event.preventDefault();setEndpoint(selected,n);
+       }
+     });
    }
  }
  const circle=(x,closed,side)=>{
@@ -199,12 +208,9 @@ function renderLine(svg,interval,readonly=false){
      e.style.cursor="grab";
      e.addEventListener("pointerdown",ev=>{
        if(locked)return;
-       selected=side;
-       drag=true;
+       selected=side;drag=true;
        svg.setPointerCapture(ev.pointerId);
-       ev.preventDefault();
-       syncInputs();
-       renderLine(svg,draft);
+       ev.preventDefault();syncInputs();renderLine(svg,draft);
      });
    }
  };
@@ -216,10 +222,8 @@ function renderLine(svg,interval,readonly=false){
    info.textContent="Tap a tick or drag a circle to change your answer";
  }
 }
-// SVG owns pointer capture, not transient endpoint elements, so a drag
-// continues when the SVG children are replaced during movement.
 $("drawLine").addEventListener("pointermove",ev=>{
- if(drag && !locked)setEndpoint(selected,nearest(ev,$("drawLine")));
+ if(drag&&!locked)setEndpoint(selected,nearest(ev,$("drawLine")));
 });
 for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
  $("drawLine").addEventListener(eventName,()=>drag=false);
@@ -227,12 +231,14 @@ for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
 function nearest(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
  const transformed=pt.matrixTransform(svg.getScreenCTM().inverse());
- return Math.max(AXIS_MIN,Math.min(AXIS_MAX,Math.round(AXIS_MIN+(transformed.x-26)*(AXIS_MAX-AXIS_MIN)/608)));
+ const {min,max}=visibleAxis();
+ return Math.max(min,Math.min(max,Math.round(min+(transformed.x-26)*(max-min)/608)));
 }
 function setEndpoint(which,n){
  if(locked)return;
  if(!Number.isFinite(n))return;
- n=Math.max(AXIS_MIN,Math.min(AXIS_MAX,Math.round(n)));
+ const {min,max}=visibleAxis();
+ n=Math.max(min,Math.min(max,Math.round(n)));
  if(draft.direction==="between"){
   if(which==="left"){draft.lower=Math.min(n,draft.upper-1);}else{draft.upper=Math.max(n,draft.lower+1);}
  }else draft.at=n;
