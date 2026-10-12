@@ -63,70 +63,87 @@ let screen="intro", q=null, draft=null, selected="left", chosen=null, locked=fal
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
 function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
-  svg.replaceChildren();
-  const cat=state.activeLevel==="mirror",width=cat?CAT_HALF_WIDTH:WIDTH;
-  svg.setAttribute("viewBox","0 0 "+width+" "+HEIGHT);
-  svg.classList.toggle("half-canvas",cat);
-  svg.setAttribute("aria-label",cat
-    ?"A picture in progress. Each correct inequality adds one row."
-    :"A sixteen by sixteen full pixel-art canvas.");
-  const drawn=new Map();
-  if(!intro){
-    for(let i=0;i<completed;i++){
-      const solvedQuestion=makeQuestion(i,save.replay,state.activeLevel);
-      if(!solvedQuestion)continue;
-      const columns=paintedColumns(solvedQuestion).map(v=>cat?v-CAT_WINDOW.min:v-COLUMN_MIN);
-      drawn.set(solvedQuestion.row,new Set(columns));
-    }
-  }
-  const newRow=animate&&q?.row;
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<width;x++){
-    const active=cat?catHalfPixelAt(x,y):pixelAt(x,y);
-    const solved=intro?active&&y>=7:active&&(colour||(drawn.get(y)?.has(x)??false));
-    const fill=solved?(colour?(cat?catColourAt(x+CAT_HALF_WIDTH,y):colourAt(x,y)):"#64738e")
-      :colour?finishedBackgroundAt(cat?"cat":"mushroom",x,y)
-      :(intro&&active?"#d0d6dd":"#e9e5df");
-    const attrs={x,y,width:1,height:1,fill,
-      stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
-    if(animate&&solved&&y===newRow&&!colour)
-      attrs.class=cat?"ink-new-primary":q.artMode==="mirror"
-        ?((q.mirrorSide==="right"?x>=WIDTH/2:x<WIDTH/2)?"ink-new-primary":"ink-new-reflection")
-        :"ink-new-full";
-    mk("rect",attrs,svg);
-  }
-  // The existing Mixed Challenge retains its original reflective row style.
-  if(!cat&&!intro&&!colour&&q?.artMode==="mirror"){
-    mk("line",{x1:WIDTH/2,x2:WIDTH/2,y1:0,y2:HEIGHT,stroke:"#6ca69b",
-      "stroke-width":.13,"stroke-dasharray":".32 .25",opacity:.95},svg);
-  }
+ const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
+ const half=picture.family==="half";
+ svg.replaceChildren();
+ svg.setAttribute("viewBox","0 0 "+width+" "+height);
+ svg.classList.toggle("half-canvas",half);
+ svg.setAttribute("aria-label","A mystery picture in progress. Each correct inequality adds a row.");
+ const filledRows=new Map();
+ if(!intro)for(let i=0;i<completed;i++){
+   const task=makePictureQuestion(picture,i,save.replay,state.activeLevel);
+   const columns=picturePaintedValues(picture,task)
+     .map(value=>value-picture.window.min);
+   filledRows.set(task.row,new Set(columns));
+ }
+ const activeRow=animate&&q?.row;
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const inside=picturePixelAt(picture,x,y);
+   const painted=intro?inside&&y>=Math.floor(height/2):
+      inside&&(colour||(filledRows.get(y)?.has(x)??false));
+   const fill=painted?(colour?pictureColourAt(picture,x,y):"#64738e"):
+      colour?pictureBackgroundAt(picture,x,y,{full:false}):
+      intro&&inside?"#d0d6dd":"#e9e5df";
+   const attrs={x,y,width:1,height:1,fill,
+     stroke:colour&&painted?"none":"#f7f3ed","stroke-width":0.035};
+   if(animate&&painted&&y===activeRow&&!colour){
+     attrs.class=q.artMode==="mirror"?
+        ((q.mirrorSide==="right"?x>=width/2:x<width/2)?
+          "ink-new-primary":"ink-new-reflection"):
+        half?"ink-new-primary":"ink-new-full";
+   }
+   mk("rect",attrs,svg);
+ }
+ // In Mixed Challenge only, a reflected answer can construct both sides
+ // of a row. No student-facing number-line pixel hints are added.
+ if(!half&&!intro&&!colour&&q?.artMode==="mirror"){
+   mk("line",{x1:width/2,x2:width/2,y1:0,y2:height,
+     stroke:"#6ca69b","stroke-width":.13,
+     "stroke-dasharray":".32 .25",opacity:.95},svg);
+ }
 }
 sprite($("introPixelArt"),{intro:true});
 function initProgress({animate=false}={}){
+ const total=questionCount(activePicture());
  $("progressMarkers").replaceChildren();
- for(let n=0;n<14;n++){const el=document.createElement("span");if(n<save.done)el.classList.add("done");$("progressMarkers").append(el);}
- $("progressText").textContent=save.done+" of 14";
- $("canvasProgress").textContent=save.done+" / 14";
- $("progressFill").style.width=(save.done/14*100)+"%";
- $("phaseText").textContent=q?.mode==="read"?"READ THE LINE":q?.mode==="solve"?"SOLVE & DRAW":q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
- $("activeRowText").textContent=q?.mode==="tutorial"?"Practice — canvas unchanged":"Current row: "+q?.row;
- $("canvasProgress").setAttribute("aria-label",save.done+" of 14 picture rows finished");
+ for(let n=0;n<total;n++){
+   const el=document.createElement("span");
+   if(n<save.done)el.classList.add("done");
+   $("progressMarkers").append(el);
+ }
+ $("progressText").textContent=save.done+" of "+total;
+ $("canvasProgress").textContent=save.done+" / "+total;
+ $("progressFill").style.width=(save.done/total*100)+"%";
+ $("phaseText").textContent=q?.mode==="read"?"READ THE LINE":
+   q?.mode==="solve"?"SOLVE & DRAW":q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
+ $("activeRowText").textContent=q?.mode==="tutorial"?
+   "Practice — canvas unchanged":"Current row: "+q?.row;
+ $("canvasProgress").setAttribute("aria-label",
+   save.done+" of "+total+" picture rows finished");
  sprite($("pixelCanvas"),{completed:save.done,animate});
 }
 function question(){
- const practice=tutorialFor(state.activeLevel);
- const tutorial=!save.tutorialDone && save.tutorial<practice.length;
- q=tutorial?practice[save.tutorial]:makeQuestion(save.done,save.replay,state.activeLevel);
+ const picture=activePicture(),practice=tutorialFor(state.activeLevel);
+ const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
+ q=tutorial?practice[save.tutorial]:
+   makePictureQuestion(picture,save.done,save.replay,state.activeLevel);
  if(!q){finish();return;}
  attempts=0;hintsShown=0;assisted=false;chosen=null;locked=false;selected="left";
- // No prefilled direction or endpoints: the student must construct the solution.
- draft={direction:state.activeLevel==="mirror"?"right":"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
+ draft={direction:picture.family==="half"?"right":"between",
+   lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
  $("workingArea").value="";
  const {min,max}=visibleAxis();
- for(const side of ["left","right"]){$(side+"Value").min=min;$(side+"Value").max=max;}
- document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button").forEach(e=>e.disabled=false);
- document.querySelector('[data-direction="between"]').hidden=state.activeLevel==="mirror";
- $("questionStep").textContent=tutorial?"LET'S PRACTISE":("ROW "+(save.done+1)+" OF 14");
- $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
+ for(const side of ["left","right"]){
+   $(side+"Value").min=min;$(side+"Value").max=max;
+ }
+ document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button")
+   .forEach(el=>el.disabled=false);
+ document.querySelector('[data-direction="between"]').hidden=picture.family==="half";
+ $("questionStep").textContent=tutorial?"LET'S PRACTISE":
+   "ROW "+(save.done+1)+" OF "+questionCount(picture);
+ $("questionHeading").textContent=tutorial?"Learn the controls":
+   q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":
+   q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
  $("modeTag").textContent=tutorial?"TUTORIAL":q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
@@ -138,10 +155,10 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
- const cat=state.activeLevel==="mirror";
  $("canvasTip").textContent="✦ Keep solving inequalities to complete the mystery picture.";
- $("playEyebrow").textContent="MYSTERY 01 / "+LEVELS[state.activeLevel].name.toUpperCase();
- $("playTitle").firstChild.textContent=cat?"Mystery Picture":"Mushroom Mystery";
+ $("playEyebrow").textContent=picture.mystery.toUpperCase()+
+   " / "+LEVELS[state.activeLevel].name.toUpperCase();
+ $("playTitle").firstChild.textContent="Mystery Picture";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
  else setDraft(draft);
