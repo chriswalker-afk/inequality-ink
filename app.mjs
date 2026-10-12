@@ -337,9 +337,11 @@ function check(){
   feedback("Exactly right! You have drawn the full solution set.",true);
   save.tutorial++;if(save.tutorial>=2)save.tutorialDone=true;
  }else{
-  feedback(q.artMode==="mirror"
-    ?"Exactly right! The "+q.mirrorSide+"-hand pixels have been drawn from your ray, then reflected to complete the row."
-    :"Beautifully done! Your exact interval has painted this row.",true);
+  feedback(q.artMode==="mirror-half"
+    ?"Exactly right! This ray paints one row of your half-cat. The other half stays hidden until the finale."
+    :q.artMode==="mirror"
+      ?"Correct! The reflected part completes this Mixed Challenge row."
+      :"Beautifully done! Your exact interval has painted this row.",true);
   if(attempts===1 && !assisted)save.firstTry++;
   save.done++;
  }
@@ -356,19 +358,21 @@ function hint(){
  const final=formatInterval(q.answer);
  let msg;
  if(hintsShown===1){
-   if(q.artMode==="mirror")msg="This is a one-sided inequality. Decide whether its full solution points left or right. The picture then uses the highlighted half of that solution.";
+   if(q.artMode==="mirror-half")msg="Represent a full one-sided ray with the correct arrow. Only the canvas edge limits the pixels, never the inequality itself.";
+   else if(q.artMode==="mirror")msg="Work out whether this one-sided solution points left or right.";
    else msg=q.mode==="solve"?"Rearrange all three parts. When dividing by a negative number, reverse both inequality signs."
      :q.mode==="read"?"Open circles exclude endpoints; closed circles include them."
      :"Identify both endpoints and consider whether each is included.";
  }else if(hintsShown===2){
-   if(q.artMode==="mirror")msg="First look at which values satisfy the inequality; do not restrict your mathematical ray to half the number line. Choose the correct arrow and circle type.";
+   if(q.artMode==="mirror-half")msg="Choose the correct arrow, endpoint number and circle. Do not add another circle at the canvas edge.";
+   else if(q.artMode==="mirror")msg="Check both the arrow direction and the circle type.";
    else msg=q.mode==="solve"?"Isolate x in the middle, then check both boundaries."
      :q.mode==="read"?"Compare both endpoints and both circle types with your options."
      :"Check the number and the circle type at each end.";
  }else {
    assisted=true;
    msg="Answer: "+(q.mode==="solve"?q.equation+" simplifies to ":"")+final+
-     (q.artMode==="mirror"?". The correct ray is sampled on the "+q.mirrorSide+" half, then reflected.":".");
+     (q.artMode==="mirror-half"?". Only the part of this ray inside the right-hand canvas is drawn.":q.artMode==="mirror"?". This mixed question uses a reflected half.":".");
  }
  $("hintPanel").hidden=false;$("hintPanel").textContent=msg;
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
