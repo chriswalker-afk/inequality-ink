@@ -446,3 +446,67 @@ test("Incorrect checks never auto-advance, and pending timers are cancelled on n
     globalThis.clearTimeout=nativeClearTimeout;
   }
 });
+
+
+test("iPhone-style SVG visibility lets the Mushroom Mystery reveal show its actual colours and details",()=>{
+  select("full",0); // Completed mushroom, the picture in the reported screenshot.
+  const picture=pictureById("mushroom-mystery");
+  const originalMatchMedia=globalThis.window.matchMedia;
+  const originalSetTimeout=globalThis.setTimeout;
+  const originalClearTimeout=globalThis.clearTimeout;
+  const queue=[];let serial=0;
+  const cancelled=new Set();
+  globalThis.window.matchMedia=()=>({matches:false});
+  globalThis.setTimeout=(fn,delay=0)=>{
+    const timer={id:++serial,delay,fn};queue.push(timer);return timer.id;
+  };
+  globalThis.clearTimeout=id=>cancelled.add(id);
+  try{
+    $("startButton").click();
+    assert.equal($("revealDialog").open,true);
+    assert.equal($("revealFinalArt").hasAttribute("hidden"),true,
+      "Finished SVG is hidden at the start of the build");
+    assert.equal($("revealBoard").classList.contains("has-colour"),false);
+    const jobs=queue.slice().sort((a,b)=>a.delay-b.delay||a.id-b.id);
+    let colourTime=-1,detailTime=-1;
+    for(const item of jobs){
+      if(cancelled.has(item.id))continue;
+      item.fn();
+      if(colourTime<0&&$("revealBoard").classList.contains("has-colour")){
+        colourTime=item.delay;
+        assert.equal($("revealFinalArt").hasAttribute("hidden"),false,
+          "The colour-stage transition must explicitly unhide the SVG on iOS");
+        assert.equal($("revealFinalArt").getAttribute("aria-hidden"),"false");
+      }
+      const visibleDetails=$("revealFinalArt")
+        .querySelectorAll("[data-detail-stage]")
+        .filter(group=>group.getAttribute("opacity")==="1").length;
+      if(visibleDetails>0&&detailTime<0)detailTime=item.delay;
+    }
+    assert.ok(colourTime>=0,"Full Picture never reached the colour stage");
+    assert.ok(detailTime>colourTime,"Face and spots appeared before the colour stage");
+    assert.equal($("revealBuildLayer").hidden,true,
+      "The grey picture must disappear after the coloured artwork fades in");
+    assert.equal($("revealMirrorLayer").hidden,true);
+    assert.equal($("revealFinalArt").hasAttribute("hidden"),false);
+    assert.equal($("revealHeading").textContent,picture.name+"!");
+    const finishedRects=$("finishedArt").children.filter(x=>x.tagName==="rect");
+    const revealRects=$("revealFinalArt").children.filter(x=>x.tagName==="rect");
+    assert.ok(revealRects.length>100);
+    assert.deepEqual(
+      revealRects.map(rect=>rect.getAttribute("fill")),
+      finishedRects.map(rect=>rect.getAttribute("fill")),
+      "The full-screen picture colours/background must match the summary picture"
+    );
+    for(const detail of $("revealFinalArt").querySelectorAll("[data-detail-stage]"))
+      assert.equal(detail.getAttribute("opacity"),"1",
+        "Every final mushroom detail should be visible before the results page");
+    assert.equal($("finishScreen").hidden,true);
+    $("closeReveal").click();
+    assert.equal($("finishScreen").hidden,false);
+  }finally{
+    globalThis.window.matchMedia=originalMatchMedia;
+    globalThis.setTimeout=originalSetTimeout;
+    globalThis.clearTimeout=originalClearTimeout;
+  }
+});
