@@ -43,6 +43,12 @@ class FakeElement {
   showModal(){this.open=true;}
   close(){this.open=false;}
   getBoundingClientRect(){return {width:300,height:250};}
+  setPointerCapture(id){this.capturedPointerId=id;}
+  releasePointerCapture(id){if(this.capturedPointerId===id)this.capturedPointerId=null;}
+  createSVGPoint(){
+    return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};
+  }
+  getScreenCTM(){return {inverse(){return {};}};}
   querySelector(selector){
     if(selector===".cat-flip-panels")return new FakeElement("div");
     return this.querySelectorAll(selector)[0]||null;
@@ -125,11 +131,29 @@ function answerCurrent(picture,index,level,replay=0){
       $(solution.included?"leftClosed":"leftOpen").click();
     }
   }
-  $("checkButton").click();
-  assert.ok($("feedback").className.includes("success"),
-    picture.id+" "+level+" row "+index+" did not mark correctly: "+
-    $("feedback").textContent);
-  assert.ok($("nextButton").hidden===false);
+  // Intercept only the short automatic row-transition timer. The test
+  // proves that a single Check & paint press moves to the next question.
+  const nativeSetTimeout=globalThis.setTimeout;
+  let advance=null;
+  globalThis.setTimeout=(fn,delay)=>{
+    if(delay===340||delay===820){advance=fn;return -913;}
+    return nativeSetTimeout(fn,delay);
+  };
+  try{
+    $("checkButton").click();
+    assert.ok($("feedback").className.includes("success"),
+      picture.id+" "+level+" row "+index+" did not mark correctly: "+
+      $("feedback").textContent);
+    assert.equal($("checkButton").disabled,true);
+    assert.ok($("checkButton").textContent.includes("Correct"));
+    assert.ok(advance,"A correct answer must schedule the next row");
+    assert.equal($("nextButton"),undefined,"There must be no second Next button");
+    assert.equal($("progressText").textContent,
+      (index+1)+" of "+questionCount(picture));
+    advance();
+  }finally{
+    globalThis.setTimeout=nativeSetTimeout;
+  }
 }
 function select(level,index){
   const button=levels.find(el=>el.dataset.level===level);
@@ -149,7 +173,6 @@ function complete(level,index,id,{animated=false}={}){
   for(let q=0;q<questionCount(picture);q++){
     answerCurrent(picture,q,level);
     assert.equal($("progressText").textContent,(q+1)+" of "+questionCount(picture));
-    $("nextButton").click();
   }
   assert.equal($("revealDialog").open,true,
     "Completing the last question should open the celebration");
@@ -296,5 +319,104 @@ test("The live animation reveals row-by-row, then reflection, colour, and detail
     globalThis.window.matchMedia=originalMatchMedia;
     globalThis.setTimeout=originalSetTimeout;
     globalThis.clearTimeout=originalClearTimeout;
+  }
+});
+
+
+function svgEndpoint(side){
+  const nodes=[];
+  const walk=node=>{
+    if(node.getAttribute?.("data-endpoint")===side)nodes.push(node);
+    for(const child of node.children||[])walk(child);
+  };
+  walk($("drawLine"));
+  assert.equal(nodes.length,1,"Expected exactly one visible "+side+" endpoint");
+  return nodes[0];
+}
+function pointer(kind,side,pointerId,startX,endX,{y=66,button=0}={}){
+  const svg=$("drawLine"),target=svgEndpoint(side);
+  const pointerType=kind==="tap"?"touch":"mouse";
+  const gesture={
+    pointerId,pointerType,button,clientX:startX,clientY:y,
+    preventDefault(){this.prevented=true;}
+  };
+  for(const fn of target.listeners.get("pointerdown")||[])fn(gesture);
+  if(kind==="drag"){
+    const movement={...gesture,clientX:endX};
+    for(const fn of svg.listeners.get("pointermove")||[])fn(movement);
+  }
+  for(const fn of svg.listeners.get("pointerup")||[])
+    fn({...gesture,clientX:endX});
+}
+test("Single mouse click and quick mobile tap toggle open/closed without moving the endpoint",()=>{
+  select("mirror",0); // Unplayed original Cat Cameo, uses a one-sided tutorial.
+  $("startButton").click();
+  assert.equal($("playScreen").hidden,false);
+  assert.equal($("leftOpen").classList.contains("selected"),true);
+  const initialValue=Number($("leftValue").value);
+  pointer("click","left",101,330,330);
+  assert.equal($("leftClosed").classList.contains("selected"),true,
+    "One left-click should produce a filled circle");
+  assert.equal(Number($("leftValue").value),initialValue,
+    "Clicking the circle must not move it");
+  pointer("tap","left",102,330,332);
+  assert.equal($("leftOpen").classList.contains("selected"),true,
+    "A mobile tap should make the circle open again");
+  assert.equal(Number($("leftValue").value),initialValue);
+  // Right mouse clicks must NOT toggle a mathematical endpoint.
+  pointer("click","left",103,330,330,{button:2});
+  assert.equal($("leftOpen").classList.contains("selected"),true);
+  const endpoint=svgEndpoint("left");
+  assert.equal(endpoint.getAttribute("role"),"button");
+  assert.equal(endpoint.getAttribute("tabindex"),"0");
+  assert.ok(endpoint.getAttribute("aria-label").includes("toggle"));
+});
+test("Dragging a circle still moves the endpoint but never toggles its inclusion",()=>{
+  const before=Number($("leftValue").value);
+  const closedBefore=$("leftClosed").classList.contains("selected");
+  pointer("drag","left",201,330,390);
+  assert.notEqual(Number($("leftValue").value),before,
+    "Dragging should move the numerical endpoint");
+  assert.equal($("leftClosed").classList.contains("selected"),closedBefore,
+    "Dragging should not change open versus closed");
+  const keyEvent={key:"Enter",repeat:false,preventDefault(){}};
+  for(const fn of svgEndpoint("left").listeners.get("keydown")||[])fn(keyEvent);
+  assert.equal($("leftClosed").classList.contains("selected"),!closedBefore,
+    "Keyboard Enter should toggle the circle");
+  $("changeLevelButton").click();
+});
+test("Incorrect checks never auto-advance, and pending timers are cancelled on navigation",()=>{
+  select("full",0); // Unplayed mushroom, first tutorial asks for x >= -2.
+  $("startButton").click();
+  const nativeSetTimeout=globalThis.setTimeout;
+  const nativeClearTimeout=globalThis.clearTimeout;
+  let advance=null,cancelled=null;
+  globalThis.setTimeout=(fn,delay)=>{
+    if(delay===340||delay===820){advance=fn;return -920;}
+    return nativeSetTimeout(fn,delay);
+  };
+  globalThis.clearTimeout=id=>{
+    if(id===-920){cancelled=id;return;}
+    return nativeClearTimeout(id);
+  };
+  try{
+    $("checkButton").click(); // Default interval is wrong.
+    assert.equal(advance,null,"Incorrect answer must not schedule navigation");
+    assert.equal($("checkButton").disabled,false);
+    const answer=$("leftValue"); // Fill a correct one-sided tutorial ray.
+    // Use the normal direction/endpoint/circle controls.
+    directions.find(d=>d.dataset.direction==="right").click();
+    answer.value="-2";answer.change();
+    $("leftClosed").click();
+    $("checkButton").click();
+    assert.ok(advance,"Correct answer should schedule auto-advance");
+    $("changeLevelButton").click();
+    assert.equal(cancelled,-920,"Leaving the activity must cancel queued advancement");
+    advance();
+    assert.equal($("introScreen").hidden,false,
+      "Stale auto-advance callback must not reopen a game");
+  }finally{
+    globalThis.setTimeout=nativeSetTimeout;
+    globalThis.clearTimeout=nativeClearTimeout;
   }
 });
