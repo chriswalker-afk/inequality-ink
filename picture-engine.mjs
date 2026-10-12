@@ -3,6 +3,8 @@
 import {PICTURE_DEFINITIONS} from "./pictures.mjs";
 import {isInInterval,identicalSolution,formatInterval,formatLinear} from "./model.mjs";
 import {makePaintQuestion,validatePaintPicture} from "./paint-engine.mjs";
+import {mathematicalStage,boundedEndpointPreferences,oneSidedOpenPreference,
+  solveTransformation} from "./math-progression.mjs";
 
 export const LEVELS_FOR_PICTURE=Object.freeze(["mirror","full","solve","mixed","paint"]);
 export const PICTURE_LIBRARY=Object.freeze(PICTURE_DEFINITIONS);
@@ -101,7 +103,7 @@ const pixelValuesForWindow=window=>Array.from(
 function withinWindow(solution,window){
   return pixelValuesForWindow(window).filter(x=>isInInterval(x,solution));
 }
-function derivedHalfAnswer(picture,row,index,replay){
+function derivedHalfAnswer(picture,row,index,replay,stage){
   const width=pictureWidth(picture);
   const full=row.from===0&&row.to===width-1;
   const right=row.to===width-1&&(row.from>0||full&&
@@ -109,6 +111,9 @@ function derivedHalfAnswer(picture,row,index,replay){
      !picture.fullRayDirection?.[row.y]&&index%2===0));
   const strictPref=picture.firstStrict?.[row.y-1]??(index%2===0);
   let strict=replay===0?strictPref:(strictPref!==((replay%2)===1));
+  strict=oneSidedOpenPreference(stage,index,replay,strict);
+  // Complete half-rows need no artificial boundary beyond the visible grid.
+  if(full&&stage<5)strict=false;
   if(right){
     // No off-screen artificial endpoint for a full-width ray.
     if(row.from===0)strict=false;
@@ -118,26 +123,28 @@ function derivedHalfAnswer(picture,row,index,replay){
   return {direction:"left",
     at:picture.window.min+row.to+(strict?1:0),included:!strict};
 }
-function derivedBoundedAnswer(picture,row,index,replay){
+function derivedBoundedAnswer(picture,row,index,replay,stage){
   const preferred=picture.initial?.[row.y-1];
-  if(preferred&&replay===0)return {
+  if(stage===5&&preferred&&replay===0)return {
     direction:"between",lower:preferred.lower,upper:preferred.upper,
     lowerIncluded:preferred.lowerIncluded,upperIncluded:preferred.upperIncluded
   };
-  const w=pictureWidth(picture),leftStrict=row.from>0&&(index+replay)%2===0;
-  const rightStrict=row.to<w-1&&(index+replay)%3===0;
+  const w=pictureWidth(picture);
+  const preference=boundedEndpointPreferences(stage,index,replay);
+  const leftStrict=row.from>0&&preference.left;
+  const rightStrict=row.to<w-1&&preference.right;
   return {direction:"between",
     lower:picture.window.min+row.from-(leftStrict?1:0),
     upper:picture.window.min+row.to+(rightStrict?1:0),
     lowerIncluded:!leftStrict,upperIncluded:!rightStrict};
 }
-function mixedRayAnswer(picture,row,index,replay){
+function mixedRayAnswer(picture,row,index,replay,stage){
   if(picture.family!=="full")throw Error("Mixed rays require full artwork");
   const values=pixelValuesForWindow(picture.window);
   const centre=values.length/2;
   if(values.length%2!==0)throw Error("Mixed mirror mode needs an even picture width");
   const side=(index+replay)%2===0?"right":"left";
-  const strict=(index+replay)%4<2;
+  const strict=oneSidedOpenPreference(stage,index,replay,(index+replay)%4<2);
   if(side==="right"){
     const edge=picture.window.min+row.to;
     return {side,answer:{direction:"left",at:edge+(strict?1:0),included:!strict}};
@@ -169,6 +176,7 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
   if(!picture.levels.includes(level))throw Error(picture.id+" does not support "+level);
   if(!Number.isInteger(index)||index<0||index>=questionCount(picture))return null;
   const row=picturedRow(picture,index);
+  const stage=mathematicalStage(picture,level);
   if(level==="paint"){
     const q=makePaintQuestion(picture,index,replay);
     // Full-window interval is used only to support the generic monochrome
@@ -181,7 +189,7 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
   if(picture.family==="half"){
     mode=index<3?"read":"draw";
     artMode="mirror-half";
-    answer=derivedHalfAnswer(picture,row,index,replay);
+    answer=derivedHalfAnswer(picture,row,index,replay,stage);
   }else{
     mode=level==="solve"?"solve":index<3?"read":"draw";
     artMode="full";
@@ -190,11 +198,11 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
       mode=phase===0?"read":phase===3?"solve":"draw";
       if(phase<=1){
         artMode="mirror";
-        const ray=mixedRayAnswer(picture,row,index,replay);
+        const ray=mixedRayAnswer(picture,row,index,replay,stage);
         answer=ray.answer;mirrorSide=ray.side;
       }
     }
-    if(!answer)answer=derivedBoundedAnswer(picture,row,index,replay);
+    if(!answer)answer=derivedBoundedAnswer(picture,row,index,replay,stage);
   }
   const basic={index,row:row.y,artMode,mirrorSide,mode,answer,pictureId:picture.id};
   if(mode==="read")return {...basic,prompt:"Which inequality does this number line represent?",
@@ -204,9 +212,7 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
       "Represent this inequality on the number line.",
     equation:formatInterval(answer)};
   const preferred=picture.initial?.[row.y-1]?.transform;
-  const coefficients=[[2,1],[2,-3],[-2,1],[3,2],[-3,-2],[1,4],[-1,1]];
-  const [a,b]=preferred&&replay===0?[preferred.a,preferred.b]:
-    coefficients[(replay+index)%coefficients.length];
+  const {a,b}=solveTransformation(stage,index,replay,preferred);
   return {...basic,prompt:"Solve the inequality, then draw your solution.",
     equation:formatLinear(answer,a,b),transformed:{a,b}};
 }
