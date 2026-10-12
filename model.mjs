@@ -365,6 +365,29 @@ export function detailStagesFor(artwork){
   if(artwork==="mushroom")return MUSHROOM_DETAIL_STAGES;
   throw Error("Unknown artwork for detail stages: "+artwork);
 }
+// Coloured backgrounds belong exclusively to the FINISHED artwork.
+// They are not mathematical pixels, are never sampled by an inequality,
+// and stay behind the silhouette and all final facial details.
+export const FINISHED_BACKGROUNDS=Object.freeze({
+  cat:Object.freeze({base:"#deebf8",light:"#f0f6fd",shade:"#d0e3f4",sparkle:"#fffaf1"}),
+  mushroom:Object.freeze({base:"#dff0e7",light:"#eff8ee",shade:"#cfe5dc",sparkle:"#fff8dd"})
+});
+export function finishedBackgroundAt(artwork,x,y){
+  const palette=FINISHED_BACKGROUNDS[artwork];
+  if(!palette)throw Error("Unknown finished background: "+artwork);
+  const width=artwork==="cat"?CAT_FULL_WIDTH:WIDTH;
+  if(!Number.isInteger(x)||!Number.isInteger(y)||
+     x<0||x>=width||y<0||y>=HEIGHT)
+    throw Error("Background pixel outside picture");
+  const left=Math.min(x,width-1-x);
+  // Gentle symmetrical pixel-art highlights make the final image feel complete.
+  if(y===2&&left===Math.floor(width/4))return palette.sparkle;
+  if(y===3&&left===Math.floor(width/4)-1)return palette.light;
+  if(y<5)return palette.light;
+  if(y>=11&&(Math.floor(left/3)+Math.floor(y/3))%2===0)return palette.shade;
+  return palette.base;
+}
+
 function validateDetails(name,details,width,mask,stages){
   const allowed=new Set(stages),placed=new Set(),lookup=new Map();
   for(const mark of details){
@@ -456,6 +479,19 @@ export function validatePuzzle() {
     if(colourAt(x,y)!==colourAt(WIDTH-1-x,y))throw Error("Colour asymmetry at "+x+","+y);
   validateDetails("Cat Cameo",CAT_DETAILS,CAT_FULL_WIDTH,catPixelAt,CAT_DETAIL_STAGES);
   validateDetails("Mushroom Mystery",MUSHROOM_DETAILS,WIDTH,pixelAt,MUSHROOM_DETAIL_STAGES);
+  for(const [artwork,width,mask] of [
+    ["cat",CAT_FULL_WIDTH,catPixelAt],["mushroom",WIDTH,pixelAt]
+  ]){
+    for(let y=0;y<HEIGHT;y++)for(let x=0;x<width;x++){
+      const colour=finishedBackgroundAt(artwork,x,y);
+      if(!/^#[0-9a-f]{6}$/i.test(colour))
+        throw Error(artwork+" has invalid background colour");
+      if(colour!==finishedBackgroundAt(artwork,width-1-x,y))
+        throw Error(artwork+" finished background is asymmetric");
+    }
+    if(!Object.isFrozen(FINISHED_BACKGROUNDS[artwork]))
+      throw Error(artwork+" finished palette is mutable");
+  }
   return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true,
     catHalfPixels:catCells.size,catConnected:true,catWindow:CAT_WINDOW,
     catDetails:CAT_DETAILS.length,mushroomDetails:MUSHROOM_DETAILS.length};
