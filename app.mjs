@@ -379,6 +379,221 @@ function start({skip=false}={}){
  window.scrollTo({top:0,behavior:"instant"});
 }
 function feedback(msg,correct=false){const e=$("feedback");e.className="feedback"+(correct?" success":"");e.textContent=msg;}
+
+// A separate, deliberately direct painting interaction. One row is editable;
+// all previous rows are locked, and future rows contain no image clues.
+// Each numbered square is the integer printed inside it, not an interval.
+function paintColour(picture,key){
+ return key==null?null:picture.paint.colours[key]?.hex||null;
+}
+function updatePaintProgress(){
+ const count=save.done,total=questionCount(activePicture());
+ $("paintProgressLabel").textContent="Row "+Math.min(count+1,total)+" of "+total;
+ $("paintProgressFill").style.width=(count/total*100)+"%";
+ $("paintRowsDone").textContent=count+" / "+total;
+ $("paintStep").textContent="ROW "+Math.min(count+1,total)+" OF "+total;
+}
+function describePaintCell(col,colourKey){
+ const value=activePicture().window.min+col;
+ const swatch=activePicture().paint.colours[colourKey];
+ return "Integer "+value+": "+(swatch?.name||"unpainted")+
+   ". Select a brush, then tap or press Enter to paint.";
+}
+function paintCellStyle(button,key){
+ const picture=activePicture();
+ button.style.backgroundColor=paintColour(picture,key)||"#f4f2ee";
+}
+function drawPaintCanvas(){
+ const picture=activePicture(),width=pictureWidth(picture),
+   height=pictureHeight(picture),host=$("paintCanvas"),
+   activeY=picture.paint.grid.length-save.done;
+ host.replaceChildren();
+ host.style.gridTemplateColumns="repeat("+width+",minmax(0,1fr))";
+ paintCells=[];
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const finished=y>=1&&y<=picture.paint.grid.length&&y>activeY;
+   const editable=y===activeY&&!paintLocked;
+   const current=y===activeY;
+   const key=finished?picture.paint.grid[y-1][x]:
+     current?(save.paintDraft?.[x]??null):null;
+   const cell=document.createElement("button");
+   cell.type="button";
+   cell.className="paint-cell "+(current?"paint-cell--active":
+     finished?"paint-cell--finished":"paint-cell--waiting");
+   cell.dataset.col=String(x);cell.dataset.row=String(y);
+   cell.disabled=!editable;
+   cell.tabIndex=editable?0:-1;
+   cell.textContent=current?String(picture.window.min+x):"";
+   paintCellStyle(cell,key);
+   cell.setAttribute("aria-label",current?
+     describePaintCell(x,key):finished?"Completed coloured square":"Not yet available");
+   if(current){
+     paintCells[x]=cell;
+     cell.onclick=()=>paintSquare(x);
+   }
+   host.append(cell);
+ }
+}
+function showPaintFeedback(message,success=false){
+ const el=$("paintFeedback");
+ el.className="feedback paint-feedback"+(success?" success":"");
+ el.textContent=message;
+}
+function updatePaintBrush(){
+ const name=paintBrush===null?"Eraser":activePicture().paint.colours[paintBrush].name;
+ $("paintSelectedLabel").textContent="Selected brush: "+name;
+ $("paintEraser").classList.toggle("selected",paintBrush===null);
+ $("paintEraser").setAttribute("aria-pressed",String(paintBrush===null));
+ for(const b of $("paintRules").children){
+   const selected=b.dataset.colour===paintBrush;
+   b.classList.toggle("selected",selected);
+   b.setAttribute("aria-pressed",String(selected));
+ }
+}
+function selectPaintBrush(key){
+ if(paintLocked)return;
+ paintBrush=key;
+ updatePaintBrush();
+}
+function renderPaintRules(){
+ const host=$("paintRules");
+ host.replaceChildren();
+ for(const rule of paintQuestion.rules){
+   const button=document.createElement("button");
+   button.type="button";button.className="paint-rule";
+   button.dataset.colour=rule.key;
+   const swatch=document.createElement("span");
+   swatch.className="paint-swatch";swatch.style.backgroundColor=rule.colour;
+   swatch.setAttribute("aria-hidden","true");
+   const copy=document.createElement("span");copy.className="paint-rule-copy";
+   const colour=document.createElement("strong");colour.textContent=rule.name;
+   const equation=document.createElement("span");
+   equation.className="paint-equation";equation.textContent=rule.inequality;
+   copy.append(colour,equation);
+   button.append(swatch,copy);
+   button.setAttribute("aria-label",rule.name+", "+rule.inequality);
+   button.onclick=()=>selectPaintBrush(rule.key);
+   host.append(button);
+ }
+ updatePaintBrush();
+}
+function startPaintRow(){
+ cancelPaintTimers();
+ const picture=activePicture(),index=save.done,width=pictureWidth(picture);
+ if(index===questionCount(picture)){finish({animate:true});return;}
+ paintQuestion=makePaintQuestion(picture,index,save.replay);
+ paintLocked=false;
+ const valid=Array.isArray(save.paintDraft)&&save.paintDraft.length===width&&
+   save.paintDraft.every(key=>key==null||picture.paint.colours[key]);
+ if(!valid)save.paintDraft=Array(width).fill(null);
+ paintBrush=paintQuestion.rules[0].key;
+ $("paintCheck").disabled=false;
+ $("paintCheck").textContent="Check row →";
+ showPaintFeedback("");
+ updatePaintProgress();
+ renderPaintRules();
+ drawPaintCanvas();
+ $("paintTitle").textContent=picture.mystery+" — colour studio";
+}
+function paintSquare(col){
+ if(screen!=="paintScreen"||paintLocked||!paintQuestion||
+    !Number.isInteger(col)||col<0||col>=pictureWidth(activePicture()))return;
+ const old=save.paintDraft[col];
+ if(old===paintBrush)return;
+ save.paintDraft[col]=paintBrush;
+ const cell=paintCells[col];
+ if(cell){
+   paintCellStyle(cell,paintBrush);
+   cell.setAttribute("aria-label",describePaintCell(col,paintBrush));
+ }
+ if(paintErrorTimer!==null){
+   clearTimeout(paintErrorTimer);paintErrorTimer=null;
+   for(const c of paintCells)c?.classList.remove("paint-cell--wrong");
+ }
+ showPaintFeedback("");
+ store();
+}
+function clearPaintRow(){
+ if(paintLocked||screen!=="paintScreen")return;
+ save.paintDraft=Array(pictureWidth(activePicture())).fill(null);
+ drawPaintCanvas();
+ showPaintFeedback("");
+ store();
+}
+function checkPaintAnswer(){
+ if(paintLocked||screen!=="paintScreen")return;
+ const picture=activePicture(),result=checkPaintRow(picture,save.done,save.paintDraft);
+ if(!result.correct){
+   save.attempts++;store();
+   showPaintFeedback(result.unpainted.length?
+     "Some squares are still unpainted. Check the inequalities and try again.":
+     "Not quite. The orange squares need another look. Try again.");
+   for(const col of result.wrong)paintCells[col]?.classList.add("paint-cell--wrong");
+   if(paintErrorTimer!==null)clearTimeout(paintErrorTimer);
+   paintErrorTimer=setTimeout(()=>{
+     paintErrorTimer=null;
+     for(const c of paintCells)c?.classList.remove("paint-cell--wrong");
+   },600);
+   return;
+ }
+ paintLocked=true;
+ if(save.attempts===0)save.firstTry++;
+ save.attempts=0;
+ save.done++;
+ save.paintDraft=[];
+ save.completed=save.done===questionCount(picture);
+ store();
+ updatePaintProgress();
+ $("paintCheck").disabled=true;
+ $("paintCheck").textContent=save.completed?"✓ Correct — revealing…":"✓ Correct — next row…";
+ showPaintFeedback("Correct! Watch the numbers disappear and the colours stay.",true);
+ for(const cell of paintCells){
+   cell.disabled=true;
+   cell.classList.add("paint-cell--correct");
+ }
+ const savedKey=activeKey(),nextCount=save.done,
+   reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ paintAdvanceTimer=setTimeout(()=>{
+   paintAdvanceTimer=null;
+   if(screen!=="paintScreen"||activeKey()!==savedKey||
+      save.done!==nextCount)return;
+   if(save.completed)finish({animate:true});
+   else{
+     startPaintRow();
+     // The current row changes in place; mobile users can keep painting
+     // without hunting for the next numbered row or the rules.
+   }
+ },reduced?280:850);
+}
+// Pointer capture stays on the stable board; the user can swipe across
+// multiple small squares without accidentally scrolling the page.
+$("paintCanvas").addEventListener("pointerdown",event=>{
+ if(screen!=="paintScreen"||paintLocked||
+   event.pointerType==="mouse"&&event.button!==0)return;
+ const square=event.target.closest?.(".paint-cell");
+ if(!square||square.disabled||square.dataset.row!==String(paintQuestion?.row))return;
+ paintPointer=event.pointerId;
+ paintSquare(Number(square.dataset.col));
+ $("paintCanvas").setPointerCapture?.(event.pointerId);
+ event.preventDefault();
+});
+$("paintCanvas").addEventListener("pointermove",event=>{
+ if(paintPointer!==event.pointerId||paintLocked)return;
+ const square=document.elementFromPoint?.(event.clientX,event.clientY)
+   ?.closest?.(".paint-cell");
+ if(square&&!square.disabled&&square.dataset.row===String(paintQuestion?.row))
+   paintSquare(Number(square.dataset.col));
+});
+for(const eventName of ["pointerup","pointercancel","lostpointercapture"])
+ $("paintCanvas").addEventListener(eventName,event=>{
+   if(paintPointer===event.pointerId)paintPointer=null;
+ });
+$("paintCheck").onclick=checkPaintAnswer;
+$("paintClear").onclick=clearPaintRow;
+$("paintEraser").onclick=()=>selectPaintBrush(null);
+$("paintBack").onclick=chooseLevel;
+$("paintRestart").onclick=restart;
+
 function renderOptions(){
  const host=$("readOptions");host.replaceChildren();
  q.options.forEach((opt,i)=>{
