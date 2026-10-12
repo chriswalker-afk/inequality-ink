@@ -18,6 +18,12 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 The library now contains **twenty-four unique pictures** offering **42 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
 
+### Start a picture immediately, or practise separately
+
+**Start picture / Continue picture** now always opens the next genuine picture question, in **every stage and bonus picture**. There is no compulsory tutorial and no need to press “Skip practice”. For the four number-line challenges (Mirror, Full, Solve and Mixed), **Just for practice** offers two optional number-line questions. These examples are clamped to the selected picture's visible number-line range and return to the picture picker when complete. Students can also leave practice early using **Back to pictures**.
+
+Practice is separate from picture play: it does not fill rows, change scores, affect completion, or alter saved picture progress. The first completed picture can be earned after exactly the advertised number of picture questions. Paint by Inequalities continues to start directly in its colour studio, without an unrelated number-line practice option.
+
 ### New quick wins and colour progression
 
 Every mode now has a **Starter → Step Up → Building → Challenge → Big Finish** path requiring **6 → 8 → 10 → 12 → 14 real picture questions**. Students get a proper colour reveal after six correct starter rows, with an optional Next picture action, and can choose any picture in any order.
