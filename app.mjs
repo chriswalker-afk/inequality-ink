@@ -440,31 +440,54 @@ function chooseLevel(){
  cancelPaintTimers();
  cancelRowAdvance();
  cancelPreviewFlash();
- clearRevealTimers();show("introScreen");
+ clearRevealTimers();
+ practiceOnly=false;practiceIndex=0;
+ $("practiceStatus").hidden=true;
+ show("introScreen");
  updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
-function start({skip=false}={}){
+function practiceQuestionsFor(picture,level){
+ // Original tutorial endpoints can fall outside the smaller starter axes.
+ // Use the same real inequalities but clamp practice examples to this picture.
+ const axis=pictureAxis(picture);
+ const clampAt=n=>Math.max(axis.min,Math.min(axis.max-1,n));
+ return tutorialFor(level).map(task=>{
+   const original=task.answer;
+   let answer;
+   if(original.direction==="between"){
+     const lower=Math.max(axis.min,Math.min(axis.max-1,original.lower));
+     const upper=Math.max(lower+1,Math.min(axis.max,original.upper));
+     answer={...original,lower,upper};
+   }else answer={...original,at:clampAt(original.at)};
+   return {...task,answer,equation:formatInterval(answer),
+     prompt:original.direction==="between"?
+       "Mark both endpoints and shade the interval shown.":
+       level==="mirror"?task.prompt:"Represent this inequality on the number line."};
+ });
+}
+function start(){
  cancelPaintTimers();
  cancelRowAdvance();
  cancelPreviewFlash();
+ practiceOnly=false;practiceIndex=0;
+ $("practiceStatus").hidden=true;
  if(save.completed){finish({animate:true});return;}
- // Six real picture questions to the first celebration, not six plus a
- // compulsory two-question unrelated tutorial.
- if(progressionStep(activePicture(),state.activeLevel)===1&&!save.done){
-   save.tutorialDone=true;
-   save.tutorial=tutorialFor(state.activeLevel).length;
-   store();
- }
- if(skip){
-   save.tutorialDone=true;
-   save.tutorial=tutorialFor(state.activeLevel).length;
-   store();
- }
+ // Start/Continue always opens the next picture row, without a tutorial.
  if(state.activeLevel==="paint"){
    show("paintScreen");startPaintRow();
  }else{
    show("playScreen");question();
  }
+ window.scrollTo({top:0,behavior:"instant"});
+}
+function startPractice(){
+ if(state.activeLevel==="paint")return; // Paint is already direct colour practice.
+ cancelPaintTimers();
+ cancelRowAdvance();
+ cancelPreviewFlash();
+ practiceOnly=true;practiceIndex=0;
+ $("practiceStatus").hidden=true;
+ show("playScreen");question();
  window.scrollTo({top:0,behavior:"instant"});
 }
 function feedback(msg,correct=false){const e=$("feedback");e.className="feedback"+(correct?" success":"");e.textContent=msg;}
