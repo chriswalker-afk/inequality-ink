@@ -1015,3 +1015,87 @@ test("Paint Starter completes a two-colour six-row heart without scrolling or ex
    globalThis.clearTimeout=clear;
  }
 });
+
+
+test("Eight, ten and twelve row inequality pictures all advance and reveal in full colour",()=>{
+ for(const [level,stage,id] of [
+   ["mirror",2,"mirror-heart-step"],
+   ["full",3,"full-ball-building"],
+   ["mixed",4,"full-flower-challenge"]
+ ]){
+   selectStage(level,stage);
+   const picture=pictureById(id),n=questionCount(picture);
+   assert.equal(n,stage*2+4);
+   $("skipTutorialButton").click(); // Optional practice remains available on longer puzzles.
+   assert.equal($("playScreen").hidden,false);
+   assert.equal($("questionStep").textContent,"ROW 1 OF "+n);
+   for(let index=0;index<n;index++){
+     answerCurrent(picture,index,level);
+     assert.equal($("progressText").textContent,(index+1)+" of "+n);
+   }
+   assert.equal($("revealDialog").open,true);
+   assert.equal($("finishScreen").hidden,true);
+   assert.equal($("finishedArt").getAttribute("viewBox"),
+     "0 0 "+(level==="mirror"?pictureWidth(picture)*2:pictureWidth(picture))+
+       " "+picture.height);
+   $("closeReveal").click();
+   assert.equal($("firstTryStat").textContent,n+"/"+n);
+   assert.equal($("finishTitle").textContent,picture.name+"!");
+   $("chooseLevelButton").click();
+   assert.equal($("introScreen").hidden,false);
+ }
+});
+test("The eight, ten and twelve row Paint stages colour and lock each integer square",()=>{
+ for(const [stage,id,swatches] of [
+   [2,"paint-star-step",2],
+   [3,"paint-daisy-building",3],
+   [4,"paint-rocket-challenge",4]
+ ]){
+   selectStage("paint",stage);
+   const picture=pictureById(id),n=questionCount(picture),w=pictureWidth(picture);
+   assert.equal(n,stage*2+4);
+   assert.equal(Object.keys(picture.paint.colours).length,swatches);
+   $("startButton").click();
+   assert.equal($("paintScreen").hidden,false);
+   assert.equal($("paintCanvas").children.length,w*picture.height);
+   assert.equal($("paintFocusRow").children.length,w);
+   const oldSetTimeout=globalThis.setTimeout,oldClearTimeout=globalThis.clearTimeout;
+   const pending=[];let serial=40000;
+   globalThis.setTimeout=(fn,delay)=>{
+     if(delay===280){pending.push({id:serial++,fn});return serial-1;}
+     return oldSetTimeout(fn,delay);
+   };
+   globalThis.clearTimeout=id=>id>=40000?undefined:oldClearTimeout(id);
+   try{
+     for(let index=0;index<n;index++){
+       const target=paintTarget(picture,index),y=n-index;
+       for(let x=0;x<w;x++){
+         choosePaintKey(target[x]);
+         $("paintFocusRow").children[x].click();
+         assert.equal(paintCell(y,x).style.backgroundColor,
+           picture.paint.colours[target[x]].hex);
+       }
+       $("paintCheck").click();
+       assert.equal($("paintRowsDone").textContent,(index+1)+" / "+n);
+       const timer=pending.shift();
+       assert.ok(timer,id+" failed to advance row "+index);
+       timer.fn();
+       if(index<n-1){
+         assert.equal(paintCell(y,0).textContent,"");
+         assert.equal(paintCell(y-1,0).disabled,false);
+       }
+     }
+     assert.equal($("revealDialog").open,true);
+     assert.equal($("finishScreen").hidden,true);
+     $("closeReveal").click();
+     assert.equal($("firstTryStat").textContent,n+"/"+n);
+     assert.equal($("finishTitle").textContent,picture.name+"!");
+     assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
+       .progress["paint:"+id].done,n);
+     $("chooseLevelButton").click();
+   }finally{
+     globalThis.setTimeout=oldSetTimeout;
+     globalThis.clearTimeout=oldClearTimeout;
+   }
+ }
+});
