@@ -187,50 +187,54 @@
 
       <section id="paintScreen" class="paint-screen" hidden aria-labelledby="paintTitle">
         <header class="paint-page-header">
-          <div>
+          <div class="paint-page-title">
             <span class="eyebrow">PAINT BY INEQUALITIES <span aria-hidden="true">✦</span></span>
             <h1 id="paintTitle">Your colour studio</h1>
-            <p>Read the inequalities, choose your brush, then colour the matching integer squares.</p>
           </div>
           <div class="paint-page-actions">
-            <button type="button" class="button button-light" id="paintBack">↔ Change picture or level</button>
-            <button type="button" class="button button-light" id="paintRestart">↺ Start over</button>
+            <button type="button" class="button button-light" id="paintBack" title="Choose a different picture or difficulty" aria-label="Change picture or difficulty">↶ <span>Pictures</span></button>
+            <button type="button" class="button button-light" id="paintRestart" title="Start this picture again" aria-label="Restart this picture">↺ <span>Restart</span></button>
           </div>
         </header>
         <div class="paint-progress" aria-label="Painted picture progress">
-          <span id="paintProgressLabel">Row 1 of 14</span>
+          <strong id="paintProgressLabel">Row 1 of 14</strong>
           <div class="progress-track"><div class="progress-fill" id="paintProgressFill"></div></div>
+          <span id="paintRowsDone">0 / 14</span>
         </div>
         <div class="paint-workspace">
-          <section class="panel paint-board-panel" aria-labelledby="paintCanvasHeading">
-            <div class="panel-heading">
-              <div><span class="panel-kicker">ONE ROW AT A TIME</span><h2 id="paintCanvasHeading">Paint the canvas</h2></div>
-              <span class="panel-pill" id="paintRowsDone">0 / 14</span>
+          <section class="panel paint-studio-panel" aria-label="Your colour-by-inequalities workspace">
+            <div class="paint-main-stage">
+              <div class="paint-overview">
+                <span class="paint-overview-label">YOUR PICTURE</span>
+                <div class="paint-canvas-frame">
+                  <div class="paint-canvas" id="paintCanvas" role="grid"
+                    aria-label="Picture in progress. Only the highlighted numbered row is editable."></div>
+                </div>
+              </div>
+              <div class="paint-rule-area">
+                <div class="paint-rule-heading">
+                  <strong id="paintStep">ROW 1 OF 14</strong>
+                  <span>Tap a rule to choose its colour</span>
+                </div>
+                <div id="paintRules" class="paint-rules" role="group"
+                  aria-label="Tap a colour and inequality to select your brush"></div>
+              </div>
             </div>
-            <div class="paint-quick-palette" id="paintQuickPalette" role="group" aria-label="Quick colour brushes while painting"></div>
-            <div class="paint-canvas-frame">
-              <div class="paint-canvas" id="paintCanvas" role="grid"
-                aria-label="Integer-labelled pixel canvas. Only the highlighted row can be painted."></div>
+            <div class="paint-focus-area">
+              <div class="paint-focus-heading">
+                <strong>PAINT THIS ROW <span aria-hidden="true">↓</span></strong>
+                <span id="paintSelectedLabel">Selected brush</span>
+              </div>
+              <div id="paintFocusRow" class="paint-focus-row" role="group"
+                aria-label="Enlarged editable row. Each square shows its integer value. Tap or swipe to paint."></div>
             </div>
-            <div class="paint-canvas-key"><span><i class="paint-key-active"></i> Numbered: paint now</span><span><i class="paint-key-done"></i> Completed: colours stay</span></div>
-            <p class="paint-canvas-tip">Each square is one integer. When a row is correct, its numbers disappear and only the colours remain.</p>
-            <button type="button" class="button button-primary paint-mobile-check" id="paintCheckMobile">Check row →</button>
-          </section>
-          <section class="panel paint-tools-panel" aria-label="Colour rules and painting controls">
-            <div class="panel-heading">
-              <div><span class="panel-kicker" id="paintStep">ROW 1 OF 14</span><h2>Choose a colour</h2></div>
-              <span class="mode-tag">PAINT</span>
+            <div class="paint-controls">
+              <button type="button" class="button button-light" id="paintEraser" aria-label="Select eraser">⌫ <span>Erase</span></button>
+              <button type="button" class="button button-light" id="paintClear">Clear row</button>
+              <button type="button" class="button button-primary paint-check" id="paintCheck">Check row <span aria-hidden="true">→</span></button>
             </div>
-            <p class="paint-instruction">Each rule assigns a colour to all the integer squares that satisfy its inequality. Select a coloured rule, then tap or swipe across the active row.</p>
-            <div id="paintRules" class="paint-rules" role="group" aria-label="Inequality colour palette"></div>
-            <div class="paint-brush-actions">
-              <button type="button" class="button button-light" id="paintEraser">⌫ Eraser</button>
-              <button type="button" class="button button-light" id="paintClear">Clear this row</button>
-            </div>
-            <p class="paint-selected-label" id="paintSelectedLabel">Brush selected</p>
             <div id="paintFeedback" class="feedback paint-feedback" role="status" aria-live="polite"></div>
-            <button type="button" class="button button-primary paint-check" id="paintCheck">Check row <span aria-hidden="true">→</span></button>
-            <p class="paint-help-note">Only the highlighted row can be edited. Tap a cell to colour it, or swipe across several. Progress saves on this device.</p>
+            <p class="paint-help-note">Tap a colour rule, then paint the numbered squares. Swipe to paint several at once. Correct rows keep their colours and lose their numbers.</p>
           </section>
         </div>
       </section>

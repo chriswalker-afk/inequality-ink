@@ -334,50 +334,75 @@ test("Phone users can see their ghosts while adjusting the number line",()=>{
   assert.ok(redraw.includes('sprite($("mobilePixelCanvas")'));
 });
 
-test("Paint by Inequalities has its own canvas, palette and independently saved rows",()=>{
- for(const id of ["paintScreen","paintCanvas","paintRules","paintQuickPalette",
-   "paintFeedback","paintCheck","paintCheckMobile","paintBack","paintRestart",
-   "paintEraser","paintClear","paintProgressLabel","paintProgressFill","paintRowsDone"])
+test("One-screen studio always includes picture, colour inequalities and enlarged active row",()=>{
+ for(const id of ["paintScreen","paintCanvas","paintRules","paintFocusRow",
+   "paintFeedback","paintCheck","paintBack","paintRestart","paintEraser",
+   "paintClear","paintProgressLabel","paintProgressFill","paintRowsDone",
+   "paintSelectedLabel","paintStep"])
   assert.ok(html.includes('id="'+id+'"'),"Missing paint UI: "+id);
+ assert.ok(!html.includes('id="paintQuickPalette"'),
+   "Duplicate brush palette creates extra mobile scrolling");
+ assert.ok(!html.includes('id="paintCheckMobile"'),
+   "Only one Check button should be needed on a single screen");
  assert.ok(html.includes('data-level="paint"'));
  assert.ok(app.includes('from "./paint-engine.mjs"'));
- assert.ok(app.includes('if(state.activeLevel==="paint"){'));
  assert.ok(app.includes('show("paintScreen");startPaintRow();'));
- assert.ok(app.includes('"playScreen","paintScreen","finishScreen"'));
+ assert.ok(app.includes('document.body.classList.toggle("paint-session",id==="paintScreen")'));
  assert.ok(app.includes('save.paintDraft'));
  assert.ok(app.includes('checkPaintRow(picture,save.done,save.paintDraft)'));
  assert.ok(app.includes('paintAdvanceTimer=setTimeout('));
  assert.ok(app.includes('finish({animate:true})'));
  assert.ok(app.includes('paintLocked=true'));
 });
-test("Only the numbered row can be edited; completed rows keep their real colours",()=>{
+test("Overview and enlarged labelled row share one draft, no answer leakage",()=>{
  const draw=getSection('function drawPaintCanvas(){','function showPaintFeedback(');
  assert.ok(draw.includes('finished=y>=1&&y<=picture.paint.grid.length&&y>activeY'));
  assert.ok(draw.includes('editable=y===activeY&&!paintLocked'));
  assert.ok(draw.includes('cell.disabled=!editable'));
  assert.ok(draw.includes('cell.textContent=current?String(picture.window.min+x):""'));
- assert.ok(draw.includes('cell.dataset.col='));
- assert.ok(draw.includes('cell.dataset.row='));
  assert.ok(draw.includes('picture.paint.grid[y-1][x]'));
- for(const term of [".paint-cell--active",".paint-cell--finished",
-   ".paint-cell--waiting",".paint-cell--wrong",".paint-cell--correct"])
-  assert.ok(css.includes(term),term+" styling absent");
+ assert.ok(draw.includes('const focus=$("paintFocusRow")'));
+ assert.ok(draw.includes('paintFocusCells=[]'));
+ assert.ok(draw.includes('paintFocusCells[x]=cell'));
+ assert.ok(draw.includes('cell.textContent=String(picture.window.min+x)'));
+ assert.ok(draw.includes('const key=save.paintDraft?.[x]??null'));
+ const painter=getSection('function paintSquare(col){','function clearPaintRow(){');
+ assert.ok(painter.includes('[paintCells[col],paintFocusCells[col]]'));
+ assert.ok(painter.includes('save.paintDraft[col]=paintBrush'));
+ const check=getSection('function checkPaintAnswer(){','// Paint on either');
+ assert.ok(check.includes('paintFocusCells[col]?.classList.add("paint-cell--wrong")'));
+ assert.ok(check.includes('[...paintCells,...paintFocusCells]'));
+ assert.ok(!check.includes('scrollIntoView'));
+ for(const cls of [".paint-cell--active",".paint-cell--finished",
+   ".paint-cell--waiting",".paint-cell--wrong",".paint-cell--correct",
+   ".paint-focus-row",".paint-focus-cell"])
+  assert.ok(css.includes(cls),cls+" styles missing");
 });
-test("Mobile swiping paints the active row with a sticky palette and check button",()=>{
- const painter=getSection('$("paintCanvas").addEventListener("pointerdown"','$("paintCheck").onclick=checkPaintAnswer;');
- assert.ok(painter.includes('square.disabled'));
- assert.ok(painter.includes('square.dataset.row!==String(paintQuestion?.row)'));
- assert.ok(painter.includes('setPointerCapture?.(event.pointerId)'));
- assert.ok(painter.includes('document.elementFromPoint?.(event.clientX,event.clientY)'));
- assert.ok(painter.includes('pointermove'));
- assert.ok(painter.includes('pointercancel'));
- assert.ok(app.includes('$("paintCheckMobile").onclick=checkPaintAnswer'));
+test("Mobile rule cards are the palette and the check action stays beside the canvas",()=>{
+ const rules=getSection('function renderPaintRules(){','function startPaintRow(){');
+ assert.ok(rules.includes('button.dataset.colour=rule.key'));
+ assert.ok(rules.includes('button.onclick=()=>selectPaintBrush(rule.key)'));
+ assert.ok(!rules.includes('paintQuickPalette'));
+ const pointer=getSection('for(const boardId of ["paintCanvas","paintFocusRow"])',
+   '$("paintCheck").onclick=checkPaintAnswer;');
+ assert.ok(pointer.includes('square.disabled'));
+ assert.ok(pointer.includes('square.dataset.row!==String(paintQuestion?.row)'));
+ assert.ok(pointer.includes('setPointerCapture?.(event.pointerId)'));
+ assert.ok(pointer.includes('document.elementFromPoint?.(event.clientX,event.clientY)'));
+ assert.ok(pointer.includes('pointermove'));
+ assert.ok(pointer.includes('pointercancel'));
+ assert.ok(app.includes('$("paintCheck").onclick=checkPaintAnswer'));
  assert.ok(app.includes('$("paintEraser").onclick=()=>selectPaintBrush(null)'));
  assert.ok(app.includes('$("paintClear").onclick=clearPaintRow'));
  assert.ok(css.includes('touch-action:none'));
- assert.ok(css.includes('.paint-quick-palette'));
- assert.ok(css.includes('position:sticky'));
+ assert.ok(css.includes('.paint-main-stage'));
+ assert.ok(css.includes('.paint-rule-area'));
+ assert.ok(css.includes('.paint-controls'));
+ assert.ok(css.includes('height:calc(100dvh - 56px'));
+ assert.ok(css.includes('grid-template-rows:minmax(0,1fr) auto auto auto'));
  assert.ok(css.includes('@media(max-width:740px)'));
+ assert.ok(css.includes('@media(max-height:450px)'));
+ assert.ok(css.includes('body.paint-session{overflow:hidden}'));
 });
 test("Paint mode uses the existing full-screen coloured artwork reveal",()=>{
  assert.ok(app.includes('if(picture.paint&&!picturePixelAt(picture,column,question.row))continue'));

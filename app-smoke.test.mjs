@@ -695,7 +695,7 @@ function paintCell(row,col){
  return square;
 }
 function choosePaintKey(key){
- const brush=$("paintQuickPalette").children.find(b=>b.dataset.colour===key);
+ const brush=$("paintRules").children.find(b=>b.dataset.colour===key);
  assert.ok(brush,"No palette entry for "+key);
  brush.click();
 }
@@ -710,7 +710,14 @@ test("Paint students can swipe the active row, erase, clear and resume a partly 
  assert.equal($("paintProgressLabel").textContent,"Row 1 of 14");
  const p=pictureById("paint-rocket"),row=14;
  assert.equal($("paintCanvas").children.length,160);
+ assert.equal($("paintFocusRow").children.length,10,
+   "A full-width enlarged row must be visible without zooming");
+ assert.equal(document.body.classList.contains("paint-session"),true);
  for(let x=0;x<10;x++){
+   const focus=$("paintFocusRow").children[x];
+   assert.equal(focus.textContent,String(p.window.min+x));
+   assert.equal(focus.disabled,false);
+   assert.equal(focus.dataset.row,String(row));
    assert.equal(paintCell(row,x).disabled,false);
    assert.equal(paintCell(row,x).textContent,String(p.window.min+x));
    assert.equal(paintCell(row-1,x).disabled,true,"Future rows stay locked");
@@ -732,10 +739,29 @@ test("Paint students can swipe the active row, erase, clear and resume a partly 
  for(const fn of board.listeners.get("pointerup")||[])fn(target);
  assert.equal(end.getAttribute("aria-label").includes("unpainted"),false,
    "Swipe should paint multiple neighbouring squares");
+ assert.equal($("paintFocusRow").children[0].style.backgroundColor,
+   p.paint.colours[key].hex,"Focused row must mirror overview paint");
+ assert.equal($("paintFocusRow").children[1].style.backgroundColor,
+   p.paint.colours[key].hex);
  assert.equal(board.capturedPointerId,14);
+ // Swiping the enlarged, accessible row should edit the same draft.
+ const focusBoard=$("paintFocusRow");
+ const cell2=focusBoard.children[2],cell3=focusBoard.children[3];
+ const finger={pointerId:15,pointerType:"touch",button:0,target:cell2,
+   clientX:85,clientY:15,preventDefault(){}};
+ for(const fn of focusBoard.listeners.get("pointerdown")||[])fn(finger);
+ globalThis.document.elementFromPoint=()=>cell3;
+ for(const fn of focusBoard.listeners.get("pointermove")||[])
+   fn({...finger,clientX:120});
+ for(const fn of focusBoard.listeners.get("pointerup")||[])fn(finger);
+ assert.equal(focusBoard.capturedPointerId,15);
+ assert.equal(paintCell(row,2).style.backgroundColor,p.paint.colours[key].hex);
+ assert.equal(paintCell(row,3).style.backgroundColor,p.paint.colours[key].hex);
  const saved=JSON.parse(localStorage.getItem("inequality-ink-v5"));
  assert.equal(saved.progress["paint:paint-rocket"].paintDraft[0],key);
  assert.equal(saved.progress["paint:paint-rocket"].paintDraft[1],key);
+ assert.equal(saved.progress["paint:paint-rocket"].paintDraft[2],key);
+ assert.equal(saved.progress["paint:paint-rocket"].paintDraft[3],key);
  $("paintEraser").click();
  end.click();
  assert.ok(end.getAttribute("aria-label").includes("unpainted"),
@@ -744,6 +770,7 @@ test("Paint students can swipe the active row, erase, clear and resume a partly 
  assert.ok(paintCell(row,0).getAttribute("aria-label").includes("unpainted"));
  $("paintBack").click();
  assert.equal($("introScreen").hidden,false);
+ assert.equal(document.body.classList.contains("paint-session"),false);
  select("paint",0);
  $("startButton").click();
  assert.equal($("paintScreen").hidden,false);
@@ -776,8 +803,12 @@ function completePaintPicture(index,id){
    assert.equal($("paintRules").children.length,
      makePaintQuestion(pic,row,0).rules.length);
    assert.ok(paintCell(y,0).textContent.length>0);
+   assert.equal($("paintFocusRow").children.length,10);
+   assert.equal($("paintFocusRow").children[0].textContent,
+     String(pic.window.min));
+   assert.equal($("paintFocusRow").children[0].disabled,false);
    if(row===0){
-     $("paintCheckMobile").click();
+     $("paintCheck").click();
      assert.ok($("paintFeedback").textContent.includes("unpainted"));
      assert.equal($("paintRowsDone").textContent,"0 / 14");
      assert.ok(paintCell(y,0).classList.contains("paint-cell--wrong"));
@@ -790,12 +821,16 @@ function completePaintPicture(index,id){
    for(let x=0;x<width;x++){
      assert.equal(paintCell(y,x).textContent,String(pic.window.min+x));
      assert.equal(paintCell(y,x).style.backgroundColor,pic.paint.colours[target[x]].hex);
+     assert.equal($("paintFocusRow").children[x].style.backgroundColor,
+       pic.paint.colours[target[x]].hex,"Focused strip and overview must match");
    }
-   $("paintCheckMobile").click();
+   $("paintCheck").click();
    assert.equal($("paintRowsDone").textContent,(row+1)+" / 14");
    assert.ok($("paintFeedback").className.includes("success"));
-   assert.equal($("paintCheckMobile").disabled,true);
+   assert.equal($("paintCheck").disabled,true);
    assert.ok(paintCell(y,4).classList.contains("paint-cell--correct"));
+   assert.ok($("paintFocusRow").children[4].classList.contains("paint-cell--correct"));
+   assert.equal($("paintFocusRow").children[4].disabled,true);
    const upcoming=timers.findLast(t=>t.delay===280&&!cancelled.has(t.id));
    assert.ok(upcoming,"Each correctly coloured row auto-advances");
    upcoming.fn();
@@ -807,6 +842,8 @@ function completePaintPicture(index,id){
      assert.equal(paintCell(y,4).style.backgroundColor,pic.paint.colours[target[4]].hex);
      assert.equal(paintCell(y-1,4).disabled,false);
      assert.equal(paintCell(y-1,4).textContent,String(pic.window.min+4));
+     assert.equal($("paintFocusRow").children[4].textContent,
+       String(pic.window.min+4),"New enlarged row must display fresh integers");
    }
   }
   assert.equal($("revealDialog").open,true);

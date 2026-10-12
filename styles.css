@@ -369,146 +369,263 @@ body.reveal-open{overflow:hidden}
 }
 
 
-/* PAINT BY INEQUALITIES — real colours painted onto integer-labelled
-   squares, one editable row at a time. No secret pixels are shown ahead. */
-.paint-screen{max-width:1400px;margin:0 auto;padding:22px 0 28px}
-.paint-page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:22px}
-.paint-page-header h1{font-size:clamp(1.7rem,4vw,2.8rem);line-height:1.1;margin:7px 0 9px;color:#28354e}
-.paint-page-header p{color:#69778a;max-width:620px;line-height:1.5;margin:0}
-.paint-page-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.paint-progress{max-width:100%;margin:0 0 18px;display:flex;align-items:center;gap:16px;font-size:.85rem;font-weight:850;color:#455977}
-.paint-progress .progress-track{flex:1;min-width:120px;margin:0}
-.paint-workspace{display:grid;grid-template-columns:minmax(0,1.14fr) minmax(330px,.86fr);gap:20px;align-items:start}
-.paint-board-panel,.paint-tools-panel{min-width:0}
-.paint-board-panel .panel-heading{margin-bottom:12px}
+/* PAINT BY INEQUALITIES — one-screen workspace.
+   Picture, mathematical colour rules, enlarged integer row and Check
+   remain simultaneously available instead of stacking long cards. */
+body.paint-session{overflow:hidden}
+.paint-screen{
+  max-width:1250px;margin:0 auto;
+  height:calc(100dvh - 109px);min-height:0;
+  padding:0 0 6px;display:flex;flex-direction:column;overflow:hidden;
+}
+.paint-page-header{
+  flex:none;display:flex;align-items:center;justify-content:space-between;
+  gap:14px;margin-bottom:7px;min-height:44px;
+}
+.paint-page-title{min-width:0}
+.paint-page-title .eyebrow{font-size:.62rem}
+.paint-page-header h1{
+  font-size:clamp(1.2rem,2.4vw,1.7rem);margin:3px 0 0;
+  color:#28354e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  letter-spacing:-.04em;line-height:1.15;
+}
+.paint-page-actions{display:flex;align-items:center;gap:7px;flex:none}
+.paint-page-actions .button{padding:9px 12px;font-size:.76rem;border-radius:10px}
+.paint-progress{
+  flex:none;display:flex;align-items:center;gap:11px;
+  font-size:.76rem;color:#455977;margin:0 0 9px;
+}
+.paint-progress .progress-track{flex:1;min-width:35px;margin:0}
+.paint-progress strong{white-space:nowrap}
+.paint-progress #paintRowsDone{white-space:nowrap;font-weight:800}
+.paint-workspace{flex:1;min-height:0;display:flex}
+.paint-studio-panel{
+  width:100%;height:100%;min-height:0;min-width:0;
+  display:grid;grid-template-rows:minmax(0,1fr) auto auto auto auto;
+  gap:clamp(5px,1.1dvh,11px);
+  padding:clamp(10px,1.6vw,20px);overflow:hidden;
+}
+.paint-main-stage{
+  min-height:0;min-width:0;display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  gap:clamp(9px,2vw,22px);align-items:stretch;
+}
+.paint-overview{
+  min-height:0;min-width:0;display:flex;flex-direction:column;
+  align-items:stretch;overflow:hidden;
+}
+.paint-overview-label{
+  font-size:.65rem;font-weight:900;letter-spacing:.08em;
+  color:#729098;line-height:1.2;margin-bottom:5px;text-align:center;
+}
 .paint-canvas-frame{
-  display:flex;justify-content:center;width:100%;border:10px solid #f9f5ee;
-  border-radius:19px;background:#e9e6e0;padding:9px;
-  box-shadow:inset 0 0 0 1px #e4ddd5,0 11px 27px #3e466016;
+  flex:1;min-height:0;min-width:0;width:100%;
+  display:flex;align-items:center;justify-content:center;
+  padding:5px;border:5px solid #f8f3ec;border-radius:12px;
+  background:#ece9e3;overflow:hidden;
 }
 .paint-canvas{
-  display:grid;width:min(100%,520px);
-  border:2px solid #edf0ec;border-radius:5px;overflow:hidden;
-  background:#eceae5;touch-action:none;user-select:none;-webkit-user-select:none;
-  box-shadow:0 6px 20px #3b455d20;
+  display:grid;min-height:0;min-width:0;
+  height:100%;width:auto;max-width:100%;max-height:100%;
+  aspect-ratio:10 / 16;
+  border:1px solid #e2e9e8;border-radius:3px;
+  background:#eceae5;overflow:hidden;touch-action:none;
+  user-select:none;-webkit-user-select:none;
+  box-shadow:0 4px 13px #36445d16;
 }
 .paint-cell{
-  display:flex;justify-content:center;align-items:center;min-width:0;
-  aspect-ratio:1;border:1px solid #ffffffa8;border-radius:0;
-  padding:0;margin:0;min-height:0;line-height:1;
-  font-size:clamp(.72rem,1.25vw,1rem);font-weight:850;
-  font-variant-numeric:tabular-nums;color:#23324a;
-  background:#f4f2ee;box-shadow:none;
+  display:flex;align-items:center;justify-content:center;
+  min-width:0;min-height:0;aspect-ratio:1;
+  padding:0;margin:0;border:1px solid #ffffffa0;border-radius:0;
+  background:#f4f2ee;line-height:1;
+  font-size:clamp(.6rem,1.1vw,.83rem);font-weight:850;
+  font-variant-numeric:tabular-nums;color:#20344e;
+  box-shadow:none;
 }
 .paint-cell:disabled{opacity:1;cursor:default}
 .paint-cell--waiting{background:#eae7e2!important;pointer-events:none}
-.paint-cell--finished{color:transparent;pointer-events:none;animation:paint-lock-in .27s ease-out both}
+.paint-cell--finished{color:transparent;pointer-events:none}
 .paint-cell--active{
-  cursor:crosshair;touch-action:none;outline:1.5px solid #6e9fa7;
-  outline-offset:-1.5px;
-  text-shadow:0 1px 0 #fff9,1px 0 0 #fff9,-1px 0 0 #fff9;
-  transition:background-color .09s ease-out;
+  cursor:crosshair;touch-action:none;outline:1px solid #6e9fa7;
+  outline-offset:-1px;text-shadow:0 1px 0 #fff9,1px 0 0 #fff9,-1px 0 0 #fff9;
+  transition:background-color .08s ease-out;
 }
-.paint-cell--active:focus-visible{outline:3px solid #254b70;outline-offset:-3px;z-index:1}
-.paint-cell--active:hover{filter:brightness(.97)}
+.paint-cell--active:focus-visible{outline:3px solid #23536a;outline-offset:-3px;z-index:1}
 .paint-cell--wrong{animation:paint-row-wrong .58s ease-in-out both}
-.paint-cell--correct{animation:paint-row-correct .62s ease-in-out both}
+.paint-cell--correct{animation:paint-row-correct .65s ease-in-out both}
 @keyframes paint-row-wrong{
   0%,100%{box-shadow:inset 0 0 0 0 #e78c3d}
   23%,68%{box-shadow:inset 0 0 0 100px #f2a457b8}
 }
 @keyframes paint-row-correct{
-  0%{box-shadow:inset 0 0 0 0 #5abf8a}
+  0%,100%{box-shadow:inset 0 0 0 0 #5abf8a}
   35%,68%{box-shadow:inset 0 0 0 100px #5ac58a9a}
-  100%{box-shadow:inset 0 0 0 0 #5abf8a}
 }
-@keyframes paint-lock-in{from{filter:brightness(1.1)}to{filter:brightness(1)}}
-.paint-canvas-key{display:flex;flex-wrap:wrap;gap:13px;margin:13px 0 6px;font-size:.74rem;color:#70828e}
-.paint-canvas-key span{display:flex;align-items:center;gap:7px}
-.paint-canvas-key i{width:11px;height:11px;border-radius:3px;display:inline-block}
-.paint-key-active{background:#e9f3f1;border:2px solid #6e9fa7}
-.paint-key-done{background:#f1a0c1;border:1px solid #d693b2}
-.paint-canvas-tip{font-size:.81rem;line-height:1.4;color:#71808a;margin:8px 0 0}
-.paint-tools-panel .panel-heading{margin-bottom:9px}
-.paint-instruction{margin:0 0 16px;color:#5f7282;line-height:1.55;font-size:.88rem}
-.paint-rules{display:grid;gap:10px;margin:0 0 15px}
+.paint-rule-area{display:flex;flex-direction:column;min-height:0;min-width:0}
+.paint-rule-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:3px 8px;min-height:17px;
+}
+.paint-rule-heading strong{
+  font-size:.76rem;letter-spacing:.065em;color:#a4716c;
+}
+.paint-rule-heading span{font-size:.72rem;color:#71818b}
+.paint-rules{
+  display:grid;grid-auto-rows:minmax(0,1fr);
+  min-height:0;flex:1;gap:clamp(5px,.7dvh,10px);margin-top:7px;
+}
 .paint-rule{
-  display:flex;align-items:center;gap:13px;min-width:0;min-height:65px;
-  border:2px solid #e7e4e0;border-radius:13px;padding:10px 12px;
-  background:#fffefa;box-shadow:0 2px 7px #3c45600c;
-  color:#344154;text-align:left;transition:background .15s,border-color .15s;
+  display:flex;align-items:center;gap:11px;min-height:40px;min-width:0;
+  border:2px solid #e7e4e0;border-radius:11px;padding:7px 11px;
+  background:#fffefa;color:#344154;text-align:left;
+  transition:background .12s,border-color .12s;overflow:hidden;
 }
 .paint-rule:hover{border-color:#81aaa7;background:#f6faf8}
-.paint-rule.selected{border-color:#42867f;background:#eaf6f0;box-shadow:0 0 0 2px #56a38e18}
-.paint-rule:focus-visible,.paint-quick-brush:focus-visible{outline:3px solid #4f819d;outline-offset:2px}
+.paint-rule.selected{
+  border-color:#398b78;background:#e9f7f0;
+  box-shadow:inset 0 0 0 1px #398b7844,0 0 0 2px #56a38e18;
+}
+.paint-rule:focus-visible{outline:3px solid #4f819d;outline-offset:2px}
 .paint-swatch{
-  width:37px;height:37px;flex:0 0 37px;border-radius:10px;
-  border:1px solid #00000017;box-shadow:inset 0 2px 6px #ffffff40
+  width:clamp(24px,2.8vw,35px);height:clamp(24px,2.8vw,35px);
+  flex:0 0 clamp(24px,2.8vw,35px);
+  border-radius:8px;border:1px solid #00000019;
+  box-shadow:inset 0 2px 5px #ffffff49;
 }
-.paint-rule-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
-.paint-rule-copy strong{font-size:.83rem;line-height:1.1}
-.paint-equation{font-family:inherit;font-size:1.09rem;line-height:1.1;font-weight:800;color:#263a57;font-variant-numeric:tabular-nums}
-.paint-brush-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px}
-.paint-brush-actions .button{flex:1;min-width:120px}
-#paintEraser.selected{background:#cfe5dc;border-color:#4b9186}
-.paint-selected-label{font-size:.76rem;font-weight:850;color:#486879;margin:4px 0 9px}
-.paint-feedback{margin:7px 0 13px;min-height:1.5em}
-.paint-check{width:100%;min-height:52px}
-.paint-help-note{font-size:.75rem;line-height:1.5;color:#7b8690;margin:12px 0 0}
-.paint-quick-palette,.paint-mobile-check{display:none}
-@media(max-width:900px){
-  .paint-workspace{grid-template-columns:minmax(0,1fr) minmax(300px,1fr)}
-  .paint-page-header{flex-wrap:wrap}
+.paint-rule-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.paint-rule-copy strong{
+  font-size:clamp(.68rem,1.2vw,.82rem);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
 }
+.paint-equation{font-size:clamp(.95rem,1.6vw,1.23rem);font-weight:850;color:#263a57;line-height:1.1}
+.paint-focus-area{min-width:0;display:flex;flex-direction:column;align-items:stretch}
+.paint-focus-heading{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:8px;margin-bottom:5px;min-width:0;
+}
+.paint-focus-heading strong{
+  color:#547a80;font-size:.73rem;letter-spacing:.055em;white-space:nowrap;
+}
+.paint-selected-label{
+  font-size:.73rem;font-weight:800;color:#486879;
+  margin:0;min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.paint-focus-row{
+  display:grid;grid-template-columns:repeat(10,minmax(0,1fr));
+  width:100%;max-width:660px;align-self:center;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  background:#edf4f2;border:3px solid #689d9b;
+  border-radius:9px;overflow:hidden;
+}
+.paint-focus-cell{
+  display:grid;place-items:center;min-width:0;
+  aspect-ratio:1;touch-action:none;
+  font-size:clamp(.83rem,1.45vw,1.16rem);
+  font-weight:900;outline-offset:-2px;
+}
+.paint-controls{
+  display:flex;align-items:stretch;gap:8px;width:100%;min-height:43px;
+}
+.paint-controls .button{padding:9px 14px;font-size:.79rem;border-radius:9px}
+#paintEraser.selected{background:#d7ece2;border-color:#548f82}
+.paint-check{flex:1;min-width:130px}
+.paint-feedback{
+  min-height:1.05em;font-size:.75rem;line-height:1.3;
+  margin:0;text-align:center;overflow:hidden;
+}
+.paint-help-note{
+  color:#78848e;font-size:.72rem;line-height:1.4;
+  text-align:center;margin:0;
+}
+/* Phones: miniature artwork beside its rules, a large numbered row below,
+   and a single Check action. No scrolling between maths and canvas. */
 @media(max-width:740px){
-  .paint-screen{padding:10px 0 20px}
-  .paint-page-header{gap:12px;margin-bottom:15px}
-  .paint-page-header h1{font-size:1.68rem;margin:4px 0}
-  .paint-page-header p{font-size:.86rem}
-  .paint-page-actions{justify-content:flex-start;width:100%}
-  .paint-page-actions .button{font-size:.75rem;flex:1;padding:9px 12px}
-  .paint-progress{gap:10px;margin-bottom:12px}
-  .paint-workspace{display:flex;flex-direction:column;gap:13px}
-  .paint-tools-panel{order:0;width:100%}
-  .paint-board-panel{order:1;width:100%;box-sizing:border-box}
-  .paint-tools-panel .panel-heading{margin-bottom:4px}
-  .paint-instruction{font-size:.81rem;margin-bottom:11px}
-  .paint-rules{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-  .paint-rule{padding:9px;gap:7px;min-height:62px}
-  .paint-swatch{width:28px;height:28px;flex-basis:28px;border-radius:7px}
-  .paint-rule-copy strong{font-size:.71rem}
-  .paint-equation{font-size:.9rem}
-  .paint-brush-actions{margin-bottom:5px}
-  .paint-tools-panel .paint-check{display:none}
+  body.paint-session .app{padding:4px 10px 2px}
+  body.paint-session .topbar{padding:1px 0 5px;min-height:42px}
+  body.paint-session .brand{gap:8px}
+  body.paint-session .brand strong{font-size:1.08rem}
+  body.paint-session .brand small{display:none}
+  body.paint-session .brand-mark{transform:rotate(-10deg) scale(.82)}
+  body.paint-session .top-button{padding:7px 9px}
+  .paint-screen{
+    height:calc(100dvh - 56px - env(safe-area-inset-bottom,0px));
+    padding:0 0 3px;
+  }
+  .paint-page-header{min-height:31px;gap:6px;margin-bottom:4px}
+  .paint-page-title .eyebrow{display:none}
+  .paint-page-header h1{
+    margin:0;font-size:clamp(.93rem,3.8vw,1.16rem);
+    max-width:calc(100vw - 147px);
+  }
+  .paint-page-actions{gap:5px}
+  .paint-page-actions .button{padding:6px 9px;font-size:.74rem}
+  .paint-page-actions .button span{display:none}
+  .paint-progress{font-size:.7rem;margin:0 0 5px;gap:8px}
+  .paint-studio-panel{
+    border-radius:16px;
+    grid-template-rows:minmax(0,1fr) auto auto auto;
+    gap:clamp(3px,.75dvh,7px);
+    padding:clamp(7px,2vw,10px);
+  }
+  .paint-main-stage{
+    grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+    gap:8px;
+  }
+  .paint-overview-label{font-size:.55rem;margin-bottom:3px}
+  .paint-canvas-frame{padding:2px;border-width:3px;border-radius:8px}
+  .paint-canvas .paint-cell{font-size:clamp(.42rem,1.6vw,.64rem)}
+  .paint-rule-heading{gap:2px;min-height:19px}
+  .paint-rule-heading strong{font-size:.68rem}
+  .paint-rule-heading span{font-size:.59rem;line-height:1.15}
+  .paint-rules{margin-top:4px;gap:4px}
+  .paint-rule{min-height:36px;border-radius:8px;padding:5px 6px;gap:6px}
+  .paint-swatch{width:23px;height:23px;flex-basis:23px;border-radius:5px}
+  .paint-rule-copy{gap:3px}
+  .paint-rule-copy strong{font-size:clamp(.6rem,2.4vw,.73rem)}
+  .paint-equation{font-size:clamp(.85rem,3.1vw,1.03rem)}
+  .paint-focus-heading{margin-bottom:3px}
+  .paint-focus-heading strong{font-size:.63rem}
+  .paint-selected-label{font-size:.66rem}
+  .paint-focus-row{border-width:2px;border-radius:6px}
+  .paint-focus-cell{font-size:clamp(.7rem,3.1vw,.97rem)}
+  .paint-controls{gap:5px;min-height:41px}
+  .paint-controls .button{padding:8px 7px;font-size:.72rem;min-width:0}
+  #paintEraser{flex:0 0 auto}
+  #paintClear{flex:0 0 auto}
+  .paint-check{flex:1;min-width:0}
+  .paint-feedback{font-size:.7rem;min-height:1.15em}
   .paint-help-note{display:none}
-  .paint-board-panel .panel-heading{margin-bottom:8px}
-  .paint-canvas-frame{padding:3px;border-width:6px;border-radius:12px}
-  .paint-canvas{width:100%}
-  .paint-cell{font-size:clamp(.68rem,3vw,.94rem)}
-  .paint-quick-palette{
-    display:flex;position:sticky;top:calc(env(safe-area-inset-top,0px) + 4px);
-    z-index:10;justify-content:center;gap:8px;
-    background:#f6faf8f2;border:1px solid #d6e7df;padding:7px;
-    margin:-2px 0 9px;border-radius:12px;backdrop-filter:blur(8px);
-    box-shadow:0 4px 13px #3a536b18
-  }
-  .paint-quick-brush{
-    flex:1;max-width:65px;min-width:0;min-height:45px;display:grid;place-items:center;
-    border:2px solid #dfebe7;border-radius:9px;background:#fff;
-    color:#41566f;font-size:1.25rem
-  }
-  .paint-quick-brush span{display:block;width:25px;height:25px;border-radius:7px;border:1px solid #0002}
-  .paint-quick-brush.selected{border-color:#398a77;box-shadow:0 0 0 2px #398a7727;background:#ecf8ef}
-  .paint-mobile-check{display:block;margin-top:12px;width:100%;min-height:50px}
 }
-@media(max-width:370px){
-  .paint-rule{padding:6px;gap:5px}
-  .paint-swatch{width:22px;height:22px;flex-basis:22px}
-  .paint-rule-copy strong{font-size:.68rem}
+@media(max-width:360px){
+  .paint-main-stage{gap:5px}
+  .paint-rule{gap:4px;padding:4px 5px}
+  .paint-swatch{width:18px;height:18px;flex-basis:18px}
   .paint-equation{font-size:.83rem}
-  .paint-quick-brush{min-height:39px}
-  .paint-quick-brush span{width:22px;height:22px}
+  .paint-controls .button{font-size:.67rem}
+}
+@media(max-height:655px) and (max-width:740px){
+  body.paint-session .topbar{min-height:34px}
+  .paint-screen{height:calc(100dvh - 49px - env(safe-area-inset-bottom,0px))}
+  .paint-page-header{min-height:26px;margin-bottom:2px}
+  .paint-progress{margin-bottom:3px}
+  .paint-studio-panel{gap:3px;padding:6px}
+  .paint-overview-label{margin-bottom:2px}
+  .paint-rule-heading span{display:none}
+  .paint-rule{min-height:30px;padding:3px 5px}
+  .paint-rules{gap:3px;margin-top:3px}
+  .paint-focus-heading{margin-bottom:2px}
+  .paint-controls{min-height:35px}
+  .paint-controls .button{padding:6px;font-size:.68rem}
+}
+/* Extremely short landscape viewports use a safe internal scroll fallback.
+   Avoid clipping rule buttons or the Check action when there is no room. */
+@media(max-height:450px){
+  body.paint-session{overflow:auto}
+  .paint-screen{height:auto;min-height:425px;overflow:visible}
+  .paint-workspace{min-height:330px}
+  .paint-main-stage{min-height:195px}
+  .paint-studio-panel{overflow:visible}
 }
 @media(prefers-reduced-motion:reduce){
-  .paint-cell--wrong,.paint-cell--correct,.paint-cell--finished{animation:none!important}
+  .paint-cell--wrong,.paint-cell--correct{animation:none!important}
 }
