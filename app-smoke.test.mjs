@@ -235,6 +235,23 @@ function complete(level,index,id,{animated=false}={}){
   assert.equal($("introScreen").hidden,false);
 }
 
+test("Picker displays playful clues, without spoiling unfinished pictures",()=>{
+  for(const level of ["mirror","full","solve","mixed","paint"]){
+    select(level,0);
+    const first=$("picturePicker").children[0];
+    const picture=pictureById(level==="mirror"?"cat-cameo":
+      level==="paint"?"paint-rocket":"mushroom-mystery");
+    const heading=first.children[1].children[0].textContent;
+    const caption=first.children[1].children[1].textContent;
+    const accessible=first.getAttribute("aria-label");
+    assert.equal(heading,picture.clue);
+    assert.ok(accessible.startsWith(picture.clue+", "));
+    assert.ok(![heading,caption,accessible].join(" ").includes(picture.name),
+      "True name leaked before completion: "+picture.name);
+    assert.ok(!heading.startsWith("Mystery "));
+  }
+  select("mirror",0);
+});
 test("Student can complete seven distinct picture/difficulty journeys independently",()=>{
   assert.equal($("picturePicker").children.length,4);
   complete("mirror",1,"heart-glow");
@@ -248,6 +265,13 @@ test("Student can complete seven distinct picture/difficulty journeys independen
   complete("solve",3,"enchanted-potion");
   complete("mixed",4,"ice-cream-treat");
   select("mirror",1);
+  const finishedHeart=$("picturePicker").children[1];
+  assert.equal(finishedHeart.children[1].children[0].textContent,
+    pictureById("heart-glow").clue);
+  assert.equal(finishedHeart.children[1].children[1].textContent,
+    pictureById("heart-glow").name+" — completed");
+  assert.ok(finishedHeart.getAttribute("aria-label")
+    .includes(pictureById("heart-glow").name+" completed"));
   assert.ok($("levelProgress").textContent.includes("complete"),
     "Switching pictures lost heart progress");
   select("mirror",0);
@@ -680,6 +704,8 @@ test("Paint students can swipe the active row, erase, clear and resume a partly 
  assert.equal($("picturePicker").children.length,3);
  $("startButton").click();
  assert.equal($("paintScreen").hidden,false);
+ assert.equal($("paintTitle").textContent,
+   pictureById("paint-rocket").clue+" — colour studio");
  assert.equal($("playScreen").hidden,true);
  assert.equal($("paintProgressLabel").textContent,"Row 1 of 14");
  const p=pictureById("paint-rocket"),row=14;
