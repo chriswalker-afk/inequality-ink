@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {identicalSolution} from "./model.mjs";
-import {pictureById,makePictureQuestion,questionCount} from "./picture-engine.mjs";
+import {pictureById,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
 
 // Dependency-free miniature DOM for exercising the actual app module in Node.
 // This is not a visual browser test, but it catches broken wiring, navigation,
@@ -509,4 +509,154 @@ test("iPhone-style SVG visibility lets the Mushroom Mystery reveal show its actu
     globalThis.setTimeout=originalSetTimeout;
     globalThis.clearTimeout=originalClearTimeout;
   }
+});
+
+
+function ghostLayer(svgId="pixelCanvas"){
+  const svg=$(svgId);
+  const layer=svg.children.filter(e=>e.tagName==="g"&&
+    e.getAttribute("class")?.includes("ink-live-preview"));
+  assert.equal(layer.length,1,"Expected exactly one ghost layer on "+svgId);
+  return layer[0];
+}
+function ghostColumns(svgId="pixelCanvas"){
+  return ghostLayer(svgId).children.map(rect=>Number(rect.getAttribute("x")));
+}
+function inspectGhost(picture,question,candidate,phase="ghost"){
+  const expected=picturePaintedValues(picture,question,candidate)
+    .map(value=>value-picture.window.min);
+  assert.deepEqual(ghostColumns(),expected,
+    "Ghost should match the student's projected inequality exactly");
+  assert.deepEqual(ghostColumns("mobilePixelCanvas"),expected,
+    "The sticky phone preview must match the main canvas");
+  assert.ok(ghostLayer().getAttribute("class")?.includes("--"+phase),
+    "Unexpected ghost feedback phase: "+ghostLayer().getAttribute("class"));
+  for(const rect of ghostLayer().children)
+    assert.equal(Number(rect.getAttribute("y")),question.row);
+}
+test("Reading options draw a live ghost, flash orange on rejection, then green and settle into ink",()=>{
+  select("mirror",0); // Cat's original exercise has not been completed.
+  $("skipTutorialButton").click();
+  const cat=pictureById("cat-cameo"),q=makePictureQuestion(cat,0,0,"mirror");
+  assert.equal($("playScreen").hidden,false);
+  assert.equal(ghostLayer().children.length,0,
+    "No answer has been selected, so there should be no preview yet");
+  const wrongIndex=q.options.findIndex(o=>!identicalSolution(o.value,q.answer)&&
+    picturePaintedValues(cat,q,o.value).length>0);
+  const correctIndex=q.options.findIndex(o=>identicalSolution(o.value,q.answer));
+  assert.ok(wrongIndex>=0&&correctIndex>=0);
+  $("readOptions").children[wrongIndex].click();
+  inspectGhost(cat,q,q.options[wrongIndex].value);
+  assert.equal($("progressText").textContent,"0 of 14",
+    "The ghost must never count as completed pixels");
+  const nativeSet=globalThis.setTimeout,nativeClear=globalThis.clearTimeout;
+  const timers=[],cancelled=new Set();
+  let nextId=7000;
+  globalThis.setTimeout=(fn,delay)=>{
+    if([580,130,340,820,1170].includes(delay)){
+      const t={id:nextId++,fn,delay};timers.push(t);return t.id;
+    }
+    return nativeSet(fn,delay);
+  };
+  globalThis.clearTimeout=id=>{
+    if(id>=7000){cancelled.add(id);return;}
+    return nativeClear(id);
+  };
+  try{
+    $("checkButton").click();
+    assert.equal($("progressText").textContent,"0 of 14");
+    assert.equal($("checkButton").disabled,false);
+    inspectGhost(cat,q,q.options[wrongIndex].value,"incorrect");
+    assert.equal($("canvasStage").classList.contains("ink-stage--incorrect"),true);
+    assert.equal($("mobilePreviewStrip").classList.contains("ink-stage--incorrect"),true);
+    const wrongTimer=timers.find(t=>t.delay===580);
+    assert.ok(wrongTimer);
+    wrongTimer.fn();
+    inspectGhost(cat,q,q.options[wrongIndex].value,"ghost");
+    assert.equal($("canvasStage").classList.contains("ink-stage--incorrect"),false);
+    $("readOptions").children[correctIndex].click();
+    inspectGhost(cat,q,q.answer,"ghost");
+    $("checkButton").click();
+    assert.equal($("checkButton").disabled,true);
+    assert.equal($("progressText").textContent,"1 of 14");
+    inspectGhost(cat,q,q.answer,"correct");
+    assert.equal($("canvasStage").classList.contains("ink-stage--correct"),true);
+    assert.equal($("mobilePreviewStrip").classList.contains("ink-stage--correct"),true);
+    const accepted=timers.find(t=>t.delay===130);
+    assert.ok(accepted,"Correct preview must settle before automatic advancement");
+    const rowCells=$("pixelCanvas").children.filter(
+      x=>x.tagName==="rect"&&Number(x.getAttribute("y"))===q.row);
+    assert.ok(rowCells.some(rect=>rect.getAttribute("fill")==="#e9e5df"),
+      "Green should appear before committing the accepted row");
+    accepted.fn();
+    assert.equal(ghostLayer().children.length,0,
+      "The green overlay should disappear once accepted ink is painted");
+    assert.equal(ghostLayer("mobilePixelCanvas").children.length,0);
+    for(const value of picturePaintedValues(cat,q)){
+      const x=value-cat.window.min;
+      const rect=$("pixelCanvas").children.find(r=>r.tagName==="rect"&&
+        Number(r.getAttribute("x"))===x&&Number(r.getAttribute("y"))===q.row);
+      assert.equal(rect?.getAttribute("fill"),"#64738e",
+        "Accepted green cells must settle to ordinary blue-grey ink");
+    }
+    assert.equal($("canvasStage").classList.contains("ink-stage--correct"),false);
+    const advance=timers.find(t=>t.delay===340);
+    assert.ok(advance,"Student should still advance after one Check press");
+    advance.fn();
+    assert.equal($("questionStep").textContent,"ROW 2 OF 14");
+    assert.equal(ghostLayer().children.length,0,
+      "Next question must not inherit the old candidate preview");
+    assert.equal($("progressText").textContent,"1 of 14");
+  }finally{
+    globalThis.setTimeout=nativeSet;
+    globalThis.clearTimeout=nativeClear;
+    $("changeLevelButton").click();
+  }
+});
+test("Endpoint steppers, circle toggles and number changes update both ghost boards",()=>{
+  select("solve",0); // Mushroom has not been played in Solve & Paint.
+  $("skipTutorialButton").click();
+  const mushroom=pictureById("mushroom-mystery"),q=makePictureQuestion(mushroom,0,0,"solve");
+  assert.equal(q.mode,"solve");
+  assert.equal(ghostLayer().children.length,0);
+  $("leftDecrease").click(); // Starting [-0,1] → (-1,1)
+  inspectGhost(mushroom,q,{
+    direction:"between",lower:-1,upper:1,
+    lowerIncluded:false,upperIncluded:false
+  });
+  $("leftClosed").click();
+  inspectGhost(mushroom,q,{
+    direction:"between",lower:-1,upper:1,
+    lowerIncluded:true,upperIncluded:false
+  });
+  $("rightIncrease").click();
+  $("rightClosed").click();
+  inspectGhost(mushroom,q,{
+    direction:"between",lower:-1,upper:2,
+    lowerIncluded:true,upperIncluded:true
+  });
+  $("leftValue").value="-3";$("leftValue").change();
+  inspectGhost(mushroom,q,{
+    direction:"between",lower:-3,upper:2,
+    lowerIncluded:true,upperIncluded:true
+  });
+  assert.equal($("progressText").textContent,"0 of 14");
+  $("changeLevelButton").click();
+});
+test("Mixed Challenge ghosts reflect the attempted half-line rather than revealing the answer",()=>{
+  select("mixed",0); // Unplayed mushroom in Mixed Challenge.
+  $("skipTutorialButton").click();
+  const mushroom=pictureById("mushroom-mystery");
+  const q=makePictureQuestion(mushroom,0,0,"mixed");
+  assert.equal(q.mode,"read");
+  assert.equal(q.artMode,"mirror");
+  const wrong=q.options.findIndex(o=>!identicalSolution(o.value,q.answer));
+  $("readOptions").children[wrong].click();
+  inspectGhost(mushroom,q,q.options[wrong].value);
+  const ghost=ghostColumns().map(x=>x+mushroom.window.min);
+  const reflected=ghost.map(x=>mushroom.window.min+mushroom.window.max-1-x);
+  assert.deepEqual([...new Set(ghost)].sort((a,b)=>a-b),
+    [...new Set(reflected)].sort((a,b)=>a-b));
+  assert.equal($("progressText").textContent,"0 of 14");
+  $("changeLevelButton").click();
 });
