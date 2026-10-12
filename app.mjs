@@ -472,6 +472,7 @@ function playCatReveal(){
   drawCatPanel($("catFlipRight"),false);
   stage.className="cat-flip-stage";
   shell.classList.remove("is-revealing","is-colouring");
+  resetFinalDetails();
   art.hidden=true;stage.hidden=false;
   $("catFlipStatus").textContent="Your completed drawing…";
   $("replayReveal").hidden=true;
@@ -481,6 +482,7 @@ function playCatReveal(){
     $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
     stage.hidden=true;
     art.hidden=false;
+    revealAllDetails();
     $("replayReveal").hidden=false;
     return;
   }
@@ -500,10 +502,13 @@ function playCatReveal(){
     $("catFlipStatus").textContent="And now… colour!";
   },2390);
   later(()=>{
-    $("replayReveal").hidden=false;
-    $("catFlipStatus").textContent="Cat Cameo — complete!";
-    $("finishTitle").textContent="Cat Cameo!";
-    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
+    $("catFlipStatus").textContent="One more thing… the little details!";
+    scheduleDetailReveal("cat",()=>{
+      $("replayReveal").hidden=false;
+      $("catFlipStatus").textContent="Eyes, nose and whiskers — Cat Cameo complete!";
+      $("finishTitle").textContent="Cat Cameo!";
+      $("finishNote").textContent="Your picture now has its final details: bright eyes, pink ears, a nose and whiskers.";
+    });
   },3500);
 }
 function finish({animate=false}={}){
@@ -515,7 +520,7 @@ function finish({animate=false}={}){
   $("finishedArtShell").classList.remove("is-revealing","is-colouring");
   $("catFlipStage").hidden=true;
   $("finishedArt").hidden=false;
-  $("replayReveal").hidden=!cat;
+  $("replayReveal").hidden=animate;
   renderFinishedArt();
   $("firstTryStat").textContent=save.firstTry+"/14";
   $("hintsStat").textContent=save.hints;
@@ -523,7 +528,13 @@ function finish({animate=false}={}){
     ?(animate?"Every inequality is complete. Watch your picture come together.":"Your drawing became a colourful, symmetrical cat!")
     :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
      :"The whole picture is complete. Every mistake you corrected was part of the learning.";
-  if(cat&&animate)playCatReveal();
+  if(animate){
+    if(cat)playCatReveal();
+    else playMushroomReveal();
+  }else{
+    // Reloaded/completed games show the entire finished illustration.
+    revealAllDetails();
+  }
   window.scrollTo({top:0,behavior:"instant"});
 }
 function restart(){
@@ -562,7 +573,7 @@ $("playAgain").onclick=()=>{
  store();start();
 };
 $("downloadArt").onclick=saveArt;
-$("replayReveal").onclick=playCatReveal;
+$("replayReveal").onclick=()=>state.activeLevel==="mirror"?playCatReveal():playMushroomReveal();
 $("helpButton").onclick=()=>$("helpDialog").showModal();
 $("closeHelp").onclick=()=>$("helpDialog").close();
 $("doneHelp").onclick=()=>$("helpDialog").close();
