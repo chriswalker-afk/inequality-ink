@@ -4,148 +4,101 @@ import {readFileSync,existsSync} from "node:fs";
 import {fileURLToPath} from "node:url";
 import {dirname,join} from "node:path";
 const root=dirname(fileURLToPath(import.meta.url));
-const read=filename=>readFileSync(join(root,filename),"utf8");
-const html=read("index.html"),script=read("app.mjs"),css=read("styles.css");
+const load=path=>readFileSync(join(root,path),"utf8");
+const html=load("index.html"),app=load("app.mjs"),css=load("styles.css");
+const engine=load("picture-engine.mjs"),definitions=load("pictures.mjs");
+const getSection=(start,end)=>app.slice(app.indexOf(start),app.indexOf(end,app.indexOf(start)));
 
-test("all DOM elements addressed by the game exist and have unique IDs",()=>{
+test("Every referenced element exists, with no duplicate HTML IDs",()=>{
  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
- assert.equal(new Set(ids).size,ids.length,"Duplicate HTML IDs");
- for(const [,id] of script.matchAll(/\$\("([^"]+)"\)/g)){
-   assert.ok(ids.includes(id),"Missing DOM element: "+id);
+ assert.equal(new Set(ids).size,ids.length);
+ for(const [,id] of app.matchAll(/\$\("([^"]+)"\)/g))
+   assert.ok(ids.includes(id),"Missing HTML element: "+id);
+ for(const id of ["picturePicker","picturePickerStatus","pictureSummary",
+   "introPixelArt","pixelCanvas","finishedArt","catFlipStage","catFlipLeft",
+   "catFlipRight","replayReveal","progressMarkers"]){
+   assert.ok(ids.includes(id));
  }
 });
-test("all four difficulty choices have accessible, wired controls",()=>{
- for(const id of ["mirror","full","solve","mixed"]){
-   assert.ok(html.includes('data-level="'+id+'"'));
- }
- assert.ok(script.includes('addEventListener("click",()=>selectLevel('));
- for(const id of ["changeLevelButton","chooseLevelButton","directionChooser",
-                  "introGridSize","pixelCanvas"]){
-   assert.ok(html.includes('id="'+id+'"'));
- }
- assert.ok(html.includes('aria-pressed="true"'));
+test("All four modes offer a picture selector and picture-specific save keys",()=>{
+ for(const level of ["mirror","full","solve","mixed"])
+   assert.ok(html.includes('data-level="'+level+'"'));
+ assert.ok(html.includes('role="group" aria-label="Choose a mystery picture"'));
+ assert.ok(app.includes('function renderPicturePicker(){'));
+ assert.ok(app.includes('picturesForLevel(state.activeLevel)'));
+ assert.ok(app.includes('state.selectedPictures[state.activeLevel]=id'));
+ assert.ok(app.includes('const progressKey=(level,pictureId)=>level+":"+pictureId;'));
+ assert.ok(app.includes('state.progress[activeKey()]=blank()'));
+ assert.ok(app.includes('state.progress[key]=safeProgress(current.progress[key],picture)'));
+ assert.ok(app.includes('state.progress[progressKey(level,picture.id)]=safeProgress(old,picture)'));
+ assert.ok(app.includes('const KEY="inequality-ink-v5"'));
 });
-test("static site needs no build process or remote assets",()=>{
- for(const path of ["index.html","styles.css","model.mjs","app.mjs","model.test.mjs"]){
-   assert.ok(existsSync(join(root,path)),path+" is missing");
+test("Changing picture never changes the student's chosen mathematical mode",()=>{
+ const select=getSection("function selectPicture(id){","function renderPicturePicker(){");
+ assert.ok(select.includes('state.selectedPictures[state.activeLevel]=id'));
+ assert.ok(select.includes('syncProgress()'));
+ assert.ok(!select.includes('state.activeLevel='));
+ assert.ok(app.includes('defaultPictureForLevel(level).id'));
+ assert.ok(app.includes('picture.mystery'));
+});
+test("The picture renderer and question generator do not use hardcoded cats or mushrooms",()=>{
+ assert.ok(app.includes('from "./picture-engine.mjs"'));
+ assert.ok(app.includes('validatePictureLibrary()'));
+ const draw=getSection('function sprite(', 'sprite($("introPixelArt"),{intro:true});');
+ assert.ok(draw.includes('pictureWidth(picture)'));
+ assert.ok(draw.includes('picturePixelAt(picture,x,y)'));
+ assert.ok(draw.includes('makePictureQuestion(picture,i,save.replay,state.activeLevel)'));
+ assert.ok(draw.includes('picturePaintedValues(picture,task)'));
+ assert.ok(draw.includes('pictureColourAt(picture,x,y)'));
+ assert.ok(!draw.includes('catPixelAt('));
+ assert.ok(!draw.includes('mushroomRows'));
+ assert.ok(app.includes('makePictureQuestion(picture,save.done,save.replay,state.activeLevel)'));
+ assert.ok(app.includes('questionCount(activePicture())'));
+});
+test("Standard number lines retain correct endpoints without artwork hints",()=>{
+ const line=getSection('function renderLine(svg,interval,readonly=false){','function nearest(ev,svg){');
+ assert.ok(line.includes('const {min,max}=visibleAxis()'));
+ assert.ok(app.includes('const visibleAxis=()=>pictureAxis(activePicture())'));
+ for(const forbidden of ["RIGHT HALF FOR PIXELS","LEFT HALF FOR PIXELS",
+   "mirrorNotice","mirrorExplainer","mirrorSideLabel","mirrorMathNote"]){
+   assert.ok(!html.includes(forbidden));
  }
- assert.ok(html.includes('src="./app.mjs"'));
+ assert.ok(!line.includes("picturePaintedValues"));
+});
+test("Half pictures flip only at the end, then the colour and character details appear",()=>{
+ const flipping=getSection("function playMirrorReveal(){","function finish({animate=false}");
+ const stepA=flipping.indexOf('stage.classList.add("is-flipping")');
+ const stepB=flipping.indexOf('stage.classList.add("is-revealed")');
+ const stepC=flipping.indexOf('shell.classList.add("is-colouring")');
+ const stepD=flipping.indexOf('scheduleDetailReveal(picture,');
+ assert.ok(stepA>=0&&stepB>stepA&&stepC>stepB&&stepD>stepC);
+ assert.ok(flipping.includes("drawHalfPanel"));
+ assert.ok(flipping.includes('fullPictureWidth(picture)+" / "+pictureHeight(picture)'));
+ assert.ok(flipping.includes('window.matchMedia?.("(prefers-reduced-motion: reduce)")'));
+ assert.ok(css.includes("@keyframes cat-unfold"));
+});
+test("All picture variants have full-colour backgrounds, finishing details and PNG export",()=>{
+ const render=getSection("function renderFinishedArt(){","function revealComplete(){");
+ assert.ok(render.includes('fullPictureWidth(picture)'));
+ assert.ok(render.includes('pictureColourAt(picture,x,y,{full:true})'));
+ assert.ok(render.includes('pictureBackgroundAt(picture,x,y)'));
+ assert.ok(render.includes('appendFinalDetails(svg,picture)'));
+ assert.ok(app.includes('pictureDetailStages(picture)'));
+ assert.ok(app.includes('pictureFinalDetails(picture)'));
+ assert.ok(app.includes('scheduleDetailReveal(picture,'));
+ assert.ok(app.includes('link.download="inequality-ink-"+picture.id+".png"'));
+ assert.ok(app.includes('sprite.setAttribute("height",height*scale)'));
+ assert.ok(css.includes('[data-detail-stage]'));
+});
+test("Site remains dependency-free and keyboard/mobile friendly",()=>{
+ for(const path of ["model.mjs","picture-engine.mjs","pictures.mjs",
+   "app.mjs","styles.css","index.html","picture-engine.test.mjs"]){
+   assert.ok(existsSync(join(root,path)),"Missing "+path);
+ }
+ assert.ok(html.includes('type="module" src="./app.mjs"'));
  assert.ok(html.includes('href="./styles.css"'));
- assert.ok(script.includes('from "./model.mjs"'));
-});
-test("the CSS includes a clear reflection animation and reduced motion option",()=>{
- assert.ok(css.includes(".ink-new-primary"));
- assert.ok(css.includes(".ink-new-reflection"));
- assert.ok(css.includes("prefers-reduced-motion:reduce"));
-});
-
-test("Cat Cameo uses a half-width canvas until every question is completed",()=>{
-  assert.ok(script.includes('const cat=state.activeLevel==="mirror",width=cat?CAT_HALF_WIDTH:WIDTH'));
-  assert.ok(script.includes('const active=cat?catHalfPixelAt(x,y):pixelAt(x,y)'));
-  assert.ok(script.includes('paintedColumns(solvedQuestion)'));
-  assert.ok(script.includes('const columns=paintedColumns(solvedQuestion).map(v=>cat?v-CAT_WINDOW.min:v-COLUMN_MIN)'));
-  assert.ok(script.includes('if(!cat&&!intro&&!colour&&q?.artMode==="mirror")'),
-    "The mixed-mode row reflection must not also reflect Cat Cameo rows");
-  assert.ok(html.includes('id="introGridSize"'));
-  assert.ok(!html.includes('id="mirrorMathNote"'));
-});
-test("finale unfolds first, displays a complete monochrome cat, then applies colour",()=>{
-  const start=script.indexOf('function playCatReveal(){');
-  const end=script.indexOf('function finish({animate=false}',start);
-  assert.ok(start>0&&end>start);
-  const reveal=script.slice(start,end);
-  const flips=reveal.indexOf('stage.classList.add("is-flipping")');
-  const completeMono=reveal.indexOf('stage.classList.add("is-revealed")');
-  const colours=reveal.indexOf('shell.classList.add("is-colouring")');
-  assert.ok(flips>0 && completeMono>flips && colours>completeMono);
-  assert.ok(reveal.includes('drawCatPanel($("catFlipLeft"),true)'));
-  assert.ok(reveal.includes('drawCatPanel($("catFlipRight"),false)'));
-  assert.ok(script.includes('save.done===14)finish({animate:true})'));
-  assert.ok(script.includes('catPixelAt(x,y)'));
-  assert.ok(script.includes('catColourAt(x,y)'));
-  for(const id of ['catFlipStage','catFlipLeft','catFlipRight','catFlipStatus',
-                   'finishedArt','finishedArtShell','replayReveal']){
-    assert.ok(html.includes('id="'+id+'"'));
-  }
-  assert.ok(css.includes('@keyframes cat-unfold'));
-  assert.ok(css.includes('.is-colouring #finishedArt'));
-  assert.ok(css.includes('prefers-reduced-motion:reduce'));
-});
-test("migrating to a new half-cat only resets old Mirror Mode progress",()=>{
-  assert.ok(script.includes('const KEY="inequality-ink-v4"'));
-  assert.ok(script.includes('if(!current && id==="mirror")continue;'));
-  assert.ok(script.includes('state.progress[id]={...blank(),...p}'));
-});
-
-test("ordinary number lines contain no labels about pixel transfer",()=>{
- for(const forbidden of [
-   "RIGHT HALF FOR PIXELS","LEFT HALF FOR PIXELS","RIGHT HALF FIRST",
-   "only the highlighted half","the eight visible canvas columns",
-   "The canvas edge silently limits","mirrorNotice","mirrorExplainer",
-   "mirrorSideLabel","mirrorMathNote"
- ]){
-   assert.ok(!html.includes(forbidden),"Unexpected student-facing instruction: "+forbidden);
- }
- const renderer=script.slice(script.indexOf("function renderLine("),
-   script.indexOf('function nearest(ev,svg){'));
- assert.ok(renderer.includes('const {min,max}=visibleAxis()'));
- assert.ok(!renderer.includes('HALF FOR PIXELS'));
- assert.ok(!renderer.includes('RIGHT HALF'));
- assert.ok(!renderer.includes('mirrorSide'));
- assert.ok(script.includes('state.activeLevel==="mirror"?CAT_WINDOW:{min:AXIS_MIN,max:AXIS_MAX}'));
- assert.ok(script.includes('const columns=paintedColumns(solvedQuestion).map(v=>cat?v-CAT_WINDOW.min:v-COLUMN_MIN)'));
-});
-test("half artwork has exactly 10 columns, with 20 columns at full reveal",()=>{
- assert.ok(html.includes('id="introGridSize">10 × 16'));
- assert.ok(html.includes('viewBox="0 0 10 16"'));
- assert.ok(html.includes('viewBox="0 0 20 16"'));
- assert.ok(script.includes('svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT)'));
- assert.ok(script.includes('for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++)'));
-});
-test("the picture name is held back until the end of the flip reveal",()=>{
- const reveal=script.slice(script.indexOf('function playCatReveal(){'),
-   script.indexOf('function finish({animate=false}',script.indexOf('function playCatReveal(){')));
- assert.ok(reveal.lastIndexOf('$("finishTitle").textContent="Cat Cameo!"')>
-   reveal.indexOf('shell.classList.add("is-colouring")'),
-   "Animated reveal must not name the picture before the colour stage");
- assert.ok(html.includes('id="playTitle">Mystery Picture'));
- assert.ok(!html.includes('RIGHT HALF FOR PIXELS'));
-});
-
-
-test("finishing details never appear in the question canvas or before the colour stage",()=>{
-  const inGame=script.slice(script.indexOf("function sprite("),script.indexOf('sprite($("introPixelArt"),{intro:true});'));
-  assert.ok(!inGame.includes("appendFinalDetails"));
-  assert.ok(!inGame.includes("revealAllDetails"));
-  const finish=script.slice(script.indexOf("function renderFinishedArt(){"),
-    script.indexOf("function playCatReveal(){"));
-  assert.ok(finish.includes("appendFinalDetails(svg,cat?"));
-  const catReveal=script.slice(script.indexOf("function playCatReveal(){"),
-    script.indexOf("function finish({animate=false}",script.indexOf("function playCatReveal(){")));
-  assert.ok(catReveal.indexOf('shell.classList.add("is-colouring")')<
-    catReveal.indexOf('scheduleDetailReveal("cat"'),
-    "Details should begin after the full-colour cat is visible");
-  const mushroom=script.slice(script.indexOf("function playMushroomReveal(){"),
-    script.indexOf("function playCatReveal(){"));
-  assert.ok(mushroom.includes('scheduleDetailReveal("mushroom"'));
-  assert.ok(script.includes('revealAllDetails()'),
-    "Returning to finished pictures and reduced-motion finishes must include details");
-});
-test("only completed images receive their symmetric pastel backgrounds",()=>{
-  assert.ok(script.includes('colour?finishedBackgroundAt(cat?"cat":"mushroom",x,y)'),
-    "Mushroom background should only appear in finished-colour rendering");
-  assert.ok(script.includes('fill:filled?catColourAt(x,y):finishedBackgroundAt("cat",x,y)'),
-    "Cat background should be painted around, not over, its final silhouette");
-  assert.ok(!html.includes("finishedBackgroundAt"),
-    "Do not reveal internal background mechanics in student instructions");
-});
-test("both completion screens and downloaded PNGs include backgrounds and facial details",()=>{
-  assert.ok(script.includes('sprite.querySelectorAll("[data-detail-stage]").forEach('));
-  assert.ok(script.includes('group.setAttribute("opacity","1")'));
-  assert.ok(script.includes('canvas.width=width*scale;canvas.height=HEIGHT*scale'));
-  assert.ok(script.includes('sprite.setAttribute("height",HEIGHT*scale)'));
-  assert.ok(script.includes('sprite.setAttribute("width",width*scale)'));
-  assert.ok(html.includes('id="replayReveal"'));
-  assert.ok(html.includes("Replay the reveal"));
-  assert.ok(css.includes('[data-detail-stage]'));
+ assert.ok(css.includes('max-width:740px')||css.includes('max-width:740px'));
+ assert.ok(css.includes('.picture-picker'));
+ assert.ok(css.includes('prefers-reduced-motion:reduce'));
+ assert.ok(app.includes('tick.addEventListener("keydown"'));
 });

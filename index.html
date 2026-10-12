@@ -53,11 +53,18 @@
             </button>
           </div>
           <p id="levelDescription" class="level-description">Represent one-sided inequalities to complete a mystery picture.</p>
+          <div class="picture-picker-shell">
+            <div class="picture-picker-heading">
+              <span class="eyebrow">CHOOSE A MYSTERY</span>
+              <span id="picturePickerStatus" aria-live="polite">2 pictures available</span>
+            </div>
+            <div id="picturePicker" class="picture-picker" role="group" aria-label="Choose a mystery picture"></div>
+          </div>
           <div class="intro-buttons">
             <button type="button" class="button button-primary button-large" id="startButton">Start drawing <span aria-hidden="true">↗</span></button>
             <button type="button" class="button button-light" id="skipTutorialButton">Skip the practice</button>
           </div>
-          <p class="tiny-copy">14 picture rows • About 15–20 minutes • No login needed</p>
+          <p class="tiny-copy" id="pictureSummary">14 picture rows • About 15–20 minutes • No login needed</p>
         </div>
         <div class="intro-art" aria-hidden="true">
           <div class="sticker sticker-top">mystery<br>picture!</div>
@@ -78,7 +85,7 @@
             <p id="playSubtitle" class="subhead">Build your picture one inequality at a time.</p>
           </div>
           <div class="play-heading-actions">
-            <button type="button" class="button button-light reset-button" id="changeLevelButton">↔ Change level</button>
+            <button type="button" class="button button-light reset-button" id="changeLevelButton">↔ Change picture or level</button>
             <button type="button" class="button button-light reset-button" id="restartButton">↺ Start over</button>
           </div>
         </div>

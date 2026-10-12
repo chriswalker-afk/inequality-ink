@@ -1,79 +1,101 @@
 # Inequality Ink
 
-A self-contained maths game for **Pearson Edexcel International GCSE Mathematics A (4MA1), Foundation Tier**. Students read, represent, and solve inequalities to create continuous pixel artwork.
+A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundation Mathematics**. Students read, represent and solve exact real-number inequalities; the correct answers construct a mystery picture, which gains a background, colours and finishing details on completion.
 
-**Live game:** https://chriswalker-afk.github.io/inequality-ink/
+**Live site:** https://chriswalker-afk.github.io/inequality-ink/
 
-## The new Mirror Mode
+## Choose a difficulty and a mystery picture
 
-Mirror Mode now keeps the mathematical interaction entirely ordinary. Students only see a conventional, correctly labelled number line and a question, such as **x < 3**. They are not told which pixels are generated, which part of a number line is sampled, or how the sprite is constructed.
-
-Behind the scenes, a picture has a **number-line window**. For the first mystery picture, that window is **−5 to 5**. Each integer column from **−5 to 4** corresponds to one pixel in the half-image, so this gives **10 possible pixel columns**. For **x < 3**, the engine shades exactly the eight integer-labelled columns **−5, −4, −3, −2, −1, 0, 1, 2**. The student's answer remains an actual unbounded ray, not a bounded inequality.
-
-The width of another picture can be chosen through its own window: for example, a window of **−3 to 3** yields six columns. The reusable `pixelsInWindow(interval,window)` function implements this without changing the rules of mathematics or modifying the UI for individual questions.
-
-Open/closed circles are still marked as real inequalities: `x < 3` and `x ≤ 2` produce the same integer pixels but are **not** equivalent solutions, and only the assigned correct answer is accepted.
-
-### The final reveal
-
-During all 14 questions, students produce **only one half** of a mystery picture. When the final row is correct:
-
-1. The complete half-picture is shown in monochrome.
-2. A reflected copy folds open about a **vertical axis**.
-3. The complete symmetric picture is shown in monochrome.
-4. The full picture fades into colour, with a softly coloured pixel-art background.
-5. The finishing details appear in stages: pink inner ears, eyes, nose and whiskers for the cat.
-
-The finished first Mirror Mode picture is the symmetrical **Cat Cameo**, **20 × 16** pixels. Its name and colourful details are withheld until the final reveal. The background is soft blue and the decorative details appear **only after the base artwork has been reflected and coloured**. There is a reveal-replay button, a PNG download and a reduced-motion alternative.
-
-### Other difficulty modes
-
-| Level | Mathematics | Artwork |
+| Difficulty | Mathematics | Pictures included |
 | --- | --- | --- |
-| **Mirror Mode** | Genuine one-sided inequalities, first reading then drawing | Ten-column half-picture; final reflection only |
-| **Full Picture** | Reading and drawing double-ended inequalities | The original mushroom |
-| **Solve & Paint** | Solve compound linear inequalities before representing them | The original mushroom |
-| **Mixed Challenge** | One-sided and double-ended questions, including algebra | The original mushroom |
+| **Mirror Mode** | One-sided inequalities. Each correct ray paints one row of a half-image. The completed half-image unfolds across a vertical axis at the end. | Mystery 01: **Cat Cameo** (10-column half-picture); Mystery 02: **Heart Glow** (8-column half-picture) |
+| **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | Mystery 01: **Mushroom Mystery**; Mystery 02: **Rocket Launch** |
+| **Solve & Paint** | Solve compound inequalities (including reversing signs with negative coefficients), then draw the exact interval. | Both full pictures |
+| **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | Both full pictures |
 
-For **Full Picture**, **Solve & Paint** and **Mixed Challenge**, the mushroom retains its existing mathematical silhouette. Its completed picture gets a soft green background, followed by cap spots and a little face (eyes and a smile).
+The picture selector intentionally says *Mystery 01* or *Mystery 02* until a picture is completed. Each picture and difficulty has **independently saved progress**. Students can switch to a different picture and return without losing their previous work.
 
-The other three levels and their saved progress are preserved. Progress from the previous Mirror Mode was reset when its picture and number-line window changed; this decorative update does **not** reset progress.
+## Reusable picture engine
 
-## The engineering model
+The game no longer needs a separate question-writing routine or illustration renderer for each picture.
 
-- `CAT_WINDOW={min:-5,max:5}` defines the visible number-line limits and the ten integer-labelled pixel positions.
-- `pixelsInWindow(interval,window)` samples integer-labelled positions strictly inside `[min,max)` that satisfy the complete real-number inequality.
-- The authored sprite `CAT_HALF_ROWS` is stored in zero-based half-image indices but its question generator converts positions into true real inequalities using `CAT_WINDOW.min`.
-- Each row is a contiguous cropped ray; the ten-column half-image is four-connected. Reflecting it produces the continuous, symmetric 20-column full image, with all colour pixels inside the mathematical outline.
-- The student's number line displays ticks only from **−5 to 5**, with a standard open or filled endpoint and one correct ray. No extra endpoints, half-line highlights or pixel mapping explanations appear.
-- All drawing controls (clickable number-line ticks, draggable endpoint, numeric steppers, circle and direction selectors) use the visible window.
-- `localStorage` saves progress separately for each difficulty. No student accounts or server backend.
-- Base silhouette, base colour, coloured background and character details are separate layers. Background colours only appear in completed artwork, and details are only revealed once colour is visible. They do **not** change which pixels are shaded by any inequality.
-- `finalDetailsFor(artwork)` supplies mirrored, validated character details; `finishedBackgroundAt(artwork,x,y)` supplies symmetric, softly shaded backgrounds. Both layers are included in saved PNGs, including if the student saves while the animation is running.
-- Reduced-motion settings show the completed artwork with all details immediately. Replaying the reveal restarts the colour/details sequence without losing the finished picture.
+- **`model.mjs`** — *pure mathematics*: correct inequality membership, exact marking, formatting, linear algebra and tutorial questions. No artwork data.
+- **`pictures.mjs`** — the **declarative picture library**: names, permitted difficulties, number-line windows, row silhouettes, palettes, background and finishing details.
+- **`picture-engine.mjs`** — reusable picture-independent mathematical engine: question creation, replay variants, integer-column sampling, mirror symmetry, colouring, connectivity and content validation.
+- **`app.mjs`** — one shared browser interface for selecting, playing, saving and revealing any picture.
+- **`styles.css`**, **`index.html`** — responsive UI and reveal animations.
+- **`picture-engine.test.mjs`**, **`model.test.mjs`**, **`static.test.mjs`** — regression tests, run by GitHub Actions.
 
-## Running and testing
+Picture-specific artistic data is kept in `pictures.mjs`. Adding another picture no longer means modifying the marking code or duplicating the reveal animation.
 
-This is a zero-dependency static website. Serve the files over HTTP:
+### What is mathematically supported?
+
+**Mirror Mode** requires that each occupied half-row can be represented by a genuine one-sided ray (`x < k`, `x ≥ k`, etc.). A visible window is used only to sample pixels. For example, with window `[-5,5]`, **`x < 3`** paints integer-labelled columns **−5 through 2** without altering the unbounded mathematical inequality. Each half-row must touch one canvas edge. Reflected silhouettes must be four-connected.
+
+**Full Picture** requires a single uninterrupted block of integer-labelled pixels per row. The engine converts the endpoints into correctly included/excluded real interval boundaries, then can generate reading or drawing questions.
+
+**Solve & Paint** uses the same pictured intervals but applies positive and negative linear transformations to generate compound inequalities that students solve and represent.
+
+**Mixed Challenge** also requires the full silhouette to be symmetric about its vertical midpoint, so some rows can be generated from one-sided rays and correctly reflected.
+
+The validator rejects invalid shapes, disconnected images, invalid row bounds, forbidden modes, offscreen endpoints, ambiguous reading options, invalid colours, unsymmetrical finishing details or question variants that paint the wrong columns. It checks every available mode against every authored row across replay variants.
+
+### Colour and completion
+
+The mathematical silhouette is drawn in monochrome. When all its rows are completed, the final picture is rendered with its picture-specific background and base colours; the character's spots, eyes, ears, portholes or other details appear in stages. Mirror Mode first unfolds a mirrored half-image before the colour/detail reveal. Reduced-motion preferences are respected.
+
+Finished pictures can be saved as PNG files with their full colour, backdrop and details.
+
+## Add a new picture
+
+See **[PICTURE_GUIDE.md](PICTURE_GUIDE.md)** for the full schema and creation checklist.
+
+A new puzzle is a single additional object in the `PICTURE_DEFINITIONS` array in `pictures.mjs` containing:
+
+```js
+{
+  id: "a-unique-id",
+  name: "Secret final picture name",
+  mystery: "Mystery 03",
+  family: "half",                   // or "full"
+  levels: ["mirror"],               // full pictures: ["full","solve","mixed"]
+  window: {min: -4, max: 4},       // pixel columns are -4 to 3
+  height: 16,
+  rows: [
+    // one [firstPixel,lastPixel] pair for every active row, top-to-bottom
+  ],
+  palette: {base:"#f08ba6", edge:"#9c4469"},
+  background: {
+    base:"#f5e6f8",light:"#fff0fa",shade:"#ebd3f2",sparkle:"#fffde6"
+  },
+  detailStages:["sparkles"],
+  details:[[2,3,"#ffeac0","sparkles"]]
+}
+```
+
+Once validated, the picture appears automatically under its permitted difficulty levels and gets its own saved progress. **This is an authoring-by-data workflow**; a graphical picture-import/editor interface is not part of this release.
+
+## Running locally and testing
+
+Zero-dependency ES modules: no build process, accounts or external API required.
 
 ```bash
 python3 -m http.server 8000
+# Open http://localhost:8000
 ```
 
-Open http://localhost:8000/.
-
-Run automated tests with Node.js 20+:
+Test with Node.js 22:
 
 ```bash
 node --test *.test.mjs
 node --check app.mjs
+node --check picture-engine.mjs
+node --check pictures.mjs
 node --check model.mjs
 ```
 
-GitHub Actions runs the mathematical checks on pushes and pull requests. Tests include the exact requested `x < 3` example, both strict and non-strict half-lines, configurable windows, all generated replay questions, the connected half-sprite and full-colour reflection, validation of every symmetric finishing detail/background pixel, and student-facing UI checks.
+GitHub Actions executes these automatically on pushes and pull requests. Deploy as a static site with **Settings → Pages → Deploy from a branch → main → /(root)**.
 
-## Publishing
+### Student privacy
 
-Set **GitHub Settings → Pages → Deploy from a branch → main → /(root)** to publish the site.
-
-Progress is local to the browser and is not transmitted to a server.
+Only picture/difficulty progress and local scores are retained, using the browser's `localStorage`. Existing progress from the previous single-picture version is migrated to its corresponding original picture. No student accounts, work submissions, analytics or backend are used.

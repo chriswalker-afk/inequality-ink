@@ -1,101 +1,149 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,finishedBackgroundAt,finalDetailsFor,detailStagesFor,validatePuzzle} from "./model.mjs";
-validatePuzzle();
+import {LEVELS,LEVEL_IDS,tutorialFor,identicalSolution,formatInterval,fmt} from "./model.mjs";
+import {
+ PICTURE_LIBRARY,pictureById,picturesForLevel,defaultPictureForLevel,
+ pictureWidth,fullPictureWidth,pictureHeight,questionCount,pictureAxis,
+ makePictureQuestion,picturePaintedValues,picturePixelAt,pictureColourAt,
+ pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
+} from "./picture-engine.mjs";
+validatePictureLibrary();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
-const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
+const KEY="inequality-ink-v5", PREVIOUS_KEY="inequality-ink-v4";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false});
-const defaults=()=>({activeLevel:"mirror",progress:Object.fromEntries(LEVEL_IDS.map(id=>[id,blank()]))});
+const defaultSelection=()=>Object.fromEntries(LEVEL_IDS.map(level=>[level,defaultPictureForLevel(level).id]));
+const defaults=()=>({activeLevel:"mirror",selectedPictures:defaultSelection(),progress:{}});
+const progressKey=(level,pictureId)=>level+":"+pictureId;
 let state=defaults();
+function safeProgress(raw,picture){
+ if(!raw||typeof raw!=="object"||!Number.isInteger(raw.done)||raw.done<0||
+   raw.done>questionCount(picture)||!Number.isInteger(raw.tutorial)||
+   raw.tutorial<0||raw.tutorial>2)return blank();
+ return {...blank(),...raw,completed:raw.completed===true||raw.done===questionCount(picture)};
+}
 try{
-  const current=JSON.parse(localStorage.getItem(KEY));
-  const previous=current||JSON.parse(localStorage.getItem(PREVIOUS_KEY))||JSON.parse(localStorage.getItem("inequality-ink-v2"));
-  if(previous && LEVELS[previous.activeLevel] && previous.progress && typeof previous.progress==="object"){
-    state.activeLevel=previous.activeLevel;
-    for(const id of LEVEL_IDS){
-      // The Mirror Mode art and number-line window have changed.
-      // Reset only the previous Mirror Mode; retain the other three levels.
-      if(!current && id==="mirror")continue;
-      const p=previous.progress[id];
-      if(p && Number.isInteger(p.done) && p.done>=0 && p.done<=14 &&
-         Number.isInteger(p.tutorial) && p.tutorial>=0 && p.tutorial<=2){
-        state.progress[id]={...blank(),...p};
-      }
-    }
-  }else{
-    const legacy=JSON.parse(localStorage.getItem(LEGACY_KEY));
-    if(legacy && Number.isInteger(legacy.done) && legacy.done>=0 && legacy.done<=14)
-      state.progress.mixed={...blank(),...legacy};
-  }
+ const current=JSON.parse(localStorage.getItem(KEY));
+ if(current&&typeof current==="object"&&LEVELS[current.activeLevel]){
+   state.activeLevel=current.activeLevel;
+   for(const level of LEVEL_IDS){
+     const requested=current.selectedPictures?.[level];
+     if(picturesForLevel(level).some(p=>p.id===requested))state.selectedPictures[level]=requested;
+   }
+   if(current.progress&&typeof current.progress==="object"){
+     for(const level of LEVEL_IDS)for(const picture of picturesForLevel(level)){
+       const key=progressKey(level,picture.id);
+       if(current.progress[key])state.progress[key]=safeProgress(current.progress[key],picture);
+     }
+   }
+ }else{
+   const previous=JSON.parse(localStorage.getItem(PREVIOUS_KEY))||
+     JSON.parse(localStorage.getItem("inequality-ink-v3"))||
+     JSON.parse(localStorage.getItem("inequality-ink-v2"));
+   if(previous&&typeof previous==="object"&&LEVELS[previous.activeLevel]&&previous.progress){
+     state.activeLevel=previous.activeLevel;
+     for(const level of LEVEL_IDS){
+       const picture=defaultPictureForLevel(level),old=previous.progress[level];
+       if(old)state.progress[progressKey(level,picture.id)]=safeProgress(old,picture);
+     }
+   }else{
+     const legacy=JSON.parse(localStorage.getItem("inequality-ink-v1"));
+     if(legacy&&typeof legacy==="object")
+       state.progress[progressKey("mixed",defaultPictureForLevel("mixed").id)]=
+         safeProgress(legacy,defaultPictureForLevel("mixed"));
+   }
+ }
 }catch{}
-let save=state.progress[state.activeLevel];
+const activePicture=()=>pictureById(state.selectedPictures[state.activeLevel]);
+const activeKey=()=>progressKey(state.activeLevel,activePicture().id);
+let save=state.progress[activeKey()]||(state.progress[activeKey()]=blank());
+const syncProgress=()=>{
+ const key=activeKey();
+ save=state.progress[key]||(state.progress[key]=blank());
+};
 const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let screen="intro", q=null, draft=null, selected="left", chosen=null, locked=false, hintsShown=0, attempts=0, assisted=false, drag=false;
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
 function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
-  svg.replaceChildren();
-  const cat=state.activeLevel==="mirror",width=cat?CAT_HALF_WIDTH:WIDTH;
-  svg.setAttribute("viewBox","0 0 "+width+" "+HEIGHT);
-  svg.classList.toggle("half-canvas",cat);
-  svg.setAttribute("aria-label",cat
-    ?"A picture in progress. Each correct inequality adds one row."
-    :"A sixteen by sixteen full pixel-art canvas.");
-  const drawn=new Map();
-  if(!intro){
-    for(let i=0;i<completed;i++){
-      const solvedQuestion=makeQuestion(i,save.replay,state.activeLevel);
-      if(!solvedQuestion)continue;
-      const columns=paintedColumns(solvedQuestion).map(v=>cat?v-CAT_WINDOW.min:v-COLUMN_MIN);
-      drawn.set(solvedQuestion.row,new Set(columns));
-    }
-  }
-  const newRow=animate&&q?.row;
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<width;x++){
-    const active=cat?catHalfPixelAt(x,y):pixelAt(x,y);
-    const solved=intro?active&&y>=7:active&&(colour||(drawn.get(y)?.has(x)??false));
-    const fill=solved?(colour?(cat?catColourAt(x+CAT_HALF_WIDTH,y):colourAt(x,y)):"#64738e")
-      :colour?finishedBackgroundAt(cat?"cat":"mushroom",x,y)
-      :(intro&&active?"#d0d6dd":"#e9e5df");
-    const attrs={x,y,width:1,height:1,fill,
-      stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
-    if(animate&&solved&&y===newRow&&!colour)
-      attrs.class=cat?"ink-new-primary":q.artMode==="mirror"
-        ?((q.mirrorSide==="right"?x>=WIDTH/2:x<WIDTH/2)?"ink-new-primary":"ink-new-reflection")
-        :"ink-new-full";
-    mk("rect",attrs,svg);
-  }
-  // The existing Mixed Challenge retains its original reflective row style.
-  if(!cat&&!intro&&!colour&&q?.artMode==="mirror"){
-    mk("line",{x1:WIDTH/2,x2:WIDTH/2,y1:0,y2:HEIGHT,stroke:"#6ca69b",
-      "stroke-width":.13,"stroke-dasharray":".32 .25",opacity:.95},svg);
-  }
+ const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
+ const half=picture.family==="half";
+ svg.replaceChildren();
+ svg.setAttribute("viewBox","0 0 "+width+" "+height);
+ svg.classList.toggle("half-canvas",half);
+ svg.setAttribute("aria-label","A mystery picture in progress. Each correct inequality adds a row.");
+ const filledRows=new Map();
+ if(!intro)for(let i=0;i<completed;i++){
+   const task=makePictureQuestion(picture,i,save.replay,state.activeLevel);
+   const columns=picturePaintedValues(picture,task)
+     .map(value=>value-picture.window.min);
+   filledRows.set(task.row,new Set(columns));
+ }
+ const activeRow=animate&&q?.row;
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const inside=picturePixelAt(picture,x,y);
+   const painted=intro?inside&&y>=Math.floor(height/2):
+      inside&&(colour||(filledRows.get(y)?.has(x)??false));
+   const fill=painted?(colour?pictureColourAt(picture,x,y):"#64738e"):
+      colour?pictureBackgroundAt(picture,x,y,{full:false}):
+      intro&&inside?"#d0d6dd":"#e9e5df";
+   const attrs={x,y,width:1,height:1,fill,
+     stroke:colour&&painted?"none":"#f7f3ed","stroke-width":0.035};
+   if(animate&&painted&&y===activeRow&&!colour){
+     attrs.class=q.artMode==="mirror"?
+        ((q.mirrorSide==="right"?x>=width/2:x<width/2)?
+          "ink-new-primary":"ink-new-reflection"):
+        half?"ink-new-primary":"ink-new-full";
+   }
+   mk("rect",attrs,svg);
+ }
+ // In Mixed Challenge only, a reflected answer can construct both sides
+ // of a row. No student-facing number-line pixel hints are added.
+ if(!half&&!intro&&!colour&&q?.artMode==="mirror"){
+   mk("line",{x1:width/2,x2:width/2,y1:0,y2:height,
+     stroke:"#6ca69b","stroke-width":.13,
+     "stroke-dasharray":".32 .25",opacity:.95},svg);
+ }
 }
 sprite($("introPixelArt"),{intro:true});
 function initProgress({animate=false}={}){
+ const total=questionCount(activePicture());
  $("progressMarkers").replaceChildren();
- for(let n=0;n<14;n++){const el=document.createElement("span");if(n<save.done)el.classList.add("done");$("progressMarkers").append(el);}
- $("progressText").textContent=save.done+" of 14";
- $("canvasProgress").textContent=save.done+" / 14";
- $("progressFill").style.width=(save.done/14*100)+"%";
- $("phaseText").textContent=q?.mode==="read"?"READ THE LINE":q?.mode==="solve"?"SOLVE & DRAW":q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
- $("activeRowText").textContent=q?.mode==="tutorial"?"Practice — canvas unchanged":"Current row: "+q?.row;
- $("canvasProgress").setAttribute("aria-label",save.done+" of 14 picture rows finished");
+ for(let n=0;n<total;n++){
+   const el=document.createElement("span");
+   if(n<save.done)el.classList.add("done");
+   $("progressMarkers").append(el);
+ }
+ $("progressText").textContent=save.done+" of "+total;
+ $("canvasProgress").textContent=save.done+" / "+total;
+ $("progressFill").style.width=(save.done/total*100)+"%";
+ $("phaseText").textContent=q?.mode==="read"?"READ THE LINE":
+   q?.mode==="solve"?"SOLVE & DRAW":q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
+ $("activeRowText").textContent=q?.mode==="tutorial"?
+   "Practice — canvas unchanged":"Current row: "+q?.row;
+ $("canvasProgress").setAttribute("aria-label",
+   save.done+" of "+total+" picture rows finished");
  sprite($("pixelCanvas"),{completed:save.done,animate});
 }
 function question(){
- const practice=tutorialFor(state.activeLevel);
- const tutorial=!save.tutorialDone && save.tutorial<practice.length;
- q=tutorial?practice[save.tutorial]:makeQuestion(save.done,save.replay,state.activeLevel);
+ const picture=activePicture(),practice=tutorialFor(state.activeLevel);
+ const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
+ q=tutorial?practice[save.tutorial]:
+   makePictureQuestion(picture,save.done,save.replay,state.activeLevel);
  if(!q){finish();return;}
  attempts=0;hintsShown=0;assisted=false;chosen=null;locked=false;selected="left";
- // No prefilled direction or endpoints: the student must construct the solution.
- draft={direction:state.activeLevel==="mirror"?"right":"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
+ draft={direction:picture.family==="half"?"right":"between",
+   lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
  $("workingArea").value="";
  const {min,max}=visibleAxis();
- for(const side of ["left","right"]){$(side+"Value").min=min;$(side+"Value").max=max;}
- document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button").forEach(e=>e.disabled=false);
- document.querySelector('[data-direction="between"]').hidden=state.activeLevel==="mirror";
- $("questionStep").textContent=tutorial?"LET'S PRACTISE":("ROW "+(save.done+1)+" OF 14");
- $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
+ for(const side of ["left","right"]){
+   $(side+"Value").min=min;$(side+"Value").max=max;
+ }
+ document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button")
+   .forEach(el=>el.disabled=false);
+ document.querySelector('[data-direction="between"]').hidden=picture.family==="half";
+ $("questionStep").textContent=tutorial?"LET'S PRACTISE":
+   "ROW "+(save.done+1)+" OF "+questionCount(picture);
+ $("questionHeading").textContent=tutorial?"Learn the controls":
+   q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":
+   q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
  $("modeTag").textContent=tutorial?"TUTORIAL":q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
@@ -107,10 +155,10 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
- const cat=state.activeLevel==="mirror";
  $("canvasTip").textContent="✦ Keep solving inequalities to complete the mystery picture.";
- $("playEyebrow").textContent="MYSTERY 01 / "+LEVELS[state.activeLevel].name.toUpperCase();
- $("playTitle").firstChild.textContent=cat?"Mystery Picture":"Mushroom Mystery";
+ $("playEyebrow").textContent=picture.mystery.toUpperCase()+
+   " / "+LEVELS[state.activeLevel].name.toUpperCase();
+ $("playTitle").firstChild.textContent="Mystery Picture";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
  else setDraft(draft);
@@ -119,30 +167,77 @@ function question(){
 function selectLevel(level){
  if(!LEVELS[level])return;
  state.activeLevel=level;
- save=state.progress[level];
- store();updateLevelSelector();
+ if(!picturesForLevel(level).some(p=>p.id===state.selectedPictures[level])){
+   state.selectedPictures[level]=defaultPictureForLevel(level).id;
+ }
+ syncProgress();store();updateLevelSelector();
+}
+function selectPicture(id){
+ if(!picturesForLevel(state.activeLevel).some(p=>p.id===id))return;
+ state.selectedPictures[state.activeLevel]=id;
+ syncProgress();store();updateLevelSelector();
+}
+function renderPicturePicker(){
+ const picker=$("picturePicker"),pictures=picturesForLevel(state.activeLevel);
+ picker.replaceChildren();
+ $("picturePickerStatus").textContent=pictures.length+
+   (pictures.length===1?" picture available":" pictures available");
+ for(const [index,picture] of pictures.entries()){
+   const isSelected=activePicture().id===picture.id;
+   const p=state.progress[progressKey(state.activeLevel,picture.id)]||blank();
+   const card=document.createElement("button");
+   card.type="button";card.className="picture-option"+(isSelected?" selected":"");
+   card.setAttribute("aria-pressed",String(isSelected));
+   card.setAttribute("aria-label",picture.mystery+", "+
+     (p.completed?picture.name+" completed":p.done+" of "+questionCount(picture)+" rows finished"));
+   const icon=document.createElement("span");
+   icon.className="picture-option-icon";icon.setAttribute("aria-hidden","true");
+   icon.textContent=p.completed?"✦":"?";
+   const contents=document.createElement("span");contents.className="picture-option-copy";
+   const title=document.createElement("strong");
+   title.textContent=picture.mystery;
+   const caption=document.createElement("small");
+   caption.textContent=p.completed?picture.name+" — completed":
+     p.done?p.done+" / "+questionCount(picture)+" rows finished":
+     "A new mystery picture";
+   contents.append(title,caption);
+   const status=document.createElement("span");status.className="picture-option-status";
+   status.textContent=p.completed?"✓":isSelected?"●":"○";
+   card.append(icon,contents,status);
+   card.addEventListener("click",()=>selectPicture(picture.id));
+   picker.append(card);
+ }
 }
 function updateLevelSelector(){
- document.querySelectorAll("[data-level]").forEach(b=>{
-   const chosen=b.dataset.level===state.activeLevel;
-   b.classList.toggle("selected",chosen);
-   b.setAttribute("aria-pressed",String(chosen));
+ document.querySelectorAll("[data-level]").forEach(button=>{
+   const chosen=button.dataset.level===state.activeLevel;
+   button.classList.toggle("selected",chosen);
+   button.setAttribute("aria-pressed",String(chosen));
  });
- const count=save.done;
- $("levelProgress").textContent=save.completed?"Artwork finished in this level":count?count+"/14 rows completed":"Fresh picture";
+ const picture=activePicture(),total=questionCount(picture),count=save.done;
+ $("levelProgress").textContent=save.completed?"Picture complete":
+   count?count+" / "+total+" rows completed":"Ready to start";
  $("levelDescription").textContent=LEVELS[state.activeLevel].detail;
- $("introGridSize").textContent=state.activeLevel==="mirror"?CAT_HALF_WIDTH+" × 16":"16 × 16";
- $("introArtCaption").textContent=state.activeLevel==="mirror"?"A picture in progress":"Solve to paint";
+ $("introGridSize").textContent=pictureWidth(picture)+" × "+picture.height;
+ $("introArtCaption").textContent="A picture in progress";
+ $("pictureSummary").textContent=total+
+   " picture rows • About 15–20 minutes • No login needed";
+ renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
- $("startButton").innerHTML=save.completed?"View completed picture ↗":count?"Continue drawing ↗":"Start drawing ↗";
+ $("startButton").innerHTML=save.completed?"View completed picture ↗":
+   count?"Continue drawing ↗":"Start drawing ↗";
 }
 function chooseLevel(){
- clearRevealTimers();
- show("introScreen");updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
+ clearRevealTimers();show("introScreen");
+ updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
  if(save.completed){finish();return;}
- if(skip){save.tutorialDone=true;save.tutorial=2;store();}
+ if(skip){
+   save.tutorialDone=true;
+   save.tutorial=tutorialFor(state.activeLevel).length;
+   store();
+ }
  show("playScreen");question();window.scrollTo({top:0,behavior:"instant"});
 }
 function feedback(msg,correct=false){const e=$("feedback");e.className="feedback"+(correct?" success":"");e.textContent=msg;}
@@ -157,7 +252,7 @@ function renderOptions(){
 // The number line has only conventional mathematical markings.
 // Its visible limits depend on the picture's chosen window, never on a
 // hidden pixel boundary or any extra endpoint added to the inequality.
-const visibleAxis=()=>state.activeLevel==="mirror"?CAT_WINDOW:{min:AXIS_MIN,max:AXIS_MAX};
+const visibleAxis=()=>pictureAxis(activePicture());
 const coord=n=>{
  const {min,max}=visibleAxis();
  return 26+(n-min)*608/(max-min);
@@ -268,7 +363,8 @@ function setDirection(direction){
  if(locked)return;
  if(direction==="between"){
    if(draft.direction==="between")return;
-   const lower=Math.min(AXIS_MAX-1,Math.max(AXIS_MIN,draft.at));
+   const {min,max}=visibleAxis();
+   const lower=Math.min(max-1,Math.max(min,draft.at));
    setDraft({direction,lower,upper:lower+1,lowerIncluded:false,
      upperIncluded:false,at:lower,included:false});
  }else{
@@ -341,7 +437,7 @@ function check(){
  save.attempts+=attempts;
  store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
  $("checkButton").hidden=true;$("nextButton").hidden=false;
- $("nextButton").textContent=save.done===14?"Reveal the artwork ✦":"Next row →";
+ $("nextButton").textContent=save.done===questionCount(activePicture())?"Reveal the artwork ✦":"Next row →";
  $("nextButton").focus();
 }
 function hint(){
@@ -370,225 +466,208 @@ function hint(){
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
  $("hintButton").disabled=hintsShown===3;
 }
-// Mirror Mode never reflects during play; the finished half-cat unfolds only now.
+// Finished artwork is rendered from each picture's registry definition.
+// The mathematical pixels stay unchanged while colour, background and
+// independently staged finishing details appear only at completion.
 let revealTimers=[];
 function clearRevealTimers(){
-  for(const timer of revealTimers)clearTimeout(timer);
-  revealTimers=[];
+ for(const timer of revealTimers)clearTimeout(timer);
+ revealTimers=[];
 }
-function later(callback,delay){revealTimers.push(setTimeout(callback,delay));}
-function drawCatPanel(svg,left=false){
-  svg.replaceChildren();
-  svg.setAttribute("viewBox","0 0 "+CAT_HALF_WIDTH+" "+HEIGHT);
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_HALF_WIDTH;x++){
-    const halfX=left?CAT_HALF_WIDTH-1-x:x;
-    const filled=catHalfPixelAt(halfX,y);
-    mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
-      stroke:"#f7f3ed","stroke-width":0.035},svg);
-  }
+function later(fn,delay){revealTimers.push(setTimeout(fn,delay));}
+function drawHalfPanel(svg,left=false){
+ const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
+ svg.replaceChildren();
+ svg.setAttribute("viewBox","0 0 "+width+" "+height);
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const local=left?width-1-x:x,filled=picturePixelAt(picture,local,y);
+   mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
+     stroke:"#f7f3ed","stroke-width":0.035},svg);
+ }
 }
-// Decorations are independent of both the mathematical silhouette and its
-// base-colour layer. The same final details appear in an animation, a reload,
-// reduced-motion mode, and a downloaded PNG.
-function appendFinalDetails(svg,artwork){
-  for(const stage of detailStagesFor(artwork)){
-    const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
-    for(const detail of finalDetailsFor(artwork)){
-      if(detail.group!==stage)continue;
-      const height=detail.height;
-      mk("rect",{x:detail.x,y:detail.y+(1-height)/2,width:1,height,
-        fill:detail.color,"shape-rendering":"crispEdges"},group);
-    }
-  }
+function appendFinalDetails(svg,picture){
+ for(const stage of pictureDetailStages(picture)){
+   const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
+   for(const mark of pictureFinalDetails(picture)){
+     if(mark.group!==stage)continue;
+     mk("rect",{x:mark.x,y:mark.y+(1-mark.height)/2,
+       width:1,height:mark.height,fill:mark.color,
+       "shape-rendering":"crispEdges"},group);
+   }
+ }
 }
 function resetFinalDetails(){
-  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
-    group.style.transition="none";
-    group.setAttribute("opacity","0");
-  });
+ $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(g=>{
+   g.style.transition="none";g.setAttribute("opacity","0");
+ });
 }
 function revealAllDetails(){
-  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
-    group.style.transition="none";
-    group.setAttribute("opacity","1");
-  });
+ $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(g=>{
+   g.style.transition="none";g.setAttribute("opacity","1");
+ });
 }
-function scheduleDetailReveal(artwork,onComplete){
-  const stages=detailStagesFor(artwork);
-  stages.forEach((stage,i)=>{
-    later(()=>{
-      const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
-        .find(element=>element.getAttribute("data-detail-stage")===stage);
-      if(!group)return;
-      group.style.transition="opacity .37s ease-out";
-      group.setAttribute("opacity","1");
-    },i*370);
-  });
-  later(onComplete,stages.length*370+280);
+function scheduleDetailReveal(picture,onComplete){
+ const stages=pictureDetailStages(picture);
+ stages.forEach((stage,index)=>{
+   later(()=>{
+     const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
+       .find(g=>g.getAttribute("data-detail-stage")===stage);
+     if(!group)return;
+     group.style.transition="opacity .37s ease-out";
+     group.setAttribute("opacity","1");
+   },index*370);
+ });
+ later(onComplete,stages.length*370+280);
 }
 function renderFinishedArt(){
-  const svg=$("finishedArt"),cat=state.activeLevel==="mirror";
-  if(!cat){
-    sprite(svg,{colour:true,completed:14});
-    svg.setAttribute("aria-label","A full-colour mushroom with spots, expressive eyes and a smiling face.");
-  }else{
-    svg.replaceChildren();
-    svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
-    svg.classList.remove("half-canvas");
-    svg.setAttribute("aria-label","A symmetrical ginger pixel-art cat with eyes, ears, nose and whiskers.");
-    for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
-      const filled=catPixelAt(x,y);
-      mk("rect",{x,y,width:1,height:1,
-        fill:filled?catColourAt(x,y):finishedBackgroundAt("cat",x,y),
-        stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
-    }
-  }
-  appendFinalDetails(svg,cat?"cat":"mushroom");
+ const picture=activePicture(),width=fullPictureWidth(picture),
+   height=pictureHeight(picture),svg=$("finishedArt");
+ svg.replaceChildren();svg.classList.remove("half-canvas");
+ svg.setAttribute("viewBox","0 0 "+width+" "+height);
+ svg.setAttribute("aria-label","Completed pixel art: "+picture.name+
+   ", with a coloured background and illustrated finishing details.");
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const filled=picturePixelAt(picture,x,y,{full:true});
+   mk("rect",{x,y,width:1,height:1,
+     fill:filled?pictureColourAt(picture,x,y,{full:true}):
+       pictureBackgroundAt(picture,x,y),
+     stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
+ }
+ appendFinalDetails(svg,picture);
 }
-function playMushroomReveal(){
-  if(state.activeLevel==="mirror")return;
-  clearRevealTimers();
-  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
-  $("catFlipStage").hidden=true;
-  $("finishedArt").hidden=false;
-  resetFinalDetails();
-  $("replayReveal").hidden=true;
-  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
-    revealAllDetails();
-    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
-    $("replayReveal").hidden=false;
-    return;
-  }
-  $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
-  later(()=>scheduleDetailReveal("mushroom",()=>{
-    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
-    $("replayReveal").hidden=false;
-  }),600);
+function revealComplete(){
+ const picture=activePicture();
+ $("finishTitle").textContent=picture.name+"!";
+ $("finishNote").textContent="A completed picture, full of colour and finishing touches.";
+ $("replayReveal").hidden=false;
 }
-function playCatReveal(){
-  if(state.activeLevel!=="mirror")return;
-  clearRevealTimers();
-  const stage=$("catFlipStage"),shell=$("finishedArtShell"),art=$("finishedArt");
-  drawCatPanel($("catFlipLeft"),true);
-  drawCatPanel($("catFlipRight"),false);
-  stage.className="cat-flip-stage";
-  shell.classList.remove("is-revealing","is-colouring");
-  resetFinalDetails();
-  art.hidden=true;stage.hidden=false;
-  $("catFlipStatus").textContent="Your completed drawing…";
-  $("replayReveal").hidden=true;
-  // Reduced-motion users get the complete accessible artwork without any flip.
-  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
-    $("finishTitle").textContent="Cat Cameo!";
-    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
-    stage.hidden=true;
-    art.hidden=false;
-    revealAllDetails();
-    $("replayReveal").hidden=false;
-    return;
-  }
-  later(()=>{
-    $("catFlipStatus").textContent="Watch your picture unfold!";
-    stage.classList.add("is-flipping");
-  },550);
-  later(()=>{
-    stage.classList.add("is-revealed");
-    $("catFlipStatus").textContent="The complete picture — still monochrome…";
-  },1850);
-  later(()=>{
-    shell.classList.add("is-revealing");
-    art.hidden=false;
-    void art.getBoundingClientRect();
-    shell.classList.add("is-colouring");
-    $("catFlipStatus").textContent="And now… colour!";
-  },2390);
-  later(()=>{
-    $("catFlipStatus").textContent="One more thing… the little details!";
-    scheduleDetailReveal("cat",()=>{
-      $("replayReveal").hidden=false;
-      $("catFlipStatus").textContent="Eyes, nose and whiskers — Cat Cameo complete!";
-      $("finishTitle").textContent="Cat Cameo!";
-      $("finishNote").textContent="Your picture now has its final details: bright eyes, pink ears, a nose and whiskers.";
-    });
-  },3500);
+function playFullReveal(){
+ const picture=activePicture();
+ if(picture.family!=="full")return;
+ clearRevealTimers();
+ $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+ $("catFlipStage").hidden=true;
+ $("finishedArt").hidden=false;
+ resetFinalDetails();
+ $("replayReveal").hidden=true;
+ if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+   revealAllDetails();revealComplete();return;
+ }
+ $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
+ later(()=>scheduleDetailReveal(picture,revealComplete),600);
+}
+function playMirrorReveal(){
+ const picture=activePicture();
+ if(picture.family!=="half")return;
+ clearRevealTimers();
+ const stage=$("catFlipStage"),shell=$("finishedArtShell"),art=$("finishedArt");
+ drawHalfPanel($("catFlipLeft"),true);
+ drawHalfPanel($("catFlipRight"),false);
+ const panels=stage.querySelector(".cat-flip-panels");
+ panels.style.aspectRatio=fullPictureWidth(picture)+" / "+pictureHeight(picture);
+ stage.className="cat-flip-stage";
+ shell.classList.remove("is-revealing","is-colouring");
+ resetFinalDetails();
+ art.hidden=true;stage.hidden=false;
+ $("catFlipStatus").textContent="Your completed drawing…";
+ $("replayReveal").hidden=true;
+ if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+   stage.hidden=true;art.hidden=false;
+   revealAllDetails();revealComplete();return;
+ }
+ later(()=>{
+   $("catFlipStatus").textContent="Watch your picture unfold!";
+   stage.classList.add("is-flipping");
+ },550);
+ later(()=>{
+   stage.classList.add("is-revealed");
+   $("catFlipStatus").textContent="The complete picture — still monochrome…";
+ },1850);
+ later(()=>{
+   shell.classList.add("is-revealing");
+   art.hidden=false;
+   void art.getBoundingClientRect();
+   shell.classList.add("is-colouring");
+   $("catFlipStatus").textContent="And now… colour!";
+ },2390);
+ later(()=>{
+   $("catFlipStatus").textContent="One more thing… the little details!";
+   scheduleDetailReveal(picture,()=>{
+     $("catFlipStatus").textContent="Masterpiece complete!";
+     revealComplete();
+   });
+ },3500);
 }
 function finish({animate=false}={}){
-  clearRevealTimers();
-  save.completed=true;store();show("finishScreen");
-  const cat=state.activeLevel==="mirror";
-  $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
-  $("finishTitle").textContent=cat?(animate?"The big reveal!":"Cat Cameo!"):"You painted it!";
-  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
-  $("catFlipStage").hidden=true;
-  $("finishedArt").hidden=false;
-  $("replayReveal").hidden=animate;
-  renderFinishedArt();
-  $("firstTryStat").textContent=save.firstTry+"/14";
-  $("hintsStat").textContent=save.hints;
-  $("finishNote").textContent=cat
-    ?(animate?"Every inequality is complete. Watch your picture come together.":"Your drawing became a colourful, symmetrical cat!")
-    :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
-     :"The whole picture is complete. Every mistake you corrected was part of the learning.";
-  if(animate){
-    if(cat)playCatReveal();
-    else playMushroomReveal();
-  }else{
-    // Reloaded/completed games show the entire finished illustration.
-    revealAllDetails();
-  }
-  window.scrollTo({top:0,behavior:"instant"});
+ clearRevealTimers();
+ const picture=activePicture();
+ save.completed=true;store();show("finishScreen");
+ $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
+ $("finishTitle").textContent=animate?"The big reveal!":picture.name+"!";
+ $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+ $("catFlipStage").hidden=true;
+ $("finishedArt").hidden=false;
+ $("replayReveal").hidden=animate;
+ renderFinishedArt();
+ $("firstTryStat").textContent=save.firstTry+"/"+questionCount(picture);
+ $("hintsStat").textContent=save.hints;
+ $("finishNote").textContent=animate?
+   "Your answers have built the picture. Watch it come to life!":
+   "You've completed "+picture.name+".";
+ if(animate){
+   if(picture.family==="half")playMirrorReveal();
+   else playFullReveal();
+ }else revealAllDetails();
+ window.scrollTo({top:0,behavior:"instant"});
 }
 function restart(){
  clearRevealTimers();
- if(!confirm("Start a new picture? Your current row progress will be reset."))return;
+ if(!confirm("Start this picture again? Your progress on other pictures will be kept."))return;
  const replay=(save.replay||0)+1;
- state.progress[state.activeLevel]=blank();
- save=state.progress[state.activeLevel];
- Object.assign(save,{replay,tutorial:2,tutorialDone:true});
+ state.progress[activeKey()]=blank();
+ syncProgress();
+ Object.assign(save,{replay,tutorial:tutorialFor(state.activeLevel).length,tutorialDone:true});
  store();start();
 }
 function saveArt(){
-  const sprite=$("finishedArt").cloneNode(true);
-  const width=state.activeLevel==="mirror"?CAT_FULL_WIDTH:WIDTH,scale=40;
-  sprite.removeAttribute("hidden");
-  sprite.setAttribute("xmlns",SVG);
-  sprite.setAttribute("width",width*scale);
-  sprite.setAttribute("height",HEIGHT*scale);
-  // A saved image is always finished, even if exported during the reveal.
-  sprite.querySelectorAll("[data-detail-stage]").forEach(group=>{
-    group.style.transition="none";
-    group.setAttribute("opacity","1");
-  });
-  const xml=new XMLSerializer().serializeToString(sprite);
-  const url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
-  const img=new Image();
-  img.onload=()=>{
-    const canvas=document.createElement("canvas");
-    canvas.width=width*scale;canvas.height=HEIGHT*scale;
-    const ctx=canvas.getContext("2d");
-    ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    URL.revokeObjectURL(url);
-    canvas.toBlob(blob=>{
-      if(!blob)return;
-      const link=document.createElement("a"),a=URL.createObjectURL(blob);
-      link.href=a;
-      link.download=state.activeLevel==="mirror"?"inequality-ink-cat-cameo.png":"inequality-ink-mushroom.png";
-      link.click();
-      setTimeout(()=>URL.revokeObjectURL(a),1000);
-    },"image/png");
-  };
-  img.onerror=()=>URL.revokeObjectURL(url);
-  img.src=url;
+ const picture=activePicture(),width=fullPictureWidth(picture),
+   height=pictureHeight(picture),scale=40;
+ const sprite=$("finishedArt").cloneNode(true);
+ sprite.removeAttribute("hidden");
+ sprite.setAttribute("xmlns",SVG);
+ sprite.setAttribute("width",width*scale);
+ sprite.setAttribute("height",height*scale);
+ sprite.querySelectorAll("[data-detail-stage]").forEach(g=>{
+   g.style.transition="none";g.setAttribute("opacity","1");
+ });
+ const xml=new XMLSerializer().serializeToString(sprite),
+   url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
+ const img=new Image();
+ img.onload=()=>{
+   const canvas=document.createElement("canvas");
+   canvas.width=width*scale;canvas.height=height*scale;
+   const ctx=canvas.getContext("2d");ctx.imageSmoothingEnabled=false;
+   ctx.drawImage(img,0,0,canvas.width,canvas.height);
+   URL.revokeObjectURL(url);
+   canvas.toBlob(blob=>{
+     if(!blob)return;
+     const link=document.createElement("a"),objectUrl=URL.createObjectURL(blob);
+     link.href=objectUrl;link.download="inequality-ink-"+picture.id+".png";
+     link.click();
+     setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+   },"image/png");
+ };
+ img.onerror=()=>URL.revokeObjectURL(url);
+ img.src=url;
 }
 document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
 });
 $("startButton").onclick=()=>start();
 $("skipTutorialButton").onclick=()=>start({skip:true});
-$("skipPractice").onclick=()=>{save.tutorial=2;save.tutorialDone=true;store();question()};
+$("skipPractice").onclick=()=>{save.tutorial=tutorialFor(state.activeLevel).length;save.tutorialDone=true;store();question();};
 $("checkButton").onclick=check;
-$("nextButton").onclick=()=>{if(save.done===14)finish({animate:true});else question();};
+$("nextButton").onclick=()=>{if(save.done===questionCount(activePicture()))finish({animate:true});else question();};
 $("hintButton").onclick=hint;
 $("restartButton").onclick=restart;
 $("changeLevelButton").onclick=chooseLevel;
@@ -596,13 +675,13 @@ $("chooseLevelButton").onclick=chooseLevel;
 $("playAgain").onclick=()=>{
  clearRevealTimers();
  const replay=(save.replay||0)+1;
- state.progress[state.activeLevel]=blank();
- save=state.progress[state.activeLevel];
- Object.assign(save,{replay,tutorial:2,tutorialDone:true});
+ state.progress[activeKey()]=blank();
+ syncProgress();
+ Object.assign(save,{replay,tutorial:tutorialFor(state.activeLevel).length,tutorialDone:true});
  store();start();
 };
 $("downloadArt").onclick=saveArt;
-$("replayReveal").onclick=()=>state.activeLevel==="mirror"?playCatReveal():playMushroomReveal();
+$("replayReveal").onclick=()=>activePicture().family==="half"?playMirrorReveal():playFullReveal();
 $("helpButton").onclick=()=>$("helpDialog").showModal();
 $("closeHelp").onclick=()=>$("helpDialog").close();
 $("doneHelp").onclick=()=>$("helpDialog").close();

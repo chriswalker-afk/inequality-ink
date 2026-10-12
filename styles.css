@@ -78,3 +78,23 @@
 @media(prefers-reduced-motion:reduce){
   #finishedArt [data-detail-stage]{transition:none!important}
 }
+
+/* A small, deliberate gallery of mystery pictures for the chosen difficulty.
+   Selection exposes completion state, never the undiscovered coloured artwork. */
+.picture-picker-shell{max-width:590px;margin:8px 0 22px}
+.picture-picker-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.picture-picker-heading #picturePickerStatus{font-size:.7rem;font-weight:750;color:#898e99}
+.picture-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.picture-option{display:flex;gap:10px;align-items:center;min-width:0;text-align:left;
+  border:2px solid #e5e2dd;border-radius:15px;padding:12px 10px;background:#fffcf8;
+  color:#33415c;transition:background .16s,border-color .16s,transform .16s}
+.picture-option:hover{transform:translateY(-1px);background:#fff}
+.picture-option.selected{border-color:#628f87;background:#edf8f2}
+.picture-option-icon{width:36px;height:36px;flex:none;display:grid;place-items:center;
+  border-radius:10px;background:#f5e8e0;color:#cb8b7c;font-size:1.15rem;font-weight:900}
+.picture-option.selected .picture-option-icon{background:#ceeade;color:#3b8676}
+.picture-option-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.picture-option-copy strong{font-size:.83rem;line-height:1.15}
+.picture-option-copy small{font-size:.67rem;color:#7c8491;line-height:1.32}
+.picture-option-status{font-size:1rem;font-weight:900;color:#73a79a;margin-left:auto}
+@media(max-width:400px){.picture-picker{grid-template-columns:1fr}}
