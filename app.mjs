@@ -444,8 +444,8 @@ function updatePaintBrush(){
  $("paintSelectedLabel").textContent="Selected brush: "+name;
  $("paintEraser").classList.toggle("selected",paintBrush===null);
  $("paintEraser").setAttribute("aria-pressed",String(paintBrush===null));
- for(const b of $("paintRules").children){
-   const selected=b.dataset.colour===paintBrush;
+ for(const b of [...$("paintRules").children,...$("paintQuickPalette").children]){
+   const selected=b.dataset.colour===(paintBrush===null?"erase":paintBrush);
    b.classList.toggle("selected",selected);
    b.setAttribute("aria-pressed",String(selected));
  }
@@ -475,6 +475,28 @@ function renderPaintRules(){
    button.onclick=()=>selectPaintBrush(rule.key);
    host.append(button);
  }
+ const quick=$("paintQuickPalette");
+ quick.replaceChildren();
+ const used=new Set();
+ for(const rule of paintQuestion.rules){
+   if(used.has(rule.key))continue;
+   used.add(rule.key);
+   const brush=document.createElement("button");
+   brush.type="button";brush.className="paint-quick-brush";
+   brush.dataset.colour=rule.key;
+   brush.title=rule.name;brush.setAttribute("aria-label","Use "+rule.name+" brush");
+   const dot=document.createElement("span");
+   dot.style.backgroundColor=rule.colour;dot.setAttribute("aria-hidden","true");
+   brush.append(dot);
+   brush.onclick=()=>selectPaintBrush(rule.key);
+   quick.append(brush);
+ }
+ const eraser=document.createElement("button");
+ eraser.type="button";eraser.className="paint-quick-brush paint-quick-erase";
+ eraser.dataset.colour="erase";eraser.textContent="⌫";
+ eraser.setAttribute("aria-label","Use eraser brush");
+ eraser.onclick=()=>selectPaintBrush(null);
+ quick.append(eraser);
  updatePaintBrush();
 }
 function startPaintRow(){
@@ -488,7 +510,9 @@ function startPaintRow(){
  if(!valid)save.paintDraft=Array(width).fill(null);
  paintBrush=paintQuestion.rules[0].key;
  $("paintCheck").disabled=false;
+ $("paintCheckMobile").disabled=false;
  $("paintCheck").textContent="Check row →";
+ $("paintCheckMobile").textContent="Check row →";
  showPaintFeedback("");
  updatePaintProgress();
  renderPaintRules();
@@ -545,7 +569,9 @@ function checkPaintAnswer(){
  store();
  updatePaintProgress();
  $("paintCheck").disabled=true;
+ $("paintCheckMobile").disabled=true;
  $("paintCheck").textContent=save.completed?"✓ Correct — revealing…":"✓ Correct — next row…";
+ $("paintCheckMobile").textContent=$("paintCheck").textContent;
  showPaintFeedback("Correct! Watch the numbers disappear and the colours stay.",true);
  for(const cell of paintCells){
    cell.disabled=true;
@@ -560,8 +586,11 @@ function checkPaintAnswer(){
    if(save.completed)finish({animate:true});
    else{
      startPaintRow();
-     // The current row changes in place; mobile users can keep painting
-     // without hunting for the next numbered row or the rules.
+     if(window.matchMedia?.("(max-width: 740px)")?.matches){
+       $("paintStep").scrollIntoView?.({
+         behavior:reduced?"instant":"smooth",block:"start"
+       });
+     }
    }
  },reduced?280:850);
 }
@@ -589,6 +618,7 @@ for(const eventName of ["pointerup","pointercancel","lostpointercapture"])
    if(paintPointer===event.pointerId)paintPointer=null;
  });
 $("paintCheck").onclick=checkPaintAnswer;
+$("paintCheckMobile").onclick=checkPaintAnswer;
 $("paintClear").onclick=clearPaintRow;
 $("paintEraser").onclick=()=>selectPaintBrush(null);
 $("paintBack").onclick=chooseLevel;
