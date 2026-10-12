@@ -156,3 +156,66 @@ test("Site remains dependency-free and keyboard/mobile friendly",()=>{
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
  assert.ok(app.includes('tick.addEventListener("keydown"'));
 });
+
+
+test("One Check & paint press handles correctness, progression and the final reveal",()=>{
+  assert.ok(html.includes('id="checkButton">Check &amp; paint'));
+  assert.ok(!html.includes('id="nextButton"'));
+  assert.ok(!app.includes('$("nextButton")'));
+  const check=getSection('function check(){','function hint(){');
+  assert.ok(check.includes('scheduleRowAdvance()'));
+  assert.ok(check.includes('locked=true'));
+  assert.ok(check.includes('initProgress({animate:q.mode!=="tutorial"})'));
+  assert.ok(check.includes('"Correct — next row"')||
+    check.includes('✓ Correct — next row…'));
+  const advance=getSection('function scheduleRowAdvance(){','const mk=');
+  assert.ok(advance.includes('setTimeout('));
+  assert.ok(advance.includes('question()'));
+  assert.ok(advance.includes('finish({animate:true})'));
+  assert.ok(advance.includes('screen!=="playScreen"'));
+  assert.ok(advance.includes('pictureKey!==activeKey()'));
+  assert.ok(advance.includes('window.matchMedia?.("(max-width: 740px)")?.matches'));
+  assert.ok(advance.includes('scrollIntoView?.('));
+  assert.ok(app.includes('function cancelRowAdvance(){'));
+  for(const segment of [
+    getSection('function chooseLevel(){','function start('),
+    getSection('function restart(){','function saveArt(){'),
+    getSection('function question(){','function selectLevel(')
+  ])assert.ok(segment.includes('cancelRowAdvance()'));
+});
+test("Number-line circles distinguish quick click/tap, drag and keyboard interactions",()=>{
+  const renderer=getSection('function renderLine(svg,interval,readonly=false){',
+    'function nearest(ev,svg){');
+  assert.ok(renderer.includes('function toggleEndpoint(side,'));
+  assert.ok(renderer.includes('g.addEventListener("pointerdown"'));
+  assert.ok(renderer.includes('g.addEventListener("keydown"'));
+  assert.ok(renderer.includes('"pointerup"'));
+  assert.ok(renderer.includes('"pointermove"'));
+  assert.ok(renderer.includes('event.pointerType==="mouse"&&event.button!==0'));
+  assert.ok(renderer.includes('const CIRCLE_DRAG_THRESHOLD=9'));
+  assert.ok(renderer.includes('Math.hypot('));
+  assert.ok(renderer.includes('if(gesture.moved||distance>CIRCLE_DRAG_THRESHOLD)'));
+  assert.ok(renderer.includes('setEndpoint(gesture.side,nearest(event,$("drawLine")))'));
+  assert.ok(renderer.includes('toggleEndpoint(gesture.side)'));
+  assert.ok(renderer.includes('"aria-pressed":String(closed)'));
+  assert.ok(renderer.includes('role:"button",tabindex:0'));
+  assert.ok(html.includes('Tap or click a circle to toggle'));
+  assert.ok(html.includes('id="leftOpen"'));
+  assert.ok(html.includes('id="rightClosed"'));
+});
+test("Desktop celebration is as immersive as mobile, with enlarged artwork and final sparkles",()=>{
+  assert.ok(css.includes('@media (min-width:900px) and (min-height:650px)'));
+  assert.ok(css.includes('width:min(100%,69dvh,760px)'));
+  assert.ok(css.includes('.reveal-dialog.is-celebrated::before'));
+  assert.ok(css.includes('.reveal-dialog.is-celebrated::after'));
+  assert.ok(css.includes('@keyframes celebration-sparkle-left'));
+  assert.ok(css.includes('@keyframes celebration-sparkle-right'));
+  assert.ok(css.includes('safe-area-inset-top'));
+  assert.ok(css.includes('max-width:740px'));
+  assert.ok(css.includes('prefers-reduced-motion:reduce'));
+  assert.ok(app.includes('classList.add("is-celebrated")'));
+  const full=getSection('function finish({animate=false}={}){',
+    'function restart(){');
+  assert.ok(full.includes('openReveal({animate})'),
+    "All desktop and mobile completions should open the full-screen reveal first");
+});
