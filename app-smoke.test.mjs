@@ -12,6 +12,7 @@ class FakeElement {
     this.tagName=tag;this.children=[];this.attrs={};this.dataset={};
     this.listeners=new Map();this.style={};this.classNames=new Set();
     this.hidden=false;this.disabled=false;this.value="";this.textContent="";
+    this.firstChild={textContent:""}; // minimal parsed title text node
     this.innerHTML="";this.className="";
     this.classList={
       add:(...items)=>items.forEach(name=>this.classNames.add(name)),
