@@ -91,6 +91,12 @@ New symmetric, contiguous-interval full pictures can be reused in Full Picture, 
 Paint by Inequalities also grows from **two to five distinct swatches** (including its actively painted background), progressing 2, 2, 3, 4, 5. Paint grids may have 6–14 rows. A complete one-colour row may have a single genuine inequality; the rule validator still checks every integer is painted exactly once.
 
 Preserve all existing picture IDs and row counts so saved student progress remains valid. A picture without a mode-specific progression position is always offered as a bonus under More pictures.
+### Stage-aware mathematical profiles
+
+Core picture steps 1–4 use the central `math-progression.mjs` profiles. The modes retain their original skills, but open/closed endpoints and the complexity of Solve & Paint transformations are introduced in a deliberate order. In Paint by Inequalities, the rules continue to be derived from contiguous colour runs; the profiles change only the presentation of their endpoints, not the run count or painted result. Stage 5 and More pictures retain existing question mathematics and replay behavior.
+
+Never change an existing picture ID or row count to adjust difficulty. For new artwork, confirm that real-number inequality endpoints remain fully visible and that every allowed replay still paints precisely the authored integer columns.
+
 ## 4. Optional first-question control
 
 The engine can derive valid questions automatically. Usually no additional math data is needed, but the picture may supply:
