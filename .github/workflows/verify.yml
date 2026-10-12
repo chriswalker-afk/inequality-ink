@@ -19,3 +19,5 @@ jobs:
         run: |
           node --check app.mjs
           node --check model.mjs
+          node --check picture-engine.mjs
+          node --check pictures.mjs
