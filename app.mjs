@@ -138,36 +138,74 @@ const coord=n=>26+(n-AXIS_MIN)*((660-52)/(AXIS_MAX-AXIS_MIN));
 function renderLine(svg,interval,readonly=false){
  svg.replaceChildren();
  const group=mk("g",{},svg),axisY=66;
+ if(q?.artMode==="mirror"){
+   const right=q.mirrorSide==="right";
+   const x0=right?coord(-.5):26,x1=right?634:coord(-.5);
+   mk("rect",{x:x0,y:23,width:x1-x0,height:66,rx:5,fill:"#e9f5ef"},group);
+   mk("line",{x1:coord(-.5),x2:coord(-.5),y1:25,y2:80,stroke:"#7baeaa",
+      "stroke-width":1.6,"stroke-dasharray":"4 4"},group);
+   const note=mk("text",{x:(x0+x1)/2,y:18,"text-anchor":"middle",
+      fill:"#458478","font-size":13,"font-weight":750},group);
+   note.textContent=right?"RIGHT HALF FOR PIXELS":"LEFT HALF FOR PIXELS";
+ }
  mk("line",{x1:26,x2:634,y1:axisY,y2:axisY,stroke:"#7c899b","stroke-width":2},group);
- const isBetween=interval.direction==="between",hasLeft=isBetween||interval.direction==="right",hasRight=isBetween||interval.direction==="left";
- const leftX=coord(isBetween?interval.lower:interval.at),rightX=coord(isBetween?interval.upper:interval.at);
+ const isBetween=interval.direction==="between",
+   hasLeft=isBetween||interval.direction==="right",
+   hasRight=isBetween||interval.direction==="left";
+ const leftX=coord(isBetween?interval.lower:interval.at),
+   rightX=coord(isBetween?interval.upper:interval.at);
  let from=hasLeft?leftX:26,to=hasRight?rightX:634;
  if(interval.direction==="left")from=26;
  if(interval.direction==="right")to=634;
  if(from<=to)mk("line",{x1:from,x2:to,y1:axisY,y2:axisY,stroke:"#538ca2","stroke-width":7,"stroke-linecap":"round"},group);
- if(interval.direction==="left")mk("path",{d:`M 26 66 l 14 -8 M 26 66 l 14 8`,fill:"none",stroke:"#538ca2","stroke-width":3},group);
- if(interval.direction==="right")mk("path",{d:`M 634 66 l -14 -8 M 634 66 l -14 8`,fill:"none",stroke:"#538ca2","stroke-width":3},group);
+ if(interval.direction==="left")mk("path",{d:"M 26 66 l 14 -8 M 26 66 l 14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
+ if(interval.direction==="right")mk("path",{d:"M 634 66 l -14 -8 M 634 66 l -14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
  for(let n=AXIS_MIN;n<=AXIS_MAX;n++){
-  const x=coord(n);mk("line",{x1:x,x2:x,y1:60,y2:72,stroke:"#768497","stroke-width":1.8},group);
-  const t=mk("text",{x,y:96,"text-anchor":"middle",fill:"#58647a","font-size":15,"font-weight":600},group);t.textContent=fmt(n);
-  if(!readonly){const h=mk("rect",{x:x-13,y:35,width:26,height:65,fill:"transparent","data-number":n,role:"button","aria-label":"Move selected endpoint to "+n,tabindex:0},group);
-   h.addEventListener("click",()=>setEndpoint(selected,n));
-   h.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();setEndpoint(selected,n);}});
-  }
+   const x=coord(n);
+   mk("line",{x1:x,x2:x,y1:60,y2:72,stroke:"#768497","stroke-width":1.8},group);
+   const t=mk("text",{x,y:96,"text-anchor":"middle",fill:"#58647a","font-size":15,"font-weight":600},group);
+   t.textContent=fmt(n);
+   if(!readonly){
+     const tick=mk("rect",{x:x-13,y:35,width:26,height:65,fill:"transparent",
+       "data-number":n,role:"button","aria-label":"Move selected endpoint to "+n,tabindex:-1},group);
+     tick.style.cursor="pointer";
+     tick.addEventListener("click",()=>setEndpoint(selected,n));
+   }
  }
- const circle=(x,closed,left)=>{
-  const g=mk("g",{},group);
-  mk("circle",{cx:x,cy:axisY,r:readonly?10:11,fill:closed?"#538ca2":"#ffffff",stroke:"#538ca2","stroke-width":3},g);
-  if(!readonly){const e=mk("circle",{cx:x,cy:axisY,r:17,fill:"transparent",stroke:selected===(left?"left":"right")?"#8ebbac":"none","stroke-width":2},g);
-   e.style.cursor="grab";
-   e.addEventListener("pointerdown",ev=>{selected=left?"left":"right";drag=true;e.setPointerCapture(ev.pointerId);ev.stopPropagation();syncInputs();});
-   e.addEventListener("pointermove",ev=>{if(drag)setEndpoint(selected,nearest(ev,svg));});
-   e.addEventListener("pointerup",()=>drag=false);e.addEventListener("pointercancel",()=>drag=false);
-  }
+ const circle=(x,closed,side)=>{
+   const g=mk("g",{},group);
+   mk("circle",{cx:x,cy:axisY,r:readonly?10:11,
+     fill:closed?"#538ca2":"#ffffff",stroke:"#538ca2","stroke-width":3},g);
+   if(!readonly){
+     const e=mk("circle",{cx:x,cy:axisY,r:18,fill:"transparent",
+       stroke:selected===side?"#8ebbac":"none","stroke-width":2},g);
+     e.style.cursor="grab";
+     e.addEventListener("pointerdown",ev=>{
+       if(locked)return;
+       selected=side;
+       drag=true;
+       svg.setPointerCapture(ev.pointerId);
+       ev.preventDefault();
+       syncInputs();
+       renderLine(svg,draft);
+     });
+   }
  };
- if(hasLeft)circle(leftX,isBetween?interval.lowerIncluded:interval.included,true);
- if(hasRight)circle(rightX,isBetween?interval.upperIncluded:interval.included,false);
- if(!readonly){const info=mk("text",{x:330,y:124,"text-anchor":"middle",fill:"#9ba2ae","font-size":13},group);info.textContent="Tap a tick or drag a circle to change your answer";}
+ if(hasLeft)circle(leftX,isBetween?interval.lowerIncluded:interval.included,"left");
+ if(hasRight)circle(rightX,isBetween?interval.upperIncluded:interval.included,
+   isBetween?"right":"left");
+ if(!readonly){
+   const info=mk("text",{x:330,y:124,"text-anchor":"middle",fill:"#9ba2ae","font-size":13},group);
+   info.textContent="Tap a tick or drag a circle to change your answer";
+ }
+}
+// SVG owns pointer capture, not transient endpoint elements, so a drag
+// continues when the SVG children are replaced during movement.
+$("drawLine").addEventListener("pointermove",ev=>{
+ if(drag && !locked)setEndpoint(selected,nearest(ev,$("drawLine")));
+});
+for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
+ $("drawLine").addEventListener(eventName,()=>drag=false);
 }
 function nearest(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
@@ -195,14 +233,29 @@ function syncInputs(){
   $(side+"Editor").classList.toggle("active",selected===side);
  }
  $("rightEditor").hidden=draft.direction!=="between";
- $("leftEditorLabel").textContent=draft.direction==="right"?"Endpoint":draft.direction==="left"?"Endpoint":"Left endpoint";
- document.querySelectorAll("[data-direction]").forEach(b=>b.classList.toggle("selected",b.dataset.direction===draft.direction));
- $("directionChooser").hidden=q.mode!=="tutorial";
+ $("leftEditorLabel").textContent=draft.direction==="between"?"Left endpoint":"Ray endpoint";
+ document.querySelectorAll("[data-direction]").forEach(b=>{
+   const active=b.dataset.direction===draft.direction;
+   b.classList.toggle("selected",active);b.setAttribute("aria-pressed",String(active));
+ });
+ $("directionChooser").hidden=q.mode==="read";
 }
 function setDirection(direction){
  if(locked)return;
- if(direction==="between")setDraft({...draft,direction,lower:-2,upper:3});
- else setDraft({direction,at:draft.lower,included:draft.lowerIncluded,lower:draft.lower,upper:draft.upper,lowerIncluded:draft.lowerIncluded,upperIncluded:draft.upperIncluded});
+ if(direction==="between"){
+   if(draft.direction==="between")return;
+   const lower=Math.min(AXIS_MAX-1,Math.max(AXIS_MIN,draft.at));
+   setDraft({direction,lower,upper:lower+1,lowerIncluded:false,
+     upperIncluded:false,at:lower,included:false});
+ }else{
+   const at=draft.direction==="between"
+     ? (direction==="left"?draft.upper:draft.lower) : draft.at;
+   const included=draft.direction==="between"
+     ? (direction==="left"?draft.upperIncluded:draft.lowerIncluded) : draft.included;
+   setDraft({...draft,direction,at,included});
+ }
+ selected="left";
+ syncInputs();renderLine($("drawLine"),draft);
 }
 document.querySelectorAll("[data-direction]").forEach(b=>b.onclick=()=>setDirection(b.dataset.direction));
 for(const side of ["left","right"]){
