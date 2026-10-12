@@ -34,8 +34,8 @@ Unlike the four original modes, this mode asks students to build a **fully colou
 
 - Every puzzle has **14 rows and 10 columns**. Each active square shows an integer from **−5 to 4**, and only that row can be edited.
 - Each row has **two to four genuine real-number inequality rules**, each paired with a named colour. For example, a sky-blue swatch might read \`x < −3\` and an orange swatch \`x ≥ −3\`. Rules never overlap or leave uncoloured integers.
-- Click/tap a colour rule and paint individual cells, or **swipe across multiple cells** on mobile. There's also an eraser and Clear Row action.
-- On mobile the rules sit above the canvas, with an additional **sticky quick-brush palette and Check row button** beside the cells.
+- Click/tap a coloured inequality to select that **rule and brush together**, then tap or swipe along the enlarged numbered row (or directly on its highlighted row in the picture). Both painting surfaces use the **same saved draft**. An eraser and Clear row action remain available.
+- **Single-screen workspace:** the full picture stays visible beside the inequality rules, which also act as colour swatches. A large, numbered **active-row strip** underneath mirrors the highlighted row in the picture, making it much easier to paint on a phone. The eraser, Clear row and **one Check row button** stay on the same screen, without scrolling between maths, brushes and canvas. The layout adapts to screen height and falls back to scrolling only on unusually short landscape displays.
 - An incorrect row briefly flashes orange on the incorrect/unpainted cells but stays editable. A correct row flashes green, **loses its integer labels**, and leaves its colours in place before the next row activates automatically.
 - In-progress rows are saved locally. Changing pictures preserves progress, without changing completion statistics from the existing modes.
 - The completed picture uses the same **full-screen celebration, background, animated finishing details and PNG download** as other modes.
