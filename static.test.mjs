@@ -15,8 +15,9 @@ test("Every referenced element exists, with no duplicate HTML IDs",()=>{
  for(const [,id] of app.matchAll(/\$\("([^"]+)"\)/g))
    assert.ok(ids.includes(id),"Missing HTML element: "+id);
  for(const id of ["picturePicker","picturePickerStatus","pictureSummary",
-   "introPixelArt","pixelCanvas","finishedArt","catFlipStage","catFlipLeft",
-   "catFlipRight","replayReveal","progressMarkers"]){
+   "introPixelArt","pixelCanvas","finishedArt","revealDialog","revealBoard",
+   "revealBuildArt","revealMirrorLeft","revealMirrorRight","revealFinalArt",
+   "closeReveal","skipReveal","revealStageText","replayReveal","progressMarkers"]){
    assert.ok(ids.includes(id));
  }
 });
@@ -65,30 +66,83 @@ test("Standard number lines retain correct endpoints without artwork hints",()=>
  }
  assert.ok(!line.includes("picturePaintedValues"));
 });
-test("Half pictures flip only at the end, then the colour and character details appear",()=>{
- const flipping=getSection("function playMirrorReveal(){","function finish({animate=false}");
- const stepA=flipping.indexOf('stage.classList.add("is-flipping")');
- const stepB=flipping.indexOf('stage.classList.add("is-revealed")');
- const stepC=flipping.indexOf('shell.classList.add("is-colouring")');
- const stepD=flipping.indexOf('scheduleDetailReveal(picture,');
- assert.ok(stepA>=0&&stepB>stepA&&stepC>stepB&&stepD>stepC);
- assert.ok(flipping.includes("drawHalfPanel"));
- assert.ok(flipping.includes('fullPictureWidth(picture)+" / "+pictureHeight(picture)'));
- assert.ok(flipping.includes('window.matchMedia?.("(prefers-reduced-motion: reduce)")'));
- assert.ok(css.includes("@keyframes cat-unfold"));
+test("The fullscreen dialog owns the reveal and remains visible until dismissed",()=>{
+  assert.ok(html.includes('<dialog id="revealDialog"'));
+  assert.ok(html.includes('aria-labelledby="revealHeading"'));
+  assert.ok(html.includes('aria-describedby="revealStageText"'));
+  assert.ok(html.includes('id="closeReveal"'));
+  assert.ok(html.includes('aria-label="Close picture reveal and see results"'));
+  assert.ok(html.includes('id="skipReveal"'));
+  const finish=getSection('function finish({animate=false}={}){','function restart(){');
+  assert.ok(finish.includes('openReveal({animate})'));
+  assert.ok(!finish.includes('show("finishScreen")'),
+    "Do not show the results screen at the moment of completion");
+  const popup=getSection('function openReveal({animate=true}={}){','function closeReveal(){');
+  assert.ok(popup.includes('show(null)'));
+  assert.ok(popup.includes('dialog.showModal()'));
+  assert.ok(popup.includes('dialog.showModal()'));
+  assert.ok(popup.includes('document.body.classList.add("reveal-open")'));
+  const close=getSection('function closeReveal(){','function finish({animate=false}={}){');
+  assert.ok(close.includes('clearRevealTimers()'));
+  assert.ok(close.includes('show("finishScreen")'));
+  assert.ok(close.includes('dialog.close()'));
+  assert.ok(app.includes('$("closeReveal").onclick=closeReveal'));
+  assert.ok(app.includes('$("revealDialog").addEventListener("cancel"'));
 });
-test("All picture variants have full-colour backgrounds, finishing details and PNG export",()=>{
- const render=getSection("function renderFinishedArt(){","function revealComplete(){");
- assert.ok(render.includes('fullPictureWidth(picture)'));
- assert.ok(render.includes('pictureColourAt(picture,x,y,{full:true})'));
- assert.ok(render.includes('pictureBackgroundAt(picture,x,y)'));
- assert.ok(render.includes('appendFinalDetails(svg,picture)'));
- assert.ok(app.includes('pictureDetailStages(picture)'));
- assert.ok(app.includes('pictureFinalDetails(picture)'));
- assert.ok(app.includes('scheduleDetailReveal(picture,'));
- assert.ok(app.includes('link.download="inequality-ink-"+picture.id+".png"'));
- assert.ok(app.includes('sprite.setAttribute("height",height*scale)'));
- assert.ok(css.includes('[data-detail-stage]'));
+test("Every row is revealed separately before reflection, colour and details",()=>{
+  const reveal=getSection('function playRevealRows(picture,rows){',
+    'function openReveal({animate=true}={}){');
+  const buildIndex=reveal.indexOf('row.setAttribute("opacity","1")');
+  const reflectIndex=reveal.indexOf('layer.classList.add("is-unfolding")');
+  const colourIndex=reveal.indexOf('$("revealBoard").classList.add("has-colour")');
+  const detailsIndex=reveal.indexOf('group.setAttribute("opacity","1")');
+  assert.ok(buildIndex>=0);
+  assert.ok(reflectIndex>buildIndex);
+  assert.ok(colourIndex>reflectIndex);
+  assert.ok(detailsIndex>colourIndex);
+  assert.ok(reveal.includes('const total=rows.length'));
+  assert.ok(reveal.includes('picture.family==="half"'));
+  assert.ok(reveal.includes('pictureDetailStages(picture)'));
+  const ink=getSection('function buildMonochromeRows(picture){',
+    'function setupRevealStages(picture){');
+  assert.ok(ink.includes('makePictureQuestion(picture,index,save.replay,state.activeLevel)'));
+  assert.ok(ink.includes('picturePaintedValues(picture,question)'));
+  assert.ok(ink.includes('question.row'));
+  assert.ok(css.includes('@keyframes reveal-unfold'));
+  assert.ok(css.includes('.reveal-board.has-colour .reveal-final-art'));
+});
+test("Background, colours and details remain picture specific, including PNG export",()=>{
+  const render=getSection('function finishedArtwork(svg,picture){',
+    'function renderFinishedArt(){');
+  assert.ok(render.includes('fullPictureWidth(picture)'));
+  assert.ok(render.includes('pictureColourAt(picture,x,y,{full:true})'));
+  assert.ok(render.includes('pictureBackgroundAt(picture,x,y)'));
+  assert.ok(render.includes('appendFinalDetails(svg,picture)'));
+  assert.ok(app.includes('pictureDetailStages(picture)'));
+  assert.ok(app.includes('pictureFinalDetails(picture)'));
+  assert.ok(app.includes('setDetailsVisible($("finishedArt"),true)'));
+  assert.ok(app.includes('setDetailsVisible($("revealFinalArt"),false)'));
+  assert.ok(app.includes('link.download="inequality-ink-"+picture.id+".png"'));
+  assert.ok(app.includes('sprite.setAttribute("height",height*scale)'));
+  assert.ok(css.includes('[data-detail-stage]'));
+});
+test("Mobile reveal keeps the picture in view and supports reduced motion",()=>{
+  assert.ok(css.includes('.reveal-dialog{'));
+  assert.ok(css.includes('height:100dvh'));
+  assert.ok(css.includes('safe-area-inset-top'));
+  assert.ok(css.includes('safe-area-inset-bottom'));
+  assert.ok(css.includes('.reveal-picture-space'));
+  assert.ok(css.includes('.reveal-close'));
+  assert.ok(css.includes('min-height:45px'));
+  assert.ok(css.includes('@media(max-height:600px)'));
+  assert.ok(css.includes('@media(prefers-reduced-motion:reduce)'));
+  assert.ok(app.includes('window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches'));
+  assert.ok(app.includes('showRevealFinished()'));
+  assert.ok(app.includes('$("skipReveal").onclick=showRevealFinished'));
+  const skip=getSection('function showRevealFinished(){','function playRevealRows(picture,rows){');
+  assert.ok(skip.includes('clearRevealTimers()'));
+  assert.ok(skip.includes('setDetailsVisible(art,true)'));
+  assert.ok(!skip.includes('show("finishScreen")'));
 });
 test("Site remains dependency-free and keyboard/mobile friendly",()=>{
  for(const path of ["model.mjs","picture-engine.mjs","pictures.mjs",

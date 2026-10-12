@@ -52,9 +52,17 @@ Picture-specific artistic data is kept in `pictures.mjs`. Adding another picture
 
 The validator rejects invalid shapes, disconnected images, invalid row bounds, forbidden modes, offscreen endpoints, ambiguous reading options, invalid colours, unsymmetrical finishing details or question variants that paint the wrong columns. It checks every available mode against every authored row across replay variants.
 
-### Colour and completion
+### Full-screen celebration before results
 
-The mathematical silhouette is drawn in monochrome. When all its rows are completed, the final picture is rendered with its picture-specific background and base colours; the character's spots, eyes, ears, portholes or other details appear in stages. Mirror Mode first unfolds a mirrored half-image before the colour/detail reveal. Reduced-motion preferences are respected.
+After answering the last inequality, the game opens a **full-screen picture reveal** rather than taking the student straight to their score. This is intentional on both mobile and desktop; the completed picture is the reward and must be clearly visible without downloading it.
+
+1. The monochrome picture **builds row by row**, using the exact generated inequality solutions.
+2. In **Mirror Mode**, the finished half-picture **unfolds around its vertical axis**.
+3. The whole image then gains its **colour and picture-specific background**.
+4. The picture's **eyes, spots, whiskers, bubbles or other details** are added in separate finishing stages.
+5. The result stays on screen until the student presses **×**, which closes the reveal and displays the results/summary screen.
+
+The reveal has a large touch-friendly close control, a **Show the finished picture** button to skip animation without skipping the picture screen, mobile safe-area support and a reduced-motion alternative. The completed picture is also available through **View the reveal again** on the summary.
 
 Finished pictures can be saved as PNG files with their full colour, backdrop and details.
 
