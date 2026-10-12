@@ -733,6 +733,58 @@ function choosePaintKey(key){
  assert.ok(brush,"No palette entry for "+key);
  brush.click();
 }
+test("Choosing one Sky inequality selects only that rule, not other Sky inequalities",()=>{
+ select("paint",0); // Rainbow Rocket / To the Moon
+ $("startButton").click();
+ assert.equal($("paintScreen").hidden,false);
+ const pic=pictureById("paint-rocket");
+ const question=makePaintQuestion(pic,0,0);
+ assert.deepEqual(question.rules.map(rule=>rule.key),["S","O","S"],
+   "The rocket's first row must exercise two different Sky inequalities");
+ const rules=$("paintRules").children;
+ assert.equal(rules.length,3);
+ const [leftSky,flame,rightSky]=rules;
+ assert.equal(leftSky.dataset.colour,rightSky.dataset.colour);
+ assert.notEqual(question.rules[0].inequality,question.rules[2].inequality);
+ const selected=()=>rules.filter(b=>b.getAttribute("aria-pressed")==="true");
+ assert.deepEqual(rules.map(b=>b.dataset.ruleIndex),["0","1","2"]);
+ assert.deepEqual(selected(),[leftSky],"Only the initial inequality is selected");
+
+ rightSky.click();
+ assert.deepEqual(selected(),[rightSky],
+   "Tapping the right Sky inequality must not highlight the left one");
+ assert.equal(leftSky.classList.contains("selected"),false);
+ assert.equal(rightSky.classList.contains("selected"),true);
+ assert.equal(flame.classList.contains("selected"),false);
+ assert.ok($("paintSelectedLabel").textContent.includes(question.rules[2].inequality));
+ assert.ok($("paintSelectedLabel").textContent.includes("Sky"));
+ const rightLabel=$("paintSelectedLabel").textContent;
+
+ leftSky.click();
+ assert.deepEqual(selected(),[leftSky]);
+ assert.ok($("paintSelectedLabel").textContent.includes(question.rules[0].inequality));
+ assert.notEqual($("paintSelectedLabel").textContent,rightLabel);
+ flame.click();
+ assert.deepEqual(selected(),[flame]);
+ assert.ok($("paintSelectedLabel").textContent.includes("Flame orange"));
+
+ $("paintEraser").click();
+ assert.equal(selected().length,0,"The eraser must deselect all colour rules");
+ assert.equal($("paintEraser").getAttribute("aria-pressed"),"true");
+ assert.ok($("paintSelectedLabel").textContent.includes("Eraser"));
+
+ rightSky.click();
+ assert.deepEqual(selected(),[rightSky]);
+ assert.equal($("paintEraser").getAttribute("aria-pressed"),"false");
+ const col=$("paintFocusRow").children[8]; // x=3, belongs to right Sky interval
+ col.click();
+ assert.equal(col.style.backgroundColor,pic.paint.colours.S.hex,
+   "Either Sky rule must still paint with the same Sky brush");
+ assert.equal(paintCell(14,8).style.backgroundColor,pic.paint.colours.S.hex);
+ $("paintClear").click();
+ $("paintBack").click();
+ assert.equal($("introScreen").hidden,false);
+});
 test("Paint students can swipe the active row, erase, clear and resume a partly painted row",()=>{
  select("paint",0);
  assert.equal($("picturePicker").children.length,5);
