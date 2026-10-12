@@ -32,6 +32,9 @@ test("Toolbar keys insert at the cursor without deleting other working",()=>{
     {value:"x ≤ 3",start:3,end:3});
   assert.deepEqual(insertMathWorking("x",1,1,"square"),
     {value:"x^2",start:3,end:3});
+  assert.deepEqual(insertMathWorking("",0,0,"square"),
+    {value:"x^2",start:3,end:3});
+  assert.match(renderMathWorking("()/()"),/<mfrac><mrow><mi>□<\/mi>/);
   assert.deepEqual(insertMathWorking("",0,0,"fraction"),
     {value:"()/()",start:1,end:1});
   assert.deepEqual(insertMathWorking("x+1",0,3,"fraction"),
