@@ -187,7 +187,7 @@ function question(){
  $("workingShell").hidden=q.mode!=="solve";
  $("checkButton").hidden=false;
  $("checkButton").disabled=false;
- $("checkButton").textContent="Check answer →";
+ $("checkButton").textContent="Check & paint →";
  $("hintButton").disabled=false;$("hintButton").textContent="✳ Give me a hint";
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
@@ -375,7 +375,7 @@ function renderLine(svg,interval,readonly=false){
  if(!readonly){
    const info=mk("text",{x:330,y:124,"text-anchor":"middle",
      fill:"#9ba2ae","font-size":13},group);
-   info.textContent="Tap a circle to open/close; drag to move; tap a tick to reposition";
+   info.textContent="Tap/click a circle to open or close it; drag to move";
  }
 }
 // Distinguish a quick tap/click from a drag. The threshold is measured in
@@ -534,8 +534,8 @@ function check(){
  save.attempts+=attempts;
  store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
  $("checkButton").disabled=true;
- $("checkButton").textContent=save.done===questionCount(activePicture())?
-   "✓ Correct — revealing…":"✓ Correct — painting…";
+ $("checkButton").textContent=q.mode==="tutorial"?"✓ Correct — continuing…":
+   save.done===questionCount(activePicture())?"✓ Correct — revealing…":"✓ Correct — next row…";
  scheduleRowAdvance();
 }
 function hint(){
