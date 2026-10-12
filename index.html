@@ -207,12 +207,14 @@
               <div><span class="panel-kicker">ONE ROW AT A TIME</span><h2 id="paintCanvasHeading">Paint the canvas</h2></div>
               <span class="panel-pill" id="paintRowsDone">0 / 14</span>
             </div>
+            <div class="paint-quick-palette" id="paintQuickPalette" role="group" aria-label="Quick colour brushes while painting"></div>
             <div class="paint-canvas-frame">
               <div class="paint-canvas" id="paintCanvas" role="grid"
                 aria-label="Integer-labelled pixel canvas. Only the highlighted row can be painted."></div>
             </div>
             <div class="paint-canvas-key"><span><i class="paint-key-active"></i> Numbered: paint now</span><span><i class="paint-key-done"></i> Completed: colours stay</span></div>
             <p class="paint-canvas-tip">Each square is one integer. When a row is correct, its numbers disappear and only the colours remain.</p>
+            <button type="button" class="button button-primary paint-mobile-check" id="paintCheckMobile">Check row →</button>
           </section>
           <section class="panel paint-tools-panel" aria-label="Colour rules and painting controls">
             <div class="panel-heading">
