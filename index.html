@@ -177,8 +177,47 @@
             </div>
 
             <div id="workingShell" class="working-shell" hidden>
-              <label for="workingArea">Working space <span>(optional — not marked)</span></label>
-              <textarea id="workingArea" rows="2" placeholder="For example: subtract 1 from all three parts..."></textarea>
+              <div class="working-heading">
+                <div><span class="section-label">WORKING SPACE</span><p>Optional — not marked. Your number line is the answer.</p></div>
+                <div class="working-switch" role="group" aria-label="Choose how to show your working">
+                  <button type="button" id="workTypeButton" class="selected" aria-pressed="true" aria-controls="workTypePanel">⌨ Type maths</button>
+                  <button type="button" id="workDrawButton" aria-pressed="false" aria-controls="workDrawPanel">✎ Draw working</button>
+                </div>
+              </div>
+              <div id="workTypePanel" class="working-method">
+                <label for="workingArea">Type each algebra step on a new line</label>
+                <textarea id="workingArea" rows="3" maxlength="2000" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="workTypingTip" placeholder="e.g. -6 &lt; 2x &lt; 4"></textarea>
+                <div class="work-math-keyboard" id="workMathKeyboard" role="group" aria-label="Insert mathematical notation">
+                  <button type="button" data-math-key="x" aria-label="Insert x">x</button>
+                  <button type="button" data-math-key="+" aria-label="Plus">+</button>
+                  <button type="button" data-math-key="−" aria-label="Minus">−</button>
+                  <button type="button" data-math-key="×" aria-label="Multiply">×</button>
+                  <button type="button" data-math-key="÷" aria-label="Divide">÷</button>
+                  <button type="button" data-math-key="&lt;" aria-label="Less than">&lt;</button>
+                  <button type="button" data-math-key="&gt;" aria-label="Greater than">&gt;</button>
+                  <button type="button" data-math-key="=" aria-label="Equals">=</button>
+                  <button type="button" data-math-key="≤" aria-label="Less than or equal to">≤</button>
+                  <button type="button" data-math-key="≥" aria-label="Greater than or equal to">≥</button>
+                  <button type="button" data-math-key="brackets" aria-label="Insert brackets">( )</button>
+                  <button type="button" data-math-key="fraction" aria-label="Insert fraction">a⁄b</button>
+                  <button type="button" data-math-key="square" aria-label="Insert square or power">x²</button>
+                  <button type="button" data-math-key="newline" aria-label="New line">↵</button>
+                  <button type="button" data-math-key="backspace" aria-label="Delete previous character">⌫</button>
+                </div>
+                <div class="working-preview-heading"><span>LIVE MATHS PREVIEW</span><small>Proper fractions, powers and inequality signs</small></div>
+                <div id="workMathPreview" class="working-math-preview" role="region" aria-label="Mathematical working as formatted notation"></div>
+                <p class="working-tip" id="workTypingTip">Type normally or use the symbols. Use / for a fraction, ^2 for a square and Enter for a new step.</p>
+              </div>
+              <div id="workDrawPanel" class="working-method" hidden>
+                <div class="work-drawing-toolbar" role="group" aria-label="Drawing tools">
+                  <button type="button" id="workPen" class="selected" aria-pressed="true">✎ Pen</button>
+                  <button type="button" id="workEraser" aria-pressed="false">⌁ Eraser</button>
+                  <button type="button" id="workUndo" disabled>↶ Undo</button>
+                  <button type="button" id="workClear" disabled>Clear</button>
+                </div>
+                <svg id="workDrawing" class="working-draw-surface" viewBox="0 0 1000 400" preserveAspectRatio="none" role="img" aria-label="Blank working space. Use a finger, stylus or mouse to draw handwritten algebra."></svg>
+                <p class="working-tip">Write with your finger, stylus or mouse. The eraser removes a stroke; Undo restores your last change.</p>
+              </div>
             </div>
 
             <div class="feedback" id="feedback" role="status" aria-live="polite"></div>

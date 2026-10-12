@@ -43,6 +43,9 @@ class FakeElement {
   }
   change(){this.onchange?.(this.value);}
   focus(){}
+  blur(){}
+  setSelectionRange(start,end){this.selectionStart=start;this.selectionEnd=end;}
+  contains(node){for(let next=node;next;next=next.parentElement)if(next===this)return true;return false;}
   showModal(){this.open=true;}
   close(){this.open=false;}
   getBoundingClientRect(){return {width:300,height:250};}
@@ -52,7 +55,10 @@ class FakeElement {
     return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};
   }
   getScreenCTM(){return {inverse(){return {};}};}
-  closest(selector){return selector===".paint-cell"&&this.className.includes("paint-cell")?this:null;}
+  closest(selector){
+    if(selector==="[data-math-key]"&&this.dataset.mathKey)return this;
+    return selector===".paint-cell"&&this.className.includes("paint-cell")?this:null;
+  }
   querySelector(selector){
     if(selector===".cat-flip-panels")return new FakeElement("div");
     return this.querySelectorAll(selector)[0]||null;
@@ -1167,4 +1173,64 @@ test("The eight, ten and twelve row Paint stages colour and lock each integer sq
      globalThis.clearTimeout=oldClearTimeout;
    }
  }
+});
+
+test("Solve & Paint lets students switch typed maths and handwritten working",()=>{
+  selectStage("solve",2);
+  const picture=pictureById("full-gift-step");
+  $("skipTutorialButton").click();
+  assert.equal($("playScreen").hidden,false);
+  assert.equal($("workingShell").hidden,false);
+  assert.equal($("workTypePanel").hidden,false);
+  assert.equal($("workDrawPanel").hidden,true);
+  const input=$("workingArea");
+  input.value="-5 < 2x+1 < 5";
+  input.setSelectionRange(3,3);
+  for(const fn of input.listeners.get("input")||[])fn({target:input});
+  assert.ok($("workMathPreview").innerHTML.includes("<math "));
+  // The keyboard must replace the selected symbol, not append at the end.
+  const button=new FakeElement("button");
+  button.dataset.mathKey="≤";
+  $("workMathKeyboard").append(button);
+  input.setSelectionRange(3,4);
+  for(const fn of input.listeners.get("select")||[])fn();
+  for(const fn of $("workMathKeyboard").listeners.get("click")||[])
+    fn({target:button});
+  assert.equal(input.value,"-5 ≤ 2x+1 < 5");
+  assert.ok($("workMathPreview").innerHTML.includes("<mo>≤</mo>"));
+  $("workDrawButton").click();
+  assert.equal($("workTypePanel").hidden,true);
+  assert.equal($("workDrawPanel").hidden,false);
+  assert.equal($("workDrawButton").getAttribute("aria-pressed"),"true");
+  const pad=$("workDrawing");
+  const down={pointerId:171,button:0,isPrimary:true,clientX:30,clientY:40,
+    preventDefault(){}};
+  for(const fn of pad.listeners.get("pointerdown")||[])fn(down);
+  for(const fn of pad.listeners.get("pointermove")||[])
+    fn({...down,clientX:95,clientY:73});
+  for(const fn of pad.listeners.get("pointerup")||[])
+    fn({...down,clientX:95,clientY:73});
+  assert.equal(pad.children.length,1);
+  assert.ok(pad.children[0].getAttribute("d").includes(" L"));
+  assert.equal($("workUndo").disabled,false);
+  $("workEraser").click();
+  for(const fn of pad.listeners.get("pointerdown")||[])fn({...down,pointerId:172});
+  for(const fn of pad.listeners.get("pointerup")||[])fn({...down,pointerId:172});
+  assert.equal(pad.children.length,0,"Eraser removes the indicated stroke");
+  $("workUndo").click();
+  assert.equal(pad.children.length,1,"Undo restores an erased stroke");
+  $("workClear").click();
+  assert.equal(pad.children.length,0);
+  $("workUndo").click();
+  assert.equal(pad.children.length,1,"Undo also restores a cleared sketch");
+  $("workTypeButton").click();
+  assert.equal(input.value,"-5 ≤ 2x+1 < 5",
+    "Switching methods must not erase either draft");
+  $("workDrawButton").click();
+  assert.equal(pad.children.length,1);
+  // Correct checking must still use the number line, not the scratchpad.
+  answerCurrent(picture,0,"solve");
+  assert.equal(input.value,"","Next row begins with fresh working");
+  assert.equal(pad.children.length,0);
+  assert.equal($("workTypePanel").hidden,false);
 });

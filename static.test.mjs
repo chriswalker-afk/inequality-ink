@@ -495,3 +495,22 @@ test("Existing picture progress and historical saves never migrate to a differen
  assert.ok(app.includes('const KEY="inequality-ink-v5"'));
  assert.ok(app.includes('state.progress[key]=safeProgress(current.progress[key],picture)'));
 });
+
+
+test("Solve & Paint provides accessible maths typing and handwriting panels",()=>{
+  for(const id of ["workingShell","workTypeButton","workDrawButton","workTypePanel",
+    "workDrawPanel","workingArea","workMathKeyboard","workMathPreview",
+    "workDrawing","workPen","workEraser","workUndo","workClear"]){
+    assert.ok(html.includes('id="'+id+'"'),"Missing working-space control: "+id);
+  }
+  assert.ok(html.includes('aria-label="Choose how to show your working"'));
+  assert.ok(html.includes('aria-pressed="true"'));
+  assert.ok(html.includes('data-math-key="fraction"'));
+  assert.ok(html.includes('data-math-key="square"'));
+  assert.ok(html.includes('aria-label="Drawing tools"'));
+  assert.ok(css.includes(".working-draw-surface{"));
+  assert.ok(css.includes("touch-action:none;cursor:crosshair"));
+  assert.ok(app.includes('import {initWorkingPad} from "./working-space.mjs";'));
+  assert.ok(app.includes("workingPad.reset();"));
+  assert.ok(app.includes('$("workingShell").hidden=q.mode!=="solve";'));
+});
