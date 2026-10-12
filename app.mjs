@@ -334,11 +334,13 @@ function updateLevelSelector(){
 }
 function chooseLevel(){
  cancelRowAdvance();
+ cancelPreviewFlash();
  clearRevealTimers();show("introScreen");
  updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
  cancelRowAdvance();
+ cancelPreviewFlash();
  if(save.completed){finish({animate:true});return;}
  if(skip){
    save.tutorialDone=true;
@@ -901,6 +903,7 @@ function closeReveal(){
 }
 function finish({animate=false}={}){
   cancelRowAdvance();
+  cancelPreviewFlash();
   clearRevealTimers();
   const picture=activePicture();
   save.completed=true;store();
@@ -917,6 +920,7 @@ function finish({animate=false}={}){
 }
 function restart(){
  cancelRowAdvance();
+ cancelPreviewFlash();
  clearRevealTimers();
  if(!confirm("Start this picture again? Your progress on other pictures will be kept."))return;
  const replay=(save.replay||0)+1;
@@ -969,6 +973,7 @@ $("changeLevelButton").onclick=chooseLevel;
 $("chooseLevelButton").onclick=chooseLevel;
 $("playAgain").onclick=()=>{
  cancelRowAdvance();
+ cancelPreviewFlash();
  clearRevealTimers();
  const replay=(save.replay||0)+1;
  state.progress[activeKey()]=blank();
