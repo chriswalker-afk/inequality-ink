@@ -1,6 +1,6 @@
 # Inequality Ink
 
-A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundation Mathematics**. Students read, represent and solve exact real-number inequalities; the correct answers construct a mystery picture, which gains a background, colours and finishing details on completion.
+A no-login, browser-based pixel-art game for practising inequalities. Students read, represent and solve exact real-number inequalities; the correct answers construct a mystery picture, which gains a background, colours and finishing details on completion.
 
 **Live site:** https://chriswalker-afk.github.io/inequality-ink/
 

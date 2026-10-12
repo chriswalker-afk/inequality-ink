@@ -260,7 +260,7 @@ The row count of an **existing** picture remains unchanged, avoiding invalidatin
 
 ## 8. Delivery phases and recommended build order
 
-### Phase A — Foundation (one PR)
+### Phase A — Core structure (one PR)
 
 1. Add optional mode-specific progression metadata and helpers.
 2. Rename “Choose a mystery” to **“Choose a picture”**.
@@ -293,7 +293,7 @@ The row count of an **existing** picture remains unchanged, avoiding invalidatin
 ### Phase D — Polishing and evidence (one PR)
 
 1. Add Next picture recommendations and concise encouragement after completion.
-2. Test with Foundation students: time to first finished picture, ability to identify the next step, successful completion rate, and whether larger stages feel manageable.
+2. Test with students at different starting points: time to first finished picture, ability to identify the next step, successful completion rate, and whether larger stages feel manageable.
 3. Adjust tier copy, early artwork recognisability and question variety using this feedback.
 4. Consider, **but do not automatically enable**, optional soft unlocking after the pilot.
 

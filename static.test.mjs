@@ -9,6 +9,18 @@ const html=load("index.html"),app=load("app.mjs"),css=load("styles.css");
 const engine=load("picture-engine.mjs"),definitions=load("pictures.mjs");
 const getSection=(start,end)=>app.slice(app.indexOf(start),app.indexOf(end,app.indexOf(start)));
 
+test("Public copy is independent of a particular exam or course",()=>{
+ for(const [file,source] of Object.entries({
+   "index.html":html,"app.mjs":app,"model.mjs":load("model.mjs"),
+   "README.md":load("README.md"),
+   "PICTURE_PROGRESSION_PLAN.md":load("PICTURE_PROGRESSION_PLAN.md")
+ }))assert.doesNotMatch(source,/\b(?:Foundation|4MA1)\b/i,
+   file+" should not contain course-specific wording");
+ assert.ok(html.includes("INEQUALITIES • PIXEL ART"));
+ assert.ok(html.includes("MATHS THROUGH PIXEL ART"));
+ assert.ok(html.includes("Practise inequalities on interactive number lines"));
+});
+
 test("Every referenced element exists, with no duplicate HTML IDs",()=>{
  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
  assert.equal(new Set(ids).size,ids.length);
