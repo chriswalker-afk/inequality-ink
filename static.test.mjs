@@ -24,7 +24,7 @@ test("Every referenced element exists, with no duplicate HTML IDs",()=>{
 test("All five modes offer a picture selector and picture-specific save keys",()=>{
  for(const level of ["mirror","full","solve","mixed","paint"])
    assert.ok(html.includes('data-level="'+level+'"'));
- assert.ok(html.includes('role="group" aria-label="Choose a mystery picture"'));
+ assert.ok(html.includes('role="group" aria-label="Choose a picture"'));
  assert.ok(app.includes('function renderPicturePicker(){'));
  assert.ok(app.includes('picturesForLevel(state.activeLevel)'));
  assert.ok(app.includes('state.selectedPictures[state.activeLevel]=id'));
@@ -43,7 +43,7 @@ test("Changing picture never changes the student's chosen mathematical mode",()=
  assert.ok(app.includes('picture.clue'));
   assert.ok(!app.includes('picture.mystery'));
   assert.ok(app.includes('title.textContent=picture.clue'));
-  assert.ok(app.includes('p.completed?picture.name+" — completed"'));
+  assert.ok(app.includes('progress.completed?picture.name+" — completed"'));
 });
 test("Numbered mystery placeholders are replaced in all visible game surfaces",()=>{
   const paintData=load("paint-pictures.mjs");
@@ -55,7 +55,7 @@ test("Numbered mystery placeholders are replaced in all visible game surfaces",(
   assert.ok(app.includes('picture.clue+" — colour studio"'));
   assert.ok(app.includes('card.setAttribute("aria-label",picture.clue'));
   assert.ok(app.includes('title.textContent=picture.clue'));
-  assert.ok(app.includes('p.completed?picture.name+" — completed"'));
+  assert.ok(app.includes('progress.completed?picture.name+" — completed"'));
   assert.ok(app.includes('$("finishTitle").textContent=picture.name+"!"'));
 });
 test("The picture renderer and question generator do not use hardcoded cats or mushrooms",()=>{
@@ -411,4 +411,48 @@ test("Paint mode uses the existing full-screen coloured artwork reveal",()=>{
  assert.ok(app.includes('cancelPaintTimers()'));
  for(const source of ["paint-engine.mjs","paint-pictures.mjs","paint-engine.test.mjs"])
   assert.ok(existsSync(join(root,source)),source+" not installed");
+});
+
+
+test("Five visible progression steps lead from six to fourteen rows, and extras stay accessible",()=>{
+ for(const id of ["pictureJourneyHelp","picturePathProgress","pictureStepTrack",
+   "morePicturesSection","morePicturesToggle","extraPicturePicker",
+   "nextPictureButton"])
+   assert.ok(html.includes('id="'+id+'"'),"Missing progression element "+id);
+ assert.ok(html.includes("CHOOSE A PICTURE"));
+ const picker=getSection("function renderPicturePicker(){","function updateLevelSelector(){");
+ assert.ok(picker.includes("progressionForLevel(level)"));
+ assert.ok(picker.includes("extraPicturesForLevel(level)"));
+ assert.ok(picker.includes('for(const picture of core)picker.append(cardFor(picture))'));
+ assert.ok(picker.includes("extras)bonus.append(cardFor(picture)"));
+ assert.ok(picker.includes('PICTURE_TIERS[step-1]'));
+ assert.ok(picker.includes('colours+" colours · "'));
+ assert.ok(picker.includes('p.done')===false || picker.includes("progress.done"));
+ assert.ok(picker.includes('picture.id===next?.id'));
+ assert.ok(picker.includes('progress.completed?picture.name+" — completed"'));
+ assert.ok(picker.includes('$("morePicturesSection").open=true'));
+ assert.ok(css.includes(".picture-step-track"));
+ assert.ok(css.includes(".picture-option-meta"));
+ assert.ok(css.includes(".more-pictures"));
+});
+test("The starter immediately asks a real six-row question, not required practice",()=>{
+ const start=getSection('function start({skip=false}={}){','function feedback(');
+ assert.ok(start.includes('progressionStep(activePicture(),state.activeLevel)===1'));
+ assert.ok(start.includes('save.tutorialDone=true'));
+ assert.ok(start.includes('save.tutorial=tutorialFor(state.activeLevel).length'));
+ assert.ok(app.includes('$("skipTutorialButton").hidden=state.activeLevel==="paint"||step===1'));
+ assert.ok(app.includes('step===1?" · Quick win"'));
+ const finish=getSection('function finish({animate=false}={}){','function restart(){');
+ assert.ok(finish.includes('progressionForLevel(state.activeLevel)'));
+ assert.ok(finish.includes('$("nextPictureButton").hidden=!next'));
+ assert.ok(app.includes('$("nextPictureButton").onclick=()=>'));
+});
+test("Existing picture progress and historical saves never migrate to a different starter",()=>{
+ assert.ok(app.includes('const HISTORICAL_DEFAULT_IDS='));
+ for(const id of ["cat-cameo","mushroom-mystery","paint-rocket"])
+   assert.ok(app.includes('"'+id+'"'));
+ assert.ok(app.includes('const picture=pictureById(HISTORICAL_DEFAULT_IDS[level])'));
+ assert.ok(app.includes('safeProgress(legacy,pictureById(HISTORICAL_DEFAULT_IDS.mixed))'));
+ assert.ok(app.includes('const KEY="inequality-ink-v5"'));
+ assert.ok(app.includes('state.progress[key]=safeProgress(current.progress[key],picture)'));
 });
