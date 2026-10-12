@@ -51,6 +51,9 @@
             <button type="button" data-level="mixed" class="level-card" aria-pressed="false">
               <span class="level-icon" aria-hidden="true">✦</span><span><b>Mixed Challenge</b><small>All three skills together</small></span>
             </button>
+            <button type="button" data-level="paint" class="level-card" aria-pressed="false">
+              <span class="level-icon" aria-hidden="true">▦</span><span><b>Paint by Inequalities</b><small>Colour integer squares directly</small></span><span class="level-badge">NEW</span>
+            </button>
           </div>
           <p id="levelDescription" class="level-description">Represent one-sided inequalities to complete a mystery picture.</p>
           <div class="picture-picker-shell">
@@ -182,6 +185,54 @@
         <div class="game-foot"><span>TIP: Tap or click an endpoint circle to open or close it. Drag to move it.</span><span>Progress saves on this device</span></div>
       </section>
 
+      <section id="paintScreen" class="paint-screen" hidden aria-labelledby="paintTitle">
+        <header class="paint-page-header">
+          <div>
+            <span class="eyebrow">PAINT BY INEQUALITIES <span aria-hidden="true">✦</span></span>
+            <h1 id="paintTitle">Your colour studio</h1>
+            <p>Read the inequalities, choose your brush, then colour the matching integer squares.</p>
+          </div>
+          <div class="paint-page-actions">
+            <button type="button" class="button button-light" id="paintBack">↔ Change picture or level</button>
+            <button type="button" class="button button-light" id="paintRestart">↺ Start over</button>
+          </div>
+        </header>
+        <div class="paint-progress" aria-label="Painted picture progress">
+          <span id="paintProgressLabel">Row 1 of 14</span>
+          <div class="progress-track"><div class="progress-fill" id="paintProgressFill"></div></div>
+        </div>
+        <div class="paint-workspace">
+          <section class="panel paint-board-panel" aria-labelledby="paintCanvasHeading">
+            <div class="panel-heading">
+              <div><span class="panel-kicker">ONE ROW AT A TIME</span><h2 id="paintCanvasHeading">Paint the canvas</h2></div>
+              <span class="panel-pill" id="paintRowsDone">0 / 14</span>
+            </div>
+            <div class="paint-canvas-frame">
+              <div class="paint-canvas" id="paintCanvas" role="grid"
+                aria-label="Integer-labelled pixel canvas. Only the highlighted row can be painted."></div>
+            </div>
+            <div class="paint-canvas-key"><span><i class="paint-key-active"></i> Numbered: paint now</span><span><i class="paint-key-done"></i> Completed: colours stay</span></div>
+            <p class="paint-canvas-tip">Each square is one integer. When a row is correct, its numbers disappear and only the colours remain.</p>
+          </section>
+          <section class="panel paint-tools-panel" aria-label="Colour rules and painting controls">
+            <div class="panel-heading">
+              <div><span class="panel-kicker" id="paintStep">ROW 1 OF 14</span><h2>Choose a colour</h2></div>
+              <span class="mode-tag">PAINT</span>
+            </div>
+            <p class="paint-instruction">Each rule assigns a colour to all the integer squares that satisfy its inequality. Select a coloured rule, then tap or swipe across the active row.</p>
+            <div id="paintRules" class="paint-rules" role="group" aria-label="Inequality colour palette"></div>
+            <div class="paint-brush-actions">
+              <button type="button" class="button button-light" id="paintEraser">⌫ Eraser</button>
+              <button type="button" class="button button-light" id="paintClear">Clear this row</button>
+            </div>
+            <p class="paint-selected-label" id="paintSelectedLabel">Brush selected</p>
+            <div id="paintFeedback" class="feedback paint-feedback" role="status" aria-live="polite"></div>
+            <button type="button" class="button button-primary paint-check" id="paintCheck">Check row <span aria-hidden="true">→</span></button>
+            <p class="paint-help-note">Only the highlighted row can be edited. Tap a cell to colour it, or swipe across several. Progress saves on this device.</p>
+          </section>
+        </div>
+      </section>
+
       <section id="finishScreen" class="finish-screen" hidden aria-labelledby="finishTitle">
         <div class="finish-card">
           <div class="finish-stamp">MASTERPIECE COMPLETE ✦</div>
@@ -256,6 +307,7 @@
       <div class="help-rule"><span class="closed-circle"></span><div><b>Closed circle</b><p>The endpoint is included: ≤ or ≥.</p></div></div>
       <div class="help-rule"><span class="help-star">↔</span><div><b>Between two endpoints</b><p>Place both circles and shade the segment between them.</p></div></div>
       <div class="help-rule"><span class="help-star">◧</span><div><b>Mirror Mode</b><p>Represent one-sided inequalities using the correct circle and arrow. Complete all the questions to reveal the picture.</p></div></div>
+      <div class="help-rule"><span class="help-star">▦</span><div><b>Paint by Inequalities</b><p>Select a colour beside its inequality. Tap or swipe over each integer-labelled square that satisfies that inequality. You can edit only the highlighted row. After a correct check, the numbers vanish and the colours remain.</p></div></div>
       <p class="dialog-foot">Click or tap a circle to switch between open and closed. Drag it to move its endpoint, tap a number-line tick, or use the +/− buttons. After a correct check, the next question appears automatically. When dividing an inequality by a negative number, reverse the signs.</p>
       <button type="button" class="button button-primary dialog-done" id="doneHelp">Got it!</button>
     </div>
