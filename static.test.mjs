@@ -165,7 +165,7 @@ test("One Check & paint press handles correctness, progression and the final rev
   const check=getSection('function check(){','function hint(){');
   assert.ok(check.includes('scheduleRowAdvance()'));
   assert.ok(check.includes('locked=true'));
-  assert.ok(check.includes('initProgress({animate:q.mode!=="tutorial"})'));
+  assert.ok(check.includes('initProgress({animate:false,redraw:q.mode==="tutorial"})'));
   assert.ok(check.includes('"Correct — next row"')||
     check.includes('✓ Correct — next row…'));
   const advance=getSection('function scheduleRowAdvance(){','const mk=');
