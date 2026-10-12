@@ -83,7 +83,7 @@ function variantForPixels(i, variant) {
 
 
 export const LEVELS = Object.freeze({
-  mirror: {name:"Mirror Mode", subtitle:"Start here · one-sided inequalities", detail:"Create the right half of Cat Cameo. The whole cat appears only after your final answer."},
+  mirror: {name:"Mirror Mode", subtitle:"Start here · one-sided inequalities", detail:"Read or represent ordinary one-sided inequalities to reveal a mystery picture."},
   full: {name:"Full Picture", subtitle:"Build both ends · bounded inequalities", detail:"Shade an exact interval across the whole picture."},
   solve: {name:"Solve & Paint", subtitle:"Algebra challenge · solve then draw", detail:"Rearrange inequalities before drawing their solutions."},
   mixed: {name:"Mixed Challenge", subtitle:"A little of everything", detail:"Switch between mirrored, bounded and algebra questions."}
@@ -102,67 +102,79 @@ export function paintedColumns(question) {
   return [...new Set([...half, ...half.map(reflectColumn)])].sort((a,b)=>a-b);
 }
 
-// CAT CAMEO is deliberately a separate 8-column right-half sprite.
-// Every row is formed by clipping one genuine real-number ray to 0..7.
-// The upper/lower canvas boundary is never an additional number-line endpoint.
-export const CAT_HALF_WIDTH=8;
+// A half-picture specifies its own displayed number-line window.
+// The integer columns are [min, max), so [-5,5] provides ten pixel columns
+// labelled -5,-4,...,4; x < 3 draws precisely -5,...,2.
+// None of these limits changes the student's unbounded real solution.
+export const CAT_WINDOW=Object.freeze({min:-5,max:5});
+export function pixelsInWindow(interval,window){
+  if(!window||!Number.isInteger(window.min)||!Number.isInteger(window.max)||
+     window.max<=window.min)throw Error("Invalid number-line window");
+  return Array.from({length:window.max-window.min},(_,j)=>window.min+j)
+    .filter(x=>isInInterval(x,interval));
+}
+export const CAT_HALF_WIDTH=CAT_WINDOW.max-CAT_WINDOW.min;
+export const CAT_FULL_WIDTH=2*CAT_HALF_WIDTH;
+// Rows are stored as pixel indices relative to the left edge of the half-canvas.
+// The generator derives one true half-line per row from the same window.
 export const CAT_HALF_ROWS=Object.freeze([
-  [1,6,7,"right",true],  // x > 5   (outer ear)
-  [2,5,7,"right",false], // x >= 5
-  [3,4,7,"right",true],  // x > 3
-  [4,0,7,"right",false], // x >= 0
-  [5,0,7,"left",true],   // x < 8
-  [6,0,6,"left",false],  // x <= 6
-  [7,0,6,"left",true],   // x < 7
-  [8,0,5,"left",false],  // x <= 5
-  [9,0,5,"left",true],   // x < 6
-  [10,0,4,"left",false], // x <= 4
-  [11,0,4,"left",true],  // x < 5
-  [12,0,3,"left",false], // x <= 3
-  [13,0,2,"left",true],  // x < 3
-  [14,0,1,"left",false]  // x <= 1
+  [1,8,9,"right",true],
+  [2,7,9,"right",false],
+  [3,6,9,"right",true],
+  [4,0,9,"right",false],
+  [5,0,9,"left",true],
+  [6,0,8,"left",false],
+  [7,0,8,"left",true],
+  [8,0,7,"left",true],   // x < 3 on [-5,5] -> -5 through 2 (8 pixels)
+  [9,0,7,"left",false],
+  [10,0,6,"left",true],
+  [11,0,6,"left",false],
+  [12,0,5,"left",true],
+  [13,0,4,"left",false],
+  [14,0,3,"left",true]
 ].map(([y,from,to,direction,strict])=>Object.freeze({y,from,to,direction,strict})));
 export const CAT_SEQUENCE=Object.freeze([...CAT_HALF_ROWS].reverse());
-export const catHalfColumns=interval=>Array.from({length:CAT_HALF_WIDTH},(_,i)=>i)
-  .filter(x=>isInInterval(x,interval));
+export const catHalfColumns=interval=>pixelsInWindow(interval,CAT_WINDOW);
 export function catHalfPixelAt(x,y){
   const row=CAT_HALF_ROWS.find(r=>r.y===y);
   return Boolean(row && x>=row.from && x<=row.to);
 }
 export function catPixelAt(x,y){
-  if(!Number.isInteger(x)||x<0||x>=WIDTH)return false;
-  const halfX=x<8?7-x:x-8;
+  if(!Number.isInteger(x)||x<0||x>=CAT_FULL_WIDTH)return false;
+  const halfX=x<CAT_HALF_WIDTH?CAT_HALF_WIDTH-1-x:x-CAT_HALF_WIDTH;
   return catHalfPixelAt(halfX,y);
 }
 export function catColourAt(x,y){
   if(!catPixelAt(x,y))return null;
-  const d=x<8?7-x:x-8;
+  const d=x<CAT_HALF_WIDTH?CAT_HALF_WIDTH-1-x:x-CAT_HALF_WIDTH;
   const row=CAT_HALF_ROWS.find(r=>r.y===y);
   const outline="#3b3445",ginger="#eba66d",furLight="#f8cc90",furShadow="#d78960",
         innerEar="#df8f9b",eye="#302b3b",muzzle="#ffe6b8",nose="#cf657c";
   if(y<=3){
-    if(d===row.from||d===7||y===1)return outline;
+    if(d===row.from||d===row.to||y===1)return outline;
     return innerEar;
   }
   if(d===row.to||y===14)return outline;
-  if(y===4&&d>=5)return outline;
-  if((y===6||y===7)&&d===3)return eye;
-  if(y===8&&d===3)return furLight;
-  if((y===8||y===9)&&d===4)return innerEar;
+  if(y===4&&d>=7)return outline;
+  if((y===6||y===7)&&d===4)return eye;
+  if(y===8&&d===4)return furLight;
+  if((y===8||y===9)&&d===5)return innerEar;
   if(y===10&&d===0)return nose;
   if(y===11&&d===0)return eye;
-  if((y===10||y===11||y===12)&&d<=2)return muzzle;
+  if((y===10||y===11||y===12)&&d<=3)return muzzle;
   if(y===13)return furShadow;
-  if(y===5&&d>=5)return furShadow;
+  if(y===5&&d>=7)return furShadow;
   return y%3===0?furLight:ginger;
 }
 function catAnswer(row,replay=0){
   const strict=replay===0?row.strict:(row.strict !== (replay%2===1));
-  const included=!strict;
-  const at=row.direction==="right"
-    ? row.from-(strict?1:0)
-    : row.to+(strict?1:0);
-  return {direction:row.direction,at,included};
+  return {
+    direction:row.direction,
+    at:row.direction==="right"
+      ? CAT_WINDOW.min+row.from-(strict?1:0)
+      : CAT_WINDOW.min+row.to+(strict?1:0),
+    included:!strict
+  };
 }
 
 // Different inequality endpoints can select identical integer pixels. Exact number-line
@@ -212,7 +224,7 @@ export function makeQuestion(index,replay=0,level="mixed") {
     return mode==="read"
       ? {...question,prompt:"Which one-sided inequality does this number line show?",
           options:readOptions(answer,index,replay)}
-      : {...question,prompt:"Draw the complete one-sided inequality. Your ray colours the right half of the picture.",
+      : {...question,prompt:"Represent this inequality on the number line.",
           equation:formatInterval(answer)};
   }
   const row=SEQUENCE[index];
@@ -337,7 +349,7 @@ export function validatePuzzle() {
   for(let n=0;n<14;n++)for(const level of LEVEL_IDS)for(let replay=0;replay<20;replay++){
     const q=makeQuestion(n,replay,level);
     const expected=level==="mirror"
-      ? Array.from({length:8},(_,i)=>i).filter(x=>catHalfPixelAt(x,q.row))
+      ? Array.from({length:CAT_HALF_WIDTH},(_,i)=>i).filter(x=>catHalfPixelAt(x,q.row)).map(i=>i+CAT_WINDOW.min)
       : columnsFor(ROWS.find(r=>r.y===q.row));
     if(JSON.stringify(paintedColumns(q))!==JSON.stringify(expected))
       throw Error("Paint mismatch "+level+" row "+q.row+" replay "+replay);
@@ -349,11 +361,11 @@ export function validatePuzzle() {
     if(q.mode==="read"&&q.options.filter(o=>identicalSolution(o.value,q.answer)).length!==1)
       throw Error("Ambiguous options");
   }
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
-    if(catColourAt(x,y)!==catColourAt(WIDTH-1-x,y))throw Error("Cat colour asymmetry");
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
+    if(catColourAt(x,y)!==catColourAt(CAT_FULL_WIDTH-1-x,y))throw Error("Cat colour asymmetry");
     if(catColourAt(x,y)!==null&&!catPixelAt(x,y))throw Error("Cat colour outside silhouette");
   }
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++)
     if(colourAt(x,y)!==colourAt(WIDTH-1-x,y))throw Error("Colour asymmetry at "+x+","+y);
-  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true,catHalfPixels:catCells.size,catConnected:true};
+  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true,catHalfPixels:catCells.size,catConnected:true,catWindow:CAT_WINDOW};
 }
