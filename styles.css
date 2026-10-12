@@ -286,3 +286,50 @@ body.reveal-open{overflow:hidden}
   .reveal-dialog.is-celebrated::before,
   .reveal-dialog.is-celebrated::after{animation:none!important}
 }
+
+
+/* Answer ghosts show the mathematical consequence of the student's CURRENT
+   selection, without altering any secret/persisted pixels. Feedback flashes
+   affect only the candidate row, then fade back to the normal ink colour. */
+.ink-live-preview{pointer-events:none}
+.ink-live-preview .ink-preview-pixel{
+  fill:#8ba9c4;fill-opacity:.45;
+  stroke:#789bb5;stroke-opacity:.55;stroke-width:.045;
+  pointer-events:none;
+}
+.ink-live-preview--incorrect .ink-preview-pixel{
+  fill:#f4a244;fill-opacity:.96;stroke:#d47d24;stroke-opacity:1;
+  animation:ink-rejected-flash .55s ease-in-out both;
+}
+.ink-live-preview--correct .ink-preview-pixel{
+  fill:#56c78d;fill-opacity:1;stroke:#328e68;stroke-opacity:1;
+  animation:ink-accepted-flash .32s ease-out both;
+}
+.canvas-stage.ink-stage--incorrect{
+  animation:ink-stage-warning .55s ease-in-out both;
+}
+.canvas-stage.ink-stage--correct{
+  animation:ink-stage-success .34s ease-out both;
+}
+@keyframes ink-rejected-flash{
+  0%,100%{fill-opacity:.47}
+  25%,65%{fill-opacity:1}
+}
+@keyframes ink-accepted-flash{
+  0%{fill-opacity:.6}
+  48%,100%{fill-opacity:1}
+}
+@keyframes ink-stage-warning{
+  0%,100%{box-shadow:0 0 0 transparent}
+  35%,65%{box-shadow:inset 0 0 0 3px #f2a84a88,0 0 22px #e99a3547}
+}
+@keyframes ink-stage-success{
+  0%{box-shadow:0 0 0 transparent}
+  45%,100%{box-shadow:inset 0 0 0 3px #58c18e89,0 0 22px #4cbe8244}
+}
+@media(prefers-reduced-motion:reduce){
+  .ink-live-preview--incorrect .ink-preview-pixel,
+  .ink-live-preview--correct .ink-preview-pixel,
+  .canvas-stage.ink-stage--incorrect,
+  .canvas-stage.ink-stage--correct{animation:none!important}
+}
