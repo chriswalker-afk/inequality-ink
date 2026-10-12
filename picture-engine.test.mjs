@@ -159,6 +159,38 @@ test("Pictures have connected, correctly reflected masks and isolated background
    assert.ok(baseWidth>0);
  }
 });
+test("Little Star unfolds upright with a central top tip, side points and two lower points",()=>{
+ const picture=pictureById("mirror-star-starter");
+ assert.equal(picture.family,"half");
+ assert.equal(questionCount(picture),6,"The quick win must remain six questions");
+ assert.equal(fullPictureWidth(picture),12);
+ const pixels=Array.from({length:picture.height},(_,y)=>
+   Array.from({length:fullPictureWidth(picture)},(_,x)=>
+     picturePixelAt(picture,x,y,{full:true})?"#":".").join(""));
+ // Regression for the iPhone screenshot: the OLD mask had painted outer
+ // upper corners rather than a tip at the mirror seam, making a U shape.
+ assert.deepEqual(pixels,[
+   "............",
+   ".....##.....",
+   "....####....",
+   "############",
+   ".##########.",
+   "###......###",
+   "##........##",
+   "............"
+ ]);
+ for(let replay=0;replay<10;replay++)for(let index=0;index<6;index++){
+   const q=makePictureQuestion(picture,index,replay,"mirror");
+   const painted=picturePaintedValues(picture,q);
+   const row=picturedRow(picture,index);
+   const expected=Array.from({length:pictureWidth(picture)},(_,x)=>
+     picture.window.min+x).filter((_,x)=>picturePixelAt(picture,x,row.y));
+   assert.deepEqual(painted,expected,"The student still paints exactly the authored pixels");
+ }
+ for(const detail of pictureFinalDetails(picture))
+   assert.ok(picturePixelAt(picture,detail.x,detail.y,{full:true}),
+     "Every finishing sparkle must lie inside the corrected star");
+});
 test("Final details and their animation stages are picture data, not engine branches",()=>{
  for(const picture of PICTURE_LIBRARY){
    const stages=pictureDetailStages(picture),details=pictureFinalDetails(picture);
