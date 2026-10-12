@@ -281,7 +281,7 @@ function question(){
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
  $("canvasTip").textContent="✦ Light squares preview your answer. Orange means try again; green means correct.";
- $("playEyebrow").textContent=picture.mystery.toUpperCase()+
+ $("playEyebrow").textContent=picture.clue.toUpperCase()+
    " / "+LEVELS[state.activeLevel].name.toUpperCase();
  $("playTitle").firstChild.textContent="Mystery Picture";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
@@ -313,14 +313,14 @@ function renderPicturePicker(){
    const card=document.createElement("button");
    card.type="button";card.className="picture-option"+(isSelected?" selected":"");
    card.setAttribute("aria-pressed",String(isSelected));
-   card.setAttribute("aria-label",picture.mystery+", "+
+   card.setAttribute("aria-label",picture.clue+", "+
      (p.completed?picture.name+" completed":p.done+" of "+questionCount(picture)+" rows finished"));
    const icon=document.createElement("span");
    icon.className="picture-option-icon";icon.setAttribute("aria-hidden","true");
    icon.textContent=p.completed?"✦":"?";
    const contents=document.createElement("span");contents.className="picture-option-copy";
    const title=document.createElement("strong");
-   title.textContent=picture.mystery;
+   title.textContent=picture.clue;
    const caption=document.createElement("small");
    caption.textContent=p.completed?picture.name+" — completed":
      p.done?p.done+" / "+questionCount(picture)+" rows finished":
@@ -530,7 +530,7 @@ function startPaintRow(){
  updatePaintProgress();
  renderPaintRules();
  drawPaintCanvas();
- $("paintTitle").textContent=picture.mystery+" — colour studio";
+ $("paintTitle").textContent=picture.clue+" — colour studio";
 }
 function paintSquare(col){
  if(screen!=="paintScreen"||paintLocked||!paintQuestion||
