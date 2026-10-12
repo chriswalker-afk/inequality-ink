@@ -343,6 +343,19 @@ function updateLevelSelector(){
  $("levelProgress").textContent=save.completed?"Picture complete":
    count?count+" / "+total+" rows completed":"Ready to start";
  $("levelDescription").textContent=LEVELS[state.activeLevel].detail;
+ const painting=state.activeLevel==="paint";
+ $("introLead").textContent=painting?
+   "Choose a colour for each inequality, then paint the integer-labelled squares directly. Every correct row stays coloured until your picture is complete.":
+   "Represent inequalities on number lines. Each correct answer reveals more of a mystery picture. Finish to see it come together in full colour.";
+ $("introStepOne").innerHTML=painting?
+   "<b>Read</b> the colour inequalities for a row.":
+   "<b>Read or solve</b> the inequality.";
+ $("introStepTwo").innerHTML=painting?
+   "<b>Tap or swipe</b> to colour the correct integer squares.":
+   "<b>Plot the endpoints</b> with the right circles.";
+ $("introStepThree").innerHTML=painting?
+   "<b>Check each row</b> and watch the numbers disappear.":
+   "<b>Finish the picture</b> to discover the colourful surprise.";
  $("introGridSize").textContent=pictureWidth(picture)+" × "+picture.height;
  $("introArtCaption").textContent="A picture in progress";
  $("pictureSummary").textContent=total+
