@@ -694,3 +694,120 @@ body.paint-session{overflow:hidden}
   .picture-step{height:20px}
   .extra-picture-picker{grid-template-columns:1fr}
 }
+
+
+/* Solve & Paint: one optional working space with a typeset maths editor or
+   a touch/stylus-friendly handwritten pad. Answer checking still uses the
+   independent number line above it. */
+.working-shell{
+  margin-top:16px;
+  padding:14px;
+  border:1px solid #e5dfd8;
+  border-radius:15px;
+  background:#fffdfa;
+}
+.working-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:12px;
+}
+.working-heading .section-label{display:block;margin-bottom:4px}
+.working-heading p{margin:0;font-size:.75rem;color:#7b8190;line-height:1.5}
+.working-switch{
+  display:flex;gap:3px;padding:3px;border-radius:11px;
+  border:1px solid #e0e2e4;background:#f3f4f3;
+}
+.working-switch button{
+  background:transparent;border:0;border-radius:8px;
+  padding:8px 10px;color:#607086;font-size:.75rem;font-weight:800;
+}
+.working-switch button.selected{
+  color:#2b5d6c;background:white;
+  box-shadow:0 1px 5px #33405618;
+}
+.working-shell .working-method>label{
+  display:block;margin:0 0 7px;
+  font-size:.75rem;font-weight:750;color:#59677c;
+}
+.working-shell textarea{
+  display:block;width:100%;min-height:90px;max-height:280px;
+  padding:12px;border:1px solid #dce1e5;border-radius:11px;
+  background:#fff;color:#273b57;font-size:.94rem;line-height:1.7;
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  resize:vertical;white-space:pre-wrap;
+}
+.working-shell textarea::placeholder{color:#9aa4b0}
+.work-math-keyboard{
+  display:grid;grid-template-columns:repeat(8,minmax(0,1fr));
+  gap:5px;margin:9px 0 13px;
+}
+.work-math-keyboard button{
+  min-width:0;min-height:37px;padding:5px 3px;border-radius:8px;
+  border:1px solid #dfe2e6;background:#f7f9fa;color:#344763;
+  font-size:.99rem;font-weight:750;
+  transition:background .12s,border-color .12s;
+}
+.work-math-keyboard button:active,
+.work-math-keyboard button:hover{
+  background:#e7f2f2;border-color:#8ebbb6;
+}
+.working-preview-heading{
+  display:flex;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;gap:5px;margin:0 0 7px;
+  color:#967a70;font-size:.64rem;font-weight:900;letter-spacing:.09em;
+}
+.working-preview-heading small{
+  color:#90949d;font-size:.67rem;letter-spacing:normal;font-weight:500;
+}
+.working-math-preview{
+  display:grid;align-content:center;gap:9px;
+  min-height:60px;max-height:250px;overflow:auto;
+  padding:12px;border-radius:11px;
+  background:#f8f5ef;border:1px solid #e9e4dc;
+  color:#273954;
+}
+.working-math-preview math{
+  display:block;width:max-content;min-width:0;
+  font-size:1.22rem;line-height:1.5;
+}
+.work-preview-empty{color:#92969e;font-size:.79rem;font-weight:500}
+.working-tip{
+  margin:9px 0 0;color:#888e9b;font-size:.71rem;line-height:1.5;
+}
+.work-drawing-toolbar{
+  display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;
+}
+.work-drawing-toolbar button{
+  min-width:80px;min-height:36px;padding:7px 11px;
+  border:1px solid #dce1e5;border-radius:9px;background:#fff;
+  color:#54677e;font-size:.76rem;font-weight:800;
+}
+.work-drawing-toolbar button.selected{
+  background:#e6f3ef;border-color:#7eada1;color:#2f6b5a;
+}
+.work-drawing-toolbar button:disabled{opacity:.45;cursor:default}
+.working-draw-surface{
+  display:block;width:100%;height:clamp(195px,26vw,255px);
+  border:1px solid #dce1e5;border-radius:11px;
+  background-color:#fdfdfa;
+  background-image:linear-gradient(#dfe7ef80 1px,transparent 1px),
+    linear-gradient(90deg,#dfe7ef80 1px,transparent 1px);
+  background-size:23px 23px;
+  touch-action:none;cursor:crosshair;user-select:none;
+}
+.working-draw-surface.is-erasing{cursor:cell}
+.working-draw-surface .working-stroke{pointer-events:none}
+@media(max-width:740px){
+  .working-shell{padding:11px;margin-top:12px}
+  .working-heading{align-items:stretch;gap:8px}
+  .working-switch{width:100%}
+  .working-switch button{flex:1}
+  .work-math-keyboard{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .working-preview-heading small{font-size:.63rem}
+  .working-math-preview math{font-size:1.1rem}
+  .working-draw-surface{height:205px}
+  .work-drawing-toolbar button{min-width:0;flex:1}
+}
