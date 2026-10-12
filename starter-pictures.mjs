@@ -14,7 +14,7 @@ const make=({id,name,clue,description,rows,width,family,step,base,edge,
   // Mixed-mode rays may have an OPEN endpoint just outside the painted grid.
   // The visible number line must include it without clipping the mathematics.
   axis:family==="full"?{min:-Math.floor(width/2)-1,max:Math.ceil(width/2)+1}:undefined,
-  height:rows.length+2,rows;
+  height:rows.length+2,rows,
   palette:{base,edge,bands},background:back,
   detailStages,details
 });
