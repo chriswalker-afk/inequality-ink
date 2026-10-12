@@ -26,6 +26,8 @@ class FakeElement {
     };
   }
   setAttribute(name,value){this.attrs[name]=String(value);}
+  removeAttribute(name){delete this.attrs[name];}
+  hasAttribute(name){return Object.hasOwn(this.attrs,name);}
   getAttribute(name){return this.attrs[name]??null;}
   append(...els){for(const el of els)if(el){this.children.push(el);el.parentElement=this;}}
   replaceChildren(...els){this.children=[];this.append(...els);}
@@ -67,6 +69,15 @@ class FakeElement {
 const html=readFileSync(new URL("./index.html",import.meta.url),"utf8");
 const ids=[...new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]))];
 const elements=new Map(ids.map(id=>[id,new FakeElement(id)]));
+// Model iPhone Safari's inconsistent support for SVGElement.hidden:
+// assigning the property may be ignored even though the SVG retains its
+// literal hidden attribute. Code must call removeAttribute("hidden").
+const finalSvg=elements.get("revealFinalArt");
+finalSvg.setAttribute("hidden","");
+Object.defineProperty(finalSvg,"hidden",{
+  get(){return this.hasAttribute("hidden");},
+  set(_value){ /* deliberate no-op like WebKit on an SVG element */ }
+});
 const levels=["mirror","full","solve","mixed"].map(id=>{
   const el=new FakeElement("button");el.dataset.level=id;return el;
 });
@@ -182,12 +193,16 @@ function complete(level,index,id,{animated=false}={}){
   assert.equal($("revealFinalArt").querySelectorAll("[data-detail-stage]").length,
     picture.detailStages.length);
   if(animated){
+    assert.equal($("revealFinalArt").hasAttribute("hidden"),true,
+      "An uncoloured animation must initially hide the finished SVG");
     assert.equal($("revealBuildLayer").hidden,false,
       "The non-reduced-motion animation should start with ink rows");
     assert.equal($("revealFinalArt").hidden,true,
       "Full colour must not appear before the rows");
     $("skipReveal").click();
     assert.equal($("revealFinalArt").hidden,false);
+    assert.equal($("revealFinalArt").hasAttribute("hidden"),false,
+      "Skipping to the final picture must remove the SVG hidden attribute");
     assert.equal($("revealRowCount").textContent,"");
     assert.equal($("finishScreen").hidden,true,
       "Skipping animation must not skip the X-to-results step");
@@ -195,6 +210,9 @@ function complete(level,index,id,{animated=false}={}){
     assert.equal($("revealFinalArt").hidden,false,
       "Reduced-motion students should see the finished art immediately");
   }
+  assert.equal($("revealFinalArt").hasAttribute("hidden"),false,
+    "Completed colour picture MUST remove the SVG hidden attribute, including on iOS");
+  assert.equal($("revealFinalArt").getAttribute("aria-hidden"),"false");
   assert.equal($("skipReveal").hidden,true,
     "Show-finished-picture control disappears when artwork is fully revealed");
   $("closeReveal").click();
@@ -224,6 +242,7 @@ test("Student can complete seven distinct picture/difficulty journeys independen
   complete("mirror",2,"coral-crab");
   complete("mirror",3,"twilight-owl");
   complete("full",2,"flower-pot",{animated:true});
+  complete("full",0,"mushroom-mystery",{animated:true});
   complete("solve",3,"enchanted-potion");
   complete("mixed",4,"ice-cream-treat");
   select("mirror",1);
@@ -301,6 +320,8 @@ test("The live animation reveals row-by-row, then reflection, colour, and detail
       if($("revealBoard").classList.contains("has-colour")){
         sawColour=true;
         assert.ok(sawFold,"Mirror Mode must reflect before colour");
+        assert.equal($("revealFinalArt").hasAttribute("hidden"),false,
+          "Colour SVG must be unhidden through its actual attribute");
       }
       if($("revealFinalArt").querySelectorAll("[data-detail-stage]")
         .some(group=>group.getAttribute("opacity")==="1")){
@@ -309,6 +330,11 @@ test("The live animation reveals row-by-row, then reflection, colour, and detail
       }
     }
     assert.ok(sawFold&&sawColour&&sawDetails);
+    assert.equal($("revealBuildLayer").hidden,true,
+      "Monochrome artwork must retire when colour finishes fading in");
+    assert.equal($("revealMirrorLayer").hidden,true);
+    assert.equal($("revealFinalArt").hasAttribute("hidden"),false);
+    assert.equal($("revealFinalArt").getAttribute("aria-hidden"),"false");
     assert.equal($("revealHeading").textContent,picture.name+"!");
     assert.equal($("finishScreen").hidden,true,
       "The summary must stay hidden even after the completed animation");
