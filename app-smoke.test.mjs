@@ -124,7 +124,7 @@ function answerCurrent(picture,index,level,replay=0){
     }
   }
   $("checkButton").click();
-  assert.ok($("feedback").classList.contains("success"),
+  assert.ok($("feedback").className.includes("success"),
     picture.id+" "+level+" row "+index+" did not mark correctly: "+
     $("feedback").textContent);
   assert.ok($("nextButton").hidden===false);
