@@ -112,6 +112,10 @@
           <section class="panel question-panel" aria-label="Current inequality challenge">
             <div class="panel-heading question-panel-head"><div><span class="panel-kicker" id="questionStep">PRACTICE</span><h2 id="questionHeading">Let's try a number line</h2></div><span id="modeTag" class="mode-tag">DRAW</span></div>
             <p class="question-prompt" id="questionPrompt">Move the points to draw the solution.</p>
+            <div class="mobile-preview-strip" id="mobilePreviewStrip" aria-label="Live pixel picture preview">
+              <svg id="mobilePixelCanvas" viewBox="0 0 16 16" role="img" aria-label="Small live preview of your picture and proposed inequality"></svg>
+              <div class="mobile-preview-copy"><strong>Live picture preview</strong><small>Light squares show your answer before checking.</small></div>
+            </div>
             <div class="equation-card" id="equationCard"><span class="equation-label">YOUR INEQUALITY</span><div class="equation" id="equationText"></div></div>
 
             <div id="readArea" class="read-area" hidden>
