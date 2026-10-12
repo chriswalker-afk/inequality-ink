@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,finalDetailsFor,detailStagesFor,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
 const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
@@ -386,23 +386,83 @@ function drawCatPanel(svg,left=false){
       stroke:"#f7f3ed","stroke-width":0.035},svg);
   }
 }
+// Decorations are independent of both the mathematical silhouette and its
+// base-colour layer. The same final details appear in an animation, a reload,
+// reduced-motion mode, and a downloaded PNG.
+function appendFinalDetails(svg,artwork){
+  for(const stage of detailStagesFor(artwork)){
+    const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
+    for(const detail of finalDetailsFor(artwork)){
+      if(detail.group!==stage)continue;
+      const height=detail.height;
+      mk("rect",{x:detail.x,y:detail.y+(1-height)/2,width:1,height,
+        fill:detail.color,"shape-rendering":"crispEdges"},group);
+    }
+  }
+}
+function resetFinalDetails(){
+  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
+    group.style.transition="none";
+    group.setAttribute("opacity","0");
+  });
+}
+function revealAllDetails(){
+  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
+    group.style.transition="none";
+    group.setAttribute("opacity","1");
+  });
+}
+function scheduleDetailReveal(artwork,onComplete){
+  const stages=detailStagesFor(artwork);
+  stages.forEach((stage,i)=>{
+    later(()=>{
+      const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
+        .find(element=>element.getAttribute("data-detail-stage")===stage);
+      if(!group)return;
+      group.style.transition="opacity .37s ease-out";
+      group.setAttribute("opacity","1");
+    },i*370);
+  });
+  later(onComplete,stages.length*370+280);
+}
 function renderFinishedArt(){
-  if(state.activeLevel!=="mirror"){
-    sprite($("finishedArt"),{colour:true,completed:14});
-    $("finishedArt").setAttribute("aria-label","A completed full-colour mushroom.");
+  const svg=$("finishedArt"),cat=state.activeLevel==="mirror";
+  if(!cat){
+    sprite(svg,{colour:true,completed:14});
+    svg.setAttribute("aria-label","A full-colour mushroom with spots, expressive eyes and a smiling face.");
+  }else{
+    svg.replaceChildren();
+    svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
+    svg.classList.remove("half-canvas");
+    svg.setAttribute("aria-label","A symmetrical ginger pixel-art cat with eyes, ears, nose and whiskers.");
+    for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
+      const filled=catPixelAt(x,y);
+      mk("rect",{x,y,width:1,height:1,
+        fill:filled?catColourAt(x,y):"#e9e5df",
+        stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
+    }
+  }
+  appendFinalDetails(svg,cat?"cat":"mushroom");
+}
+function playMushroomReveal(){
+  if(state.activeLevel==="mirror")return;
+  clearRevealTimers();
+  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+  $("catFlipStage").hidden=true;
+  $("finishedArt").hidden=false;
+  resetFinalDetails();
+  $("replayReveal").hidden=true;
+  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+    revealAllDetails();
+    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
+    $("replayReveal").hidden=false;
     return;
   }
-  const svg=$("finishedArt");
-  svg.replaceChildren();
-  svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
-  svg.classList.remove("half-canvas");
-  svg.setAttribute("aria-label","A fully symmetrical coloured cat face, reflected from its right half.");
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
-    const filled=catPixelAt(x,y);
-    mk("rect",{x,y,width:1,height:1,
-      fill:filled?catColourAt(x,y):"#e9e5df",
-      stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
-  }
+  $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
+  later(()=>scheduleDetailReveal("mushroom",()=>{
+    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
+    $("replayReveal").hidden=false;
+  }),600);
 }
 function playCatReveal(){
   if(state.activeLevel!=="mirror")return;
