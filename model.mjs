@@ -118,9 +118,9 @@ export const CAT_FULL_WIDTH=2*CAT_HALF_WIDTH;
 // Rows are stored as pixel indices relative to the left edge of the half-canvas.
 // The generator derives one true half-line per row from the same window.
 export const CAT_HALF_ROWS=Object.freeze([
-  [1,8,9,"right",true],
-  [2,7,9,"right",false],
-  [3,6,9,"right",true],
+  [1,9,9,"right",true], // x > 3 paints only pixel 4
+  [2,8,9,"right",false],
+  [3,7,9,"right",true],
   [4,0,9,"right",false],
   [5,0,9,"left",true],
   [6,0,8,"left",false],
@@ -167,7 +167,8 @@ export function catColourAt(x,y){
   return y%3===0?furLight:ginger;
 }
 function catAnswer(row,replay=0){
-  const strict=replay===0?row.strict:(row.strict !== (replay%2===1));
+  const strict=row.direction==="right"&&row.from===0?false:
+    (replay===0?row.strict:(row.strict !== (replay%2===1)));
   return {
     direction:row.direction,
     at:row.direction==="right"
