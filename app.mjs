@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,identicalSolution,formatInterval,fmt,pixelAt,colourAt,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,COLUMN_MIN,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
 const KEY="inequality-ink-v2", LEGACY_KEY="inequality-ink-v1";
@@ -31,11 +31,20 @@ const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag)
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
 function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
  svg.replaceChildren();
+ // Reconstruct every solved row from its exact question solution.
+ // Mirror rows are genuinely clipped to the indicated half then reflected.
+ const drawn=new Map();
+ if(!intro){
+   for(let i=0;i<completed;i++){
+     const solvedQuestion=makeQuestion(i,save.replay,state.activeLevel);
+     drawn.set(solvedQuestion.row,new Set(paintedColumns(solvedQuestion).map(v=>v-COLUMN_MIN)));
+   }
+ }
  const newRow=animate && q?.row;
  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
    const active=pixelAt(x,y);
    const solved=intro ? active && y>=7 :
-     active && (colour || SEQUENCE.findIndex(r=>r.y===y)<completed);
+     active && (colour || (drawn.get(y)?.has(x)??false));
    const fill=solved?(colour?colourAt(x,y):"#64738e"):(intro&&active?"#d0d6dd":"#e9e5df");
    const attrs={x,y,width:1,height:1,fill,stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
    if(animate && solved && y===newRow && !colour){
