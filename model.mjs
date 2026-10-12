@@ -148,20 +148,15 @@ export function catColourAt(x,y){
   if(!catPixelAt(x,y))return null;
   const d=x<CAT_HALF_WIDTH?CAT_HALF_WIDTH-1-x:x-CAT_HALF_WIDTH;
   const row=CAT_HALF_ROWS.find(r=>r.y===y);
-  const outline="#3b3445",ginger="#eba66d",furLight="#f8cc90",furShadow="#d78960",
-        innerEar="#df8f9b",eye="#302b3b",muzzle="#ffe6b8",nose="#cf657c";
+  // The base colour layer contains no eyes, nose, ear interiors or whiskers.
+  // Those are separate final details, revealed only after full colour appears.
+  const outline="#3b3445",ginger="#eba66d",furLight="#f8cc90",furShadow="#d78960";
   if(y<=3){
     if(d===row.from||d===row.to||y===1)return outline;
-    return innerEar;
+    return ginger;
   }
   if(d===row.to||y===14)return outline;
   if(y===4&&d>=7)return outline;
-  if((y===6||y===7)&&d===4)return eye;
-  if(y===8&&d===4)return furLight;
-  if((y===8||y===9)&&d===5)return innerEar;
-  if(y===10&&d===0)return nose;
-  if(y===11&&d===0)return eye;
-  if((y===10||y===11||y===12)&&d<=3)return muzzle;
   if(y===13)return furShadow;
   if(y===5&&d>=7)return furShadow;
   return y%3===0?furLight:ginger;
@@ -288,20 +283,111 @@ export function colourAt(x,y) {
   const row=ROWS[y-1],first=columnsFor(row)[0]-COLUMN_MIN,last=columnsFor(row).at(-1)-COLUMN_MIN;
   const lx=Math.min(x,WIDTH-1-x);
   const outline="#28324c",coral="#ed707d",shadow="#ca4b67",
-    highlight="#f79b94",cream="#fff2ce",stem="#e8c596",stemShade="#cfa373";
+    highlight="#f79b94",stem="#e8c596",stemShade="#cfa373";
   if(y===1||y===9||x===first||x===last)return outline;
   if(y<=8){
-    if(([3,4].includes(y)&&[4,5].includes(lx))||
-       ([5,6].includes(y)&&[2,3].includes(lx))||
-       (y===7&&[6,7].includes(lx)))return cream;
+    // Spots and the small face are final details, not part of the base colour.
     if(y===2||(y===3&&lx===7))return highlight;
     if(y>=7)return shadow;
     return coral;
   }
-  if(y===11&&lx===6)return outline;
-  if(y===12&&lx===7)return shadow;
   if((y===13&&lx===6)||(y===14&&lx>=5))return stemShade;
   return stem;
+}
+
+// Separate finishing touches from the mathematical artwork and its base colours.
+// Each detail is an SVG pixel or small, pixel-aligned ink stroke, not an inequality pixel.
+// Designs are authored as symmetrical LEFT-side details and mirrored deterministically.
+// Details remain entirely inside the already painted silhouette.
+function mirroredDetails(fullWidth,leftMarks){
+  const marks=[];
+  for(const [x,y,color,group,height=1] of leftMarks){
+    for(const px of [x,fullWidth-1-x]){
+      marks.push(Object.freeze({x:px,y,color,group,height}));
+    }
+  }
+  return Object.freeze(marks);
+}
+export const CAT_DETAIL_STAGES=Object.freeze(["ears","eyes","face","whiskers"]);
+export const MUSHROOM_DETAIL_STAGES=Object.freeze(["spots","eyes","face"]);
+export const CAT_DETAILS=mirroredDetails(CAT_FULL_WIDTH,[
+  // Pink inner ears appear first.
+  [1,2,"#e891a1","ears"],
+  [1,3,"#f1a8b3","ears"],
+  [2,3,"#e891a1","ears"],
+
+  // Two expressive dark eyes, each with a tiny cream catchlight.
+  [6,7,"#29283c","eyes"],
+  [7,7,"#fff6dc","eyes"],
+  [6,8,"#29283c","eyes"],
+  [7,8,"#29283c","eyes"],
+
+  // Cheeks, bright muzzle, a pink nose and a small curved smile.
+  [5,9,"#f59d99","face"],
+  [6,9,"#f6b4a6","face"],
+  [7,10,"#ffe8bb","face"],
+  [8,10,"#ffe8bb","face"],
+  [9,10,"#e06c85","face"],
+  [7,11,"#ffedc8","face"],
+  [8,11,"#ffedc8","face"],
+  [9,11,"#704958","face",0.38],
+  [8,12,"#704958","face",0.35],
+
+  // Fine whiskers are centred in their pixels rather than full-height blocks.
+  [4,11,"#73545a","whiskers",0.22],
+  [5,11,"#73545a","whiskers",0.22],
+  [6,11,"#73545a","whiskers",0.22],
+  [5,12,"#73545a","whiskers",0.22],
+  [6,12,"#73545a","whiskers",0.22]
+]);
+export const MUSHROOM_DETAILS=mirroredDetails(WIDTH,[
+  // Cap spots add a second colour and texture after the cap is coloured.
+  [7,3,"#fff0d8","spots"],
+  [5,4,"#fff0d8","spots"],
+  [6,4,"#fff0d8","spots"],
+  [3,5,"#fff0d8","spots"],
+  [4,5,"#fff0d8","spots"],
+  [3,6,"#fff0d8","spots"],
+  [4,6,"#fff0d8","spots"],
+
+  // A little face transforms the stem into a character.
+  [6,11,"#273048","eyes"],
+  [5,12,"#efa2a0","face"],
+  [7,12,"#855c55","face",0.36]
+]);
+export function finalDetailsFor(artwork){
+  if(artwork==="cat")return CAT_DETAILS;
+  if(artwork==="mushroom")return MUSHROOM_DETAILS;
+  throw Error("Unknown artwork for details: "+artwork);
+}
+export function detailStagesFor(artwork){
+  if(artwork==="cat")return CAT_DETAIL_STAGES;
+  if(artwork==="mushroom")return MUSHROOM_DETAIL_STAGES;
+  throw Error("Unknown artwork for detail stages: "+artwork);
+}
+function validateDetails(name,details,width,mask,stages){
+  const allowed=new Set(stages),placed=new Set(),lookup=new Map();
+  for(const mark of details){
+    if(!Number.isInteger(mark.x)||!Number.isInteger(mark.y)||
+       mark.x<0||mark.x>=width||mark.y<0||mark.y>=HEIGHT)
+      throw Error(name+" has an out-of-bounds detail");
+    if(!mask(mark.x,mark.y))throw Error(name+" detail outside the silhouette at "+mark.x+","+mark.y);
+    if(!allowed.has(mark.group))throw Error(name+" detail has unknown group "+mark.group);
+    if(!/^#[0-9a-f]{6}$/i.test(mark.color))throw Error(name+" detail has invalid colour");
+    if(!(mark.height>0&&mark.height<=1))throw Error(name+" detail has invalid height");
+    const key=mark.x+","+mark.y;
+    if(placed.has(key))throw Error(name+" has overlapping final details at "+key);
+    placed.add(key);lookup.set(key,mark);
+  }
+  for(const mark of details){
+    const reflected=lookup.get((width-1-mark.x)+","+mark.y);
+    if(!reflected||reflected.color!==mark.color||
+       reflected.group!==mark.group||reflected.height!==mark.height)
+      throw Error(name+" has asymmetric final details at "+mark.x+","+mark.y);
+  }
+  for(const stage of stages)
+    if(!details.some(mark=>mark.group===stage))throw Error(name+" has an empty detail stage "+stage);
+  return true;
 }
 
 export function validatePuzzle() {
@@ -368,5 +454,9 @@ export function validatePuzzle() {
   }
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++)
     if(colourAt(x,y)!==colourAt(WIDTH-1-x,y))throw Error("Colour asymmetry at "+x+","+y);
-  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true,catHalfPixels:catCells.size,catConnected:true,catWindow:CAT_WINDOW};
+  validateDetails("Cat Cameo",CAT_DETAILS,CAT_FULL_WIDTH,catPixelAt,CAT_DETAIL_STAGES);
+  validateDetails("Mushroom Mystery",MUSHROOM_DETAILS,WIDTH,pixelAt,MUSHROOM_DETAIL_STAGES);
+  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true,
+    catHalfPixels:catCells.size,catConnected:true,catWindow:CAT_WINDOW,
+    catDetails:CAT_DETAILS.length,mushroomDetails:MUSHROOM_DETAILS.length};
 }
