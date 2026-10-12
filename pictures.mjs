@@ -35,7 +35,7 @@ const mushroomInitial=[
 
 export const PICTURE_DEFINITIONS = Object.freeze([
   {
-    id:"cat-cameo",name:"Cat Cameo",mystery:"Mystery 01",
+    id:"cat-cameo",name:"Cat Cameo",clue:"Whisker Wink",
     description:"A secret character waits until the picture is finished.",
     family:"half",levels:["mirror"],window:{min:-5,max:5},height:16,
     rows:catRows,firstStrict:[true,false,true,false,true,false,true,true,false,true,false,true,false,true],
@@ -60,7 +60,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   },
   {
-    id:"heart-glow",name:"Heart Glow",mystery:"Mystery 02",
+    id:"heart-glow",name:"Heart Glow",clue:"Full of Feeling",
     description:"A smaller picture with a big surprise.",
     family:"half",levels:["mirror"],window:{min:-4,max:4},height:16,
     rows:heartRows,firstStrict:[true,false,true,false,true,false,true,false,true,false,true,false,true,false],
@@ -80,7 +80,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   },
   {
-    id:"mushroom-mystery",name:"Mushroom Mystery",mystery:"Mystery 01",
+    id:"mushroom-mystery",name:"Mushroom Mystery",clue:"Woodland Wonder",
     description:"The original mystery picture with two-ended intervals.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -101,7 +101,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   },
   {
-    id:"rocket-launch",name:"Rocket Launch",mystery:"Mystery 02",
+    id:"rocket-launch",name:"Rocket Launch",clue:"Blast Off",
     description:"A new picture for the same full-interval questions.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -125,7 +125,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
 
   // MIRROR MODE · single genuine one-sided inequalities
   {
-    id:"coral-crab",name:"Coral Crab",mystery:"Mystery 03",
+    id:"coral-crab",name:"Coral Crab",clue:"Seaside Sidestep",
     description:"A colourful seaside creature awaits the final reveal.",
     family:"half",levels:["mirror"],window:{min:-5,max:5},height:16,
     rows:[
@@ -155,7 +155,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   },
   {
-    id:"twilight-owl",name:"Twilight Owl",mystery:"Mystery 04",
+    id:"twilight-owl",name:"Twilight Owl",clue:"Night Watch",
     description:"A wide-eyed nocturnal character awaits.",
     family:"half",levels:["mirror"],window:{min:-4,max:5},height:16,
     rows:[
@@ -186,7 +186,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
   // FULL PICTURE · one bounded interval per row; also compatible with
   // Solve & Paint and Mixed Challenge via horizontal symmetry.
   {
-    id:"flower-pot",name:"Blooming Flower",mystery:"Mystery 03",
+    id:"flower-pot",name:"Blooming Flower",clue:"In Full Bloom",
     description:"A tiny garden blooms as the rows rise.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -213,7 +213,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   },
   {
-    id:"enchanted-potion",name:"Enchanted Potion",mystery:"Mystery 04",
+    id:"enchanted-potion",name:"Enchanted Potion",clue:"Bubbling Brew",
     description:"A sparkling magical object appears at the end.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -240,7 +240,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   },
   {
-    id:"ice-cream-treat",name:"Ice Cream Treat",mystery:"Mystery 05",
+    id:"ice-cream-treat",name:"Ice Cream Treat",clue:"Sweet Scoop",
     description:"A colourful sweet treat is revealed piece by piece.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
