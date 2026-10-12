@@ -15,7 +15,7 @@ test("Every referenced element exists, with no duplicate HTML IDs",()=>{
  for(const [,id] of app.matchAll(/\$\("([^"]+)"\)/g))
    assert.ok(ids.includes(id),"Missing HTML element: "+id);
  for(const id of ["picturePicker","picturePickerStatus","pictureSummary",
-   "introPixelArt","pixelCanvas","finishedArt","replayDialog","revealBoard",
+   "introPixelArt","pixelCanvas","finishedArt","revealDialog","revealBoard",
    "revealBuildArt","revealMirrorLeft","revealMirrorRight","revealFinalArt",
    "closeReveal","skipReveal","revealStageText","replayReveal","progressMarkers"]){
    assert.ok(ids.includes(id));
@@ -94,7 +94,7 @@ test("Every row is revealed separately before reflection, colour and details",()
     'function openReveal({animate=true}={}){');
   const buildIndex=reveal.indexOf('row.setAttribute("opacity","1")');
   const reflectIndex=reveal.indexOf('layer.classList.add("is-unfolding")');
-  const colourIndex=reveal.indexOf('board.classList.add("has-colour")');
+  const colourIndex=reveal.indexOf('$("revealBoard").classList.add("has-colour")');
   const detailsIndex=reveal.indexOf('group.setAttribute("opacity","1")');
   assert.ok(buildIndex>=0);
   assert.ok(reflectIndex>buildIndex);
