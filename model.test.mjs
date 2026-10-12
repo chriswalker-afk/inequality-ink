@@ -6,7 +6,9 @@ import {
   CAT_WINDOW,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_HALF_ROWS,CAT_SEQUENCE,
   pixelsInWindow,catHalfColumns,catHalfPixelAt,catPixelAt,catColourAt,
   reflectColumn,paintedColumns,columnsFor,isInInterval,identicalSolution,
-  makeQuestion,pixelAt,colourAt,validatePuzzle,formatLinear
+  makeQuestion,pixelAt,colourAt,validatePuzzle,formatLinear,
+  CAT_DETAILS,MUSHROOM_DETAILS,finalDetailsFor,detailStagesFor,
+  FINISHED_BACKGROUNDS,finishedBackgroundAt
 } from "./model.mjs";
 
 test("two independent artworks remain connected and valid",()=>{
@@ -159,4 +161,61 @@ test("tutorials teach full mathematical half-lines, never bounded pixel ranges",
 test("negative coefficients in Solve & Paint still reverse both inequality signs",()=>{
  const i={direction:"between",lower:-3,upper:2,lowerIncluded:false,upperIncluded:false};
  assert.equal(formatLinear(i,-2,1),"−3 < 1 − 2x < 7");
+});
+
+
+test("final-character artwork includes eyes and other delayed details in both pictures",()=>{
+  const stats=validatePuzzle();
+  assert.ok(stats.catDetails>=28,"Cat should have an expressive face");
+  assert.ok(stats.mushroomDetails>=16,"Mushroom should have spots and a face");
+  assert.deepEqual([...detailStagesFor("cat")],["ears","eyes","face","whiskers"]);
+  assert.deepEqual([...detailStagesFor("mushroom")],["spots","eyes","face"]);
+  assert.deepEqual(finalDetailsFor("cat"),CAT_DETAILS);
+  assert.deepEqual(finalDetailsFor("mushroom"),MUSHROOM_DETAILS);
+  assert.throws(()=>finalDetailsFor("unknown"),/Unknown artwork/);
+  assert.throws(()=>detailStagesFor("unknown"),/Unknown artwork/);
+});
+test("finishing touches lie inside, and mirror exactly across, the correct silhouette",()=>{
+  for(const {details,width,inside} of [
+    {details:CAT_DETAILS,width:CAT_FULL_WIDTH,inside:catPixelAt},
+    {details:MUSHROOM_DETAILS,width:WIDTH,inside:pixelAt}
+  ]){
+    const byCoordinate=new Map(details.map(d=>[d.x+","+d.y,d]));
+    assert.equal(byCoordinate.size,details.length,"No two detail strokes overlap");
+    for(const d of details){
+      assert.equal(inside(d.x,d.y),true,"Final art must stay inside the drawn image");
+      assert.ok(d.height>0&&d.height<=1);
+      assert.match(d.color,/^#[0-9a-f]{6}$/i);
+      const mirror=byCoordinate.get((width-1-d.x)+","+d.y);
+      assert.ok(mirror,"Missing mirror-symmetric character detail");
+      assert.equal(mirror.group,d.group);
+      assert.equal(mirror.color,d.color);
+      assert.equal(mirror.height,d.height);
+    }
+  }
+});
+test("finished picture backgrounds are colourful and symmetric, while the silhouettes stay untouched",()=>{
+  for(const {artwork,width,inside} of [
+    {artwork:"cat",width:CAT_FULL_WIDTH,inside:catPixelAt},
+    {artwork:"mushroom",width:WIDTH,inside:pixelAt}
+  ]){
+    assert.ok(Object.isFrozen(FINISHED_BACKGROUNDS[artwork]));
+    const backgrounds=new Set();
+    let unfilled=0;
+    for(let y=0;y<HEIGHT;y++)for(let x=0;x<width;x++){
+      const bg=finishedBackgroundAt(artwork,x,y);
+      assert.match(bg,/^#[0-9a-f]{6}$/i);
+      assert.equal(bg,finishedBackgroundAt(artwork,width-1-x,y));
+      if(!inside(x,y)){backgrounds.add(bg);unfilled++;}
+    }
+    assert.ok(unfilled>0);
+    assert.ok(backgrounds.size>=2,"The completed background should have gentle pixel-art shading");
+  }
+  assert.notEqual(FINISHED_BACKGROUNDS.cat.base,FINISHED_BACKGROUNDS.mushroom.base);
+  assert.throws(()=>finishedBackgroundAt("cat",-1,0),/outside/);
+  assert.throws(()=>finishedBackgroundAt("mushroom",16,0),/outside/);
+  assert.throws(()=>finishedBackgroundAt("unknown",0,0),/Unknown/);
+  const xLessThree={direction:"left",at:3,included:false};
+  assert.deepEqual(paintedColumns(makeQuestion(6,0,"mirror")),[-5,-4,-3,-2,-1,0,1,2]);
+  assert.deepEqual(catHalfColumns(xLessThree),[-5,-4,-3,-2,-1,0,1,2]);
 });
