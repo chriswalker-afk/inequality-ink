@@ -91,6 +91,16 @@ Picture-specific artistic data is kept in `pictures.mjs`. Adding another picture
 
 The validator rejects invalid shapes, disconnected images, invalid row bounds, forbidden modes, offscreen endpoints, ambiguous reading options, invalid colours, unsymmetrical finishing details or question variants that paint the wrong columns. It checks every available mode against every authored row across replay variants.
 
+### Optional Solve & Paint working space
+
+Solve & Paint now has a two-way **Type maths / Draw working** switch below the interactive number line. This is scratch working, **not the marked answer**; the number line above remains the student's submission.
+
+- **Type maths:** enter one algebra step per line with a built-in compact keyboard for `x`, operations, inequality signs, brackets, a fraction template, powers, backspace and new lines. A live, locally rendered **MathML** preview shows real mathematical layout including stacked fractions and superscripts. Typing `<=` or `>=` renders the correct inequality symbol, `/` makes a fraction and `^2` makes a square.
+- **Draw working:** a touch-action-safe SVG writing surface accepts a finger, stylus or mouse; Pen, Eraser, Undo and Clear provide full control without external libraries or handwriting recognition.
+- Students can switch between both methods **without losing either draft for the current question**. Work resets only on the next question/restart. The optional scratch work is not assessed or stored; saved picture progress and marking remain independent. The design adapts to small mobile screens and keyboard navigation.
+
+The rendering/ink logic lives in **`working-space.mjs`** and is covered by focused mathematical, safety and simulated-student interaction tests.
+
 ### Fluid question flow and direct endpoint controls
 
 The **Check & paint** button is the only confirmation needed for an inequality. If an answer is incorrect, the student stays on that question and receives targeted feedback. If correct, the completed row is painted and the next question arrives automatically after a short acknowledgement; on the last row, the full-screen reveal opens automatically. This also applies to the introductory practice questions. No separate *Next row* button is needed.
