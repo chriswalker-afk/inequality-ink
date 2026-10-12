@@ -38,3 +38,41 @@ test("the CSS includes a clear reflection animation and reduced motion option",(
  assert.ok(css.includes(".ink-new-reflection"));
  assert.ok(css.includes("prefers-reduced-motion:reduce"));
 });
+
+test("Cat Cameo uses a half-width canvas until every question is completed",()=>{
+  assert.ok(script.includes('const cat=state.activeLevel==="mirror",width=cat?CAT_HALF_WIDTH:WIDTH'));
+  assert.ok(script.includes('const active=cat?catHalfPixelAt(x,y):pixelAt(x,y)'));
+  assert.ok(script.includes('paintedColumns(solvedQuestion)'));
+  assert.ok(script.includes('const columns=paintedColumns(solvedQuestion).map(v=>cat?v:v-COLUMN_MIN)'));
+  assert.ok(script.includes('if(!cat&&!intro&&!colour&&q?.artMode==="mirror")'),
+    "The mixed-mode row reflection must not also reflect Cat Cameo rows");
+  assert.ok(html.includes('id="introGridSize"'));
+  assert.ok(html.includes('id="mirrorMathNote"'));
+});
+test("finale unfolds first, displays a complete monochrome cat, then applies colour",()=>{
+  const start=script.indexOf('function playCatReveal(){');
+  const end=script.indexOf('function finish({animate=false}',start);
+  assert.ok(start>0&&end>start);
+  const reveal=script.slice(start,end);
+  const flips=reveal.indexOf('stage.classList.add("is-flipping")');
+  const completeMono=reveal.indexOf('stage.classList.add("is-revealed")');
+  const colours=reveal.indexOf('shell.classList.add("is-colouring")');
+  assert.ok(flips>0 && completeMono>flips && colours>completeMono);
+  assert.ok(reveal.includes('drawCatPanel($("catFlipLeft"),true)'));
+  assert.ok(reveal.includes('drawCatPanel($("catFlipRight"),false)'));
+  assert.ok(script.includes('save.done===14)finish({animate:true})'));
+  assert.ok(script.includes('catPixelAt(x,y)'));
+  assert.ok(script.includes('catColourAt(x,y)'));
+  for(const id of ['catFlipStage','catFlipLeft','catFlipRight','catFlipStatus',
+                   'finishedArt','finishedArtShell','replayReveal']){
+    assert.ok(html.includes('id="'+id+'"'));
+  }
+  assert.ok(css.includes('@keyframes cat-unfold'));
+  assert.ok(css.includes('.is-colouring #finishedArt'));
+  assert.ok(css.includes('prefers-reduced-motion:reduce'));
+});
+test("migrating to a new half-cat only resets old Mirror Mode progress",()=>{
+  assert.ok(script.includes('const KEY="inequality-ink-v3"'));
+  assert.ok(script.includes('if(!current && id==="mirror")continue;'));
+  assert.ok(script.includes('state.progress[id]={...blank(),...p}'));
+});
