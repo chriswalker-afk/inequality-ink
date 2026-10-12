@@ -232,7 +232,7 @@ function chooseLevel(){
  updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
- if(save.completed){finish();return;}
+ if(save.completed){finish({animate:true});return;}
  if(skip){
    save.tutorialDone=true;
    save.tutorial=tutorialFor(state.activeLevel).length;
@@ -466,159 +466,249 @@ function hint(){
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
  $("hintButton").disabled=hintsShown===3;
 }
-// Finished artwork is rendered from each picture's registry definition.
-// The mathematical pixels stay unchanged while colour, background and
-// independently staged finishing details appear only at completion.
+// The student sees a full-screen celebration BEFORE the results page.
+// Each question contributes one real row of ink. Mirror Mode unfolds only
+// after every row; colour/background and character details follow separately.
 let revealTimers=[];
 function clearRevealTimers(){
- for(const timer of revealTimers)clearTimeout(timer);
- revealTimers=[];
+  for(const timer of revealTimers)clearTimeout(timer);
+  revealTimers=[];
 }
-function later(fn,delay){revealTimers.push(setTimeout(fn,delay));}
+function later(callback,delay){
+  revealTimers.push(setTimeout(callback,delay));
+}
 function drawHalfPanel(svg,left=false){
- const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
- svg.replaceChildren();
- svg.setAttribute("viewBox","0 0 "+width+" "+height);
- for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-   const local=left?width-1-x:x,filled=picturePixelAt(picture,local,y);
-   mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
-     stroke:"#f7f3ed","stroke-width":0.035},svg);
- }
+  const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
+  svg.replaceChildren();
+  svg.setAttribute("viewBox","0 0 "+width+" "+height);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const local=left?width-1-x:x;
+    const filled=picturePixelAt(picture,local,y);
+    mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
+      stroke:"#f7f3ed","stroke-width":0.035},svg);
+  }
 }
 function appendFinalDetails(svg,picture){
- for(const stage of pictureDetailStages(picture)){
-   const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
-   for(const mark of pictureFinalDetails(picture)){
-     if(mark.group!==stage)continue;
-     mk("rect",{x:mark.x,y:mark.y+(1-mark.height)/2,
-       width:1,height:mark.height,fill:mark.color,
-       "shape-rendering":"crispEdges"},group);
-   }
- }
+  for(const stage of pictureDetailStages(picture)){
+    const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
+    for(const mark of pictureFinalDetails(picture)){
+      if(mark.group!==stage)continue;
+      mk("rect",{x:mark.x,y:mark.y+(1-mark.height)/2,
+        width:1,height:mark.height,fill:mark.color,
+        "shape-rendering":"crispEdges"},group);
+    }
+  }
 }
-function resetFinalDetails(){
- $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(g=>{
-   g.style.transition="none";g.setAttribute("opacity","0");
- });
+function setDetailsVisible(svg,visible){
+  svg.querySelectorAll("[data-detail-stage]").forEach(group=>{
+    group.style.transition="none";
+    group.setAttribute("opacity",visible?"1":"0");
+  });
 }
-function revealAllDetails(){
- $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(g=>{
-   g.style.transition="none";g.setAttribute("opacity","1");
- });
-}
-function scheduleDetailReveal(picture,onComplete){
- const stages=pictureDetailStages(picture);
- stages.forEach((stage,index)=>{
-   later(()=>{
-     const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
-       .find(g=>g.getAttribute("data-detail-stage")===stage);
-     if(!group)return;
-     group.style.transition="opacity .37s ease-out";
-     group.setAttribute("opacity","1");
-   },index*370);
- });
- later(onComplete,stages.length*370+280);
+function finishedArtwork(svg,picture){
+  const width=fullPictureWidth(picture),height=pictureHeight(picture);
+  svg.replaceChildren();
+  svg.classList.remove("half-canvas");
+  svg.setAttribute("viewBox","0 0 "+width+" "+height);
+  svg.setAttribute("aria-label",picture.name+
+    " with its colourful background and illustrated finishing details");
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    const filled=picturePixelAt(picture,x,y,{full:true});
+    mk("rect",{x,y,width:1,height:1,
+      fill:filled?pictureColourAt(picture,x,y,{full:true}):
+        pictureBackgroundAt(picture,x,y),
+      stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
+  }
+  appendFinalDetails(svg,picture);
 }
 function renderFinishedArt(){
- const picture=activePicture(),width=fullPictureWidth(picture),
-   height=pictureHeight(picture),svg=$("finishedArt");
- svg.replaceChildren();svg.classList.remove("half-canvas");
- svg.setAttribute("viewBox","0 0 "+width+" "+height);
- svg.setAttribute("aria-label","Completed pixel art: "+picture.name+
-   ", with a coloured background and illustrated finishing details.");
- for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-   const filled=picturePixelAt(picture,x,y,{full:true});
-   mk("rect",{x,y,width:1,height:1,
-     fill:filled?pictureColourAt(picture,x,y,{full:true}):
-       pictureBackgroundAt(picture,x,y),
-     stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
- }
- appendFinalDetails(svg,picture);
+  finishedArtwork($("finishedArt"),activePicture());
+  setDetailsVisible($("finishedArt"),true);
 }
-function revealComplete(){
- const picture=activePicture();
- $("finishTitle").textContent=picture.name+"!";
- $("finishNote").textContent="A completed picture, full of colour and finishing touches.";
- $("replayReveal").hidden=false;
+function buildMonochromeRows(picture){
+  const svg=$("revealBuildArt"),width=pictureWidth(picture),
+    height=pictureHeight(picture),rows=[];
+  svg.replaceChildren();
+  svg.setAttribute("viewBox","0 0 "+width+" "+height);
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+    mk("rect",{x,y,width:1,height:1,fill:"#e9e5df",
+      stroke:"#f8f3ec","stroke-width":0.035},svg);
+  }
+  // The actual generated inequality decides every pixel in every row.
+  // This works for read, draw, solve and mixed questions alike.
+  for(let index=0;index<questionCount(picture);index++){
+    const question=makePictureQuestion(picture,index,save.replay,state.activeLevel);
+    const group=mk("g",{"class":"reveal-ink-row",opacity:0},svg);
+    for(const value of picturePaintedValues(picture,question)){
+      mk("rect",{x:value-picture.window.min,y:question.row,
+        width:1,height:1,fill:"#61748e",
+        stroke:"#f8f3ec","stroke-width":0.025},group);
+    }
+    rows.push(group);
+  }
+  return rows;
 }
-function playFullReveal(){
- const picture=activePicture();
- if(picture.family!=="full")return;
- clearRevealTimers();
- $("finishedArtShell").classList.remove("is-revealing","is-colouring");
- $("catFlipStage").hidden=true;
- $("finishedArt").hidden=false;
- resetFinalDetails();
- $("replayReveal").hidden=true;
- if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
-   revealAllDetails();revealComplete();return;
- }
- $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
- later(()=>scheduleDetailReveal(picture,revealComplete),600);
+function setupRevealStages(picture){
+  const labels=picture.family==="half"?
+    ["Build","Reflect","Colour","Details"]:["Build","Colour","Details"];
+  const holder=$("revealSteps");
+  holder.replaceChildren();
+  for(const label of labels){
+    const element=document.createElement("span");
+    element.className="reveal-step";
+    element.textContent=label;
+    holder.append(element);
+  }
 }
-function playMirrorReveal(){
- const picture=activePicture();
- if(picture.family!=="half")return;
- clearRevealTimers();
- const stage=$("catFlipStage"),shell=$("finishedArtShell"),art=$("finishedArt");
- drawHalfPanel($("catFlipLeft"),true);
- drawHalfPanel($("catFlipRight"),false);
- const panels=stage.querySelector(".cat-flip-panels");
- panels.style.aspectRatio=fullPictureWidth(picture)+" / "+pictureHeight(picture);
- stage.className="cat-flip-stage";
- shell.classList.remove("is-revealing","is-colouring");
- resetFinalDetails();
- art.hidden=true;stage.hidden=false;
- $("catFlipStatus").textContent="Your completed drawing…";
- $("replayReveal").hidden=true;
- if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
-   stage.hidden=true;art.hidden=false;
-   revealAllDetails();revealComplete();return;
- }
- later(()=>{
-   $("catFlipStatus").textContent="Watch your picture unfold!";
-   stage.classList.add("is-flipping");
- },550);
- later(()=>{
-   stage.classList.add("is-revealed");
-   $("catFlipStatus").textContent="The complete picture — still monochrome…";
- },1850);
- later(()=>{
-   shell.classList.add("is-revealing");
-   art.hidden=false;
-   void art.getBoundingClientRect();
-   shell.classList.add("is-colouring");
-   $("catFlipStatus").textContent="And now… colour!";
- },2390);
- later(()=>{
-   $("catFlipStatus").textContent="One more thing… the little details!";
-   scheduleDetailReveal(picture,()=>{
-     $("catFlipStatus").textContent="Masterpiece complete!";
-     revealComplete();
-   });
- },3500);
+function setRevealStage(index,message){
+  const steps=Array.from($("revealSteps").children);
+  steps.forEach((step,i)=>{
+    step.classList.toggle("active",i===index);
+    step.classList.toggle("done",i<index);
+  });
+  $("revealStageText").textContent=message;
+}
+function showRevealFinished(){
+  if(!$("revealDialog").open)return;
+  clearRevealTimers();
+  const picture=activePicture(),board=$("revealBoard"),art=$("revealFinalArt");
+  $("revealBuildLayer").hidden=true;
+  $("revealMirrorLayer").hidden=true;
+  art.hidden=false;
+  board.classList.add("has-colour");
+  setDetailsVisible(art,true);
+  $("revealHeading").textContent=picture.name+"!";
+  setRevealStage($("revealSteps").children.length-1,
+    "Your masterpiece is complete. Close this screen to see your results.");
+  for(const step of $("revealSteps").children){
+    step.classList.remove("active");
+    step.classList.add("done");
+  }
+  $("revealRowCount").textContent="";
+  $("skipReveal").hidden=true;
+}
+function playRevealRows(picture,rows){
+  const total=rows.length,delay=370,between=155;
+  setRevealStage(0,"Watch your correct answers create the picture, row by row.");
+  for(let i=0;i<total;i++){
+    later(()=>{
+      const row=rows[i];
+      row.style.transition="opacity .28s ease-out";
+      row.setAttribute("opacity","1");
+      row.classList.add("is-painted");
+      $("revealRowCount").textContent=(i+1)+" of "+total+" rows";
+    },delay+i*between);
+  }
+  const rowsFinished=delay+(total-1)*between+430;
+  let colourTime=rowsFinished+430;
+  if(picture.family==="half"){
+    const unfoldTime=rowsFinished+250;
+    later(()=>{
+      $("revealBuildLayer").hidden=true;
+      const layer=$("revealMirrorLayer");
+      layer.hidden=false;
+      setRevealStage(1,"Your completed half-picture is unfolding!");
+      // Reflow makes the hinge animation reliable on Safari and iOS.
+      void layer.getBoundingClientRect();
+      layer.classList.add("is-unfolding");
+      $("revealRowCount").textContent="";
+    },unfoldTime);
+    later(()=>$("revealMirrorLayer").classList.add("is-open"),
+      unfoldTime+1150);
+    colourTime=unfoldTime+1450;
+  }
+  const colourIndex=picture.family==="half"?2:1;
+  later(()=>{
+    setRevealStage(colourIndex,"Now the background and colours appear!");
+    $("revealRowCount").textContent="";
+    const art=$("revealFinalArt");
+    art.hidden=false;
+    void art.getBoundingClientRect();
+    $("revealBoard").classList.add("has-colour");
+  },colourTime);
+  const detailTime=colourTime+1150,stages=pictureDetailStages(picture);
+  later(()=>setRevealStage(colourIndex+1,
+    "The finishing touches are bringing your picture to life!"),detailTime);
+  stages.forEach((stage,i)=>{
+    later(()=>{
+      const group=Array.from($("revealFinalArt")
+        .querySelectorAll("[data-detail-stage]"))
+        .find(candidate=>candidate.getAttribute("data-detail-stage")===stage);
+      if(!group)return;
+      group.style.transition="opacity .38s ease-out";
+      group.setAttribute("opacity","1");
+    },detailTime+i*420);
+  });
+  later(()=>{
+    $("revealHeading").textContent=picture.name+"!";
+    setRevealStage(colourIndex+1,
+      "Your masterpiece is complete. Close this screen to see your results.");
+    for(const step of $("revealSteps").children){
+      step.classList.remove("active");
+      step.classList.add("done");
+    }
+    $("skipReveal").hidden=true;
+  },detailTime+stages.length*420+250);
+}
+function openReveal({animate=true}={}){
+  clearRevealTimers();
+  const dialog=$("revealDialog"),picture=activePicture(),
+    width=fullPictureWidth(picture),height=pictureHeight(picture),
+    board=$("revealBoard"),half=picture.family==="half";
+  if(dialog.open)dialog.close();
+  board.className="reveal-board";
+  board.style.aspectRatio=width+" / "+height;
+  $("revealBuildLayer").hidden=false;
+  $("revealBuildLayer").style.width=half?"50%":"100%";
+  $("revealBuildLayer").style.left=half?"50%":"0";
+  $("revealMirrorLayer").className="reveal-mirror-layer";
+  $("revealMirrorLayer").hidden=true;
+  $("revealFinalArt").hidden=true;
+  finishedArtwork($("revealFinalArt"),picture);
+  setDetailsVisible($("revealFinalArt"),false);
+  drawHalfPanel($("revealMirrorLeft"),true);
+  drawHalfPanel($("revealMirrorRight"),false);
+  setupRevealStages(picture);
+  const rows=buildMonochromeRows(picture);
+  $("revealHeading").textContent="Your picture is coming to life!";
+  $("revealRowCount").textContent="0 of "+questionCount(picture)+" rows";
+  $("skipReveal").hidden=false;
+  setRevealStage(0,"Getting your picture ready…");
+  document.activeElement?.blur?.();
+  // Hide the results themselves, not just cover them with a translucent layer.
+  show(null);
+  document.body.classList.add("reveal-open");
+  dialog.showModal();
+  $("closeReveal").focus();
+  if(!animate||window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+    showRevealFinished();
+  }else playRevealRows(picture,rows);
+}
+function closeReveal(){
+  clearRevealTimers();
+  const dialog=$("revealDialog");
+  if(dialog.open)dialog.close();
+  document.body.classList.remove("reveal-open");
+  // The results screen becomes available ONLY after the popup is dismissed.
+  show("finishScreen");
+  $("replayReveal").hidden=false;
+  window.scrollTo({top:0,behavior:"instant"});
+  $("replayReveal").focus?.({preventScroll:true});
 }
 function finish({animate=false}={}){
- clearRevealTimers();
- const picture=activePicture();
- save.completed=true;store();show("finishScreen");
- $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
- $("finishTitle").textContent=animate?"The big reveal!":picture.name+"!";
- $("finishedArtShell").classList.remove("is-revealing","is-colouring");
- $("catFlipStage").hidden=true;
- $("finishedArt").hidden=false;
- $("replayReveal").hidden=animate;
- renderFinishedArt();
- $("firstTryStat").textContent=save.firstTry+"/"+questionCount(picture);
- $("hintsStat").textContent=save.hints;
- $("finishNote").textContent=animate?
-   "Your answers have built the picture. Watch it come to life!":
-   "You've completed "+picture.name+".";
- if(animate){
-   if(picture.family==="half")playMirrorReveal();
-   else playFullReveal();
- }else revealAllDetails();
- window.scrollTo({top:0,behavior:"instant"});
+  clearRevealTimers();
+  const picture=activePicture();
+  save.completed=true;store();
+  $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
+  $("finishTitle").textContent=picture.name+"!";
+  $("finishNote").textContent="You've completed "+picture.name+
+    ". Revisit your artwork whenever you like!";
+  renderFinishedArt();
+  $("firstTryStat").textContent=save.firstTry+"/"+questionCount(picture);
+  $("hintsStat").textContent=save.hints;
+  $("replayReveal").hidden=false;
+  // Even on phones the picture occupies its OWN screen before any stats.
+  openReveal({animate});
 }
 function restart(){
  clearRevealTimers();
@@ -681,7 +771,16 @@ $("playAgain").onclick=()=>{
  store();start();
 };
 $("downloadArt").onclick=saveArt;
-$("replayReveal").onclick=()=>activePicture().family==="half"?playMirrorReveal():playFullReveal();
+$("replayReveal").onclick=()=>openReveal({animate:true});
+$("skipReveal").onclick=showRevealFinished;
+$("closeReveal").onclick=closeReveal;
+$("revealDialog").addEventListener("cancel",event=>{
+  event.preventDefault();closeReveal();
+});
+$("revealDialog").addEventListener("close",()=>{
+  // Native dismissal (for example, browser back) also reveals the summary.
+  if(screen!=="finish")closeReveal();
+});
 $("helpButton").onclick=()=>$("helpDialog").showModal();
 $("closeHelp").onclick=()=>$("helpDialog").close();
 $("doneHelp").onclick=()=>$("helpDialog").close();
