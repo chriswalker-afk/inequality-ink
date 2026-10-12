@@ -8,7 +8,7 @@ import {isInInterval} from "./model.mjs";
 
 const ids=["paint-rocket","paint-flower","paint-robot"];
 test("Three colour puzzles validate and work with the existing picture registry",()=>{
- assert.equal(validatePictureLibrary().length,12);
+ assert.equal(validatePictureLibrary().length,24);
  for(const id of ids){
   const p=pictureById(id);
   assert.deepEqual(p.levels,["paint"]);
@@ -96,8 +96,52 @@ test("Invalid grids are rejected before publishing",()=>{
  const five=[...p.paint.grid];
  five[0]="SPGPYPGPSS";
  assert.throws(()=>validatePaintPicture({...p,paint:{...p.paint,grid:five}}),
-   /two to four colour intervals/);
- const short=p.paint.grid.slice(0,13);
+   /one to four colour intervals/);
+ const short=p.paint.grid.slice(0,5);
  assert.throws(()=>validatePaintPicture({...p,paint:{...p.paint,grid:short}}),
-   /fourteen painted rows/);
+   /six to fourteen painted rows/);
+});
+
+
+test("Quick-win Paint by Inequalities pictures grow from six to twelve rows and two to four colours",()=>{
+ const starters=[
+  ["paint-heart-starter",6,8,2],
+  ["paint-star-step",8,8,2],
+  ["paint-daisy-building",10,10,3],
+  ["paint-rocket-challenge",12,10,4]
+ ];
+ for(const [id,rows,width,colours] of starters){
+  const p=pictureById(id);
+  assert.equal(p.levels[0],"paint");
+  assert.equal(p.paint.grid.length,rows);
+  assert.equal(pictureWidth(p),width);
+  assert.equal(Object.keys(p.paint.colours).length,colours);
+  assert.equal(validatePaintPicture(p).rows,rows);
+  for(let replay=0;replay<12;replay++)for(let i=0;i<rows;i++){
+   const q=makePaintQuestion(p,i,replay);
+   const expected=paintTarget(p,i),assigned=Array(width).fill(null);
+   assert.equal(q.row,rows-i);
+   assert.ok(q.rules.length>=1&&q.rules.length<=4);
+   for(const rule of q.rules)for(let j=0;j<width;j++){
+    if(isInInterval(p.window.min+j,rule.solution)){
+     assert.equal(assigned[j],null,id+": rules overlap at "+i+","+j);
+     assigned[j]=rule.key;
+    }
+   }
+   assert.deepEqual(assigned,expected,id+": incorrect rule coverage");
+   assert.equal(checkPaintRow(p,i,expected).correct,true);
+   const unfinished=expected.slice();unfinished[0]=null;
+   assert.equal(checkPaintRow(p,i,unfinished).correct,false);
+   assert.equal(checkPaintRow(p,i,unfinished).unpainted[0],0);
+  }
+ }
+});
+test("A full single-colour integer row uses one genuine inequality rule",()=>{
+ const p=pictureById("paint-heart-starter");
+ const index=p.paint.grid.length-1-p.paint.grid.indexOf("RRRRRRRR");
+ const q=makePaintQuestion(p,index);
+ assert.equal(q.rules.length,1);
+ assert.equal(q.rules[0].key,"R");
+ for(let x=p.window.min;x<p.window.max;x++)
+  assert.equal(isInInterval(x,q.rules[0].solution),true);
 });
