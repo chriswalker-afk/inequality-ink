@@ -59,7 +59,40 @@ const syncProgress=()=>{
  save=state.progress[key]||(state.progress[key]=blank());
 };
 const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
-let screen="intro", q=null, draft=null, selected="left", chosen=null, locked=false, hintsShown=0, attempts=0, assisted=false, drag=false;
+let screen="intro", q=null, draft=null, selected="left", chosen=null,
+  locked=false, hintsShown=0, attempts=0, assisted=false, drag=null;
+let rowAdvanceTimer=null;
+function cancelRowAdvance(){
+ if(rowAdvanceTimer!==null){
+   clearTimeout(rowAdvanceTimer);
+   rowAdvanceTimer=null;
+ }
+}
+function scheduleRowAdvance(){
+ cancelRowAdvance();
+ const pictureKey=activeKey(),doneAtCheck=save.done;
+ const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ // Keep the ink animation and confirmation readable, without requiring
+ // a second press. Ignore the callback if the player has left this picture.
+ rowAdvanceTimer=setTimeout(()=>{
+   rowAdvanceTimer=null;
+   if(screen!=="playScreen"||!locked||pictureKey!==activeKey()||
+      save.done!==doneAtCheck)return;
+   if(save.done===questionCount(activePicture())){
+     finish({animate:true});
+   }else{
+     question();
+     // On a narrow display the button is well below the next question.
+     // Bring the NEW inequality into view without moving the desktop layout.
+     if(window.matchMedia?.("(max-width: 740px)")?.matches){
+       document.activeElement?.blur?.();
+       $("questionStep").scrollIntoView?.({
+         behavior:reduced?"instant":"smooth",block:"start"
+       });
+     }
+   }
+ },reduced?340:820);
+}
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
 function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
@@ -123,6 +156,8 @@ function initProgress({animate=false}={}){
  sprite($("pixelCanvas"),{completed:save.done,animate});
 }
 function question(){
+ cancelRowAdvance();
+ drag=null;
  const picture=activePicture(),practice=tutorialFor(state.activeLevel);
  const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
  q=tutorial?practice[save.tutorial]:
@@ -150,7 +185,9 @@ function question(){
  $("equationText").textContent=q.equation||"";
  $("readArea").hidden=q.mode!=="read";$("drawArea").hidden=q.mode==="read";
  $("workingShell").hidden=q.mode!=="solve";
- $("nextButton").hidden=true;$("checkButton").hidden=false;
+ $("checkButton").hidden=false;
+ $("checkButton").disabled=false;
+ $("checkButton").textContent="Check & paint →";
  $("hintButton").disabled=false;$("hintButton").textContent="✳ Give me a hint";
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
@@ -228,10 +265,12 @@ function updateLevelSelector(){
    count?"Continue drawing ↗":"Start drawing ↗";
 }
 function chooseLevel(){
+ cancelRowAdvance();
  clearRevealTimers();show("introScreen");
  updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
+ cancelRowAdvance();
  if(save.completed){finish({animate:true});return;}
  if(skip){
    save.tutorialDone=true;
@@ -295,18 +334,38 @@ function renderLine(svg,interval,readonly=false){
    }
  }
  const circle=(x,closed,side)=>{
-   const g=mk("g",{},group);
+   const endpointLabel=side==="left"?"Left":"Right";
+   const value=interval.direction==="between"?
+     (side==="left"?interval.lower:interval.upper):interval.at;
+   const groupAttrs=readonly?{}:{
+     role:"button",tabindex:0,"data-endpoint":side,
+     "aria-pressed":String(closed),
+     "aria-label":endpointLabel+" endpoint "+fmt(value)+", "+
+       (closed?"closed":"open")+". Tap or press Enter to toggle. Drag to move."
+   };
+   const g=mk("g",groupAttrs,group);
    mk("circle",{cx:x,cy:axisY,r:readonly?10:11,
      fill:closed?"#538ca2":"#ffffff",stroke:"#538ca2","stroke-width":3},g);
    if(!readonly){
-     const e=mk("circle",{cx:x,cy:axisY,r:18,fill:"transparent",
+     const hit=mk("circle",{cx:x,cy:axisY,r:20,fill:"transparent",
        stroke:selected===side?"#8ebbac":"none","stroke-width":2},g);
-     e.style.cursor="grab";
-     e.addEventListener("pointerdown",ev=>{
-       if(locked)return;
-       selected=side;drag=true;
-       svg.setPointerCapture(ev.pointerId);
-       ev.preventDefault();syncInputs();renderLine(svg,draft);
+     hit.style.cursor="pointer";
+     g.addEventListener("pointerdown",event=>{
+       if(locked||(event.pointerType==="mouse"&&event.button!==0))return;
+       // Pointer capture stays on the stable SVG even while the circles redraw.
+       drag={pointerId:event.pointerId,side,
+         startX:event.clientX,startY:event.clientY,moved:false};
+       selected=side;
+       syncInputs();
+       svg.setPointerCapture?.(event.pointerId);
+       event.preventDefault();
+     });
+     g.addEventListener("keydown",event=>{
+       if(locked||event.repeat)return;
+       if(event.key==="Enter"||event.key===" "){
+         event.preventDefault();
+         toggleEndpoint(side,{restoreFocus:true});
+       }
      });
    }
  };
@@ -314,16 +373,54 @@ function renderLine(svg,interval,readonly=false){
  if(hasRight)circle(rightX,isBetween?interval.upperIncluded:interval.included,
    isBetween?"right":"left");
  if(!readonly){
-   const info=mk("text",{x:330,y:124,"text-anchor":"middle",fill:"#9ba2ae","font-size":13},group);
-   info.textContent="Tap a tick or drag a circle to change your answer";
+   const info=mk("text",{x:330,y:124,"text-anchor":"middle",
+     fill:"#9ba2ae","font-size":13},group);
+   info.textContent="Tap/click a circle to open or close it; drag to move";
  }
 }
-$("drawLine").addEventListener("pointermove",ev=>{
- if(drag&&!locked)setEndpoint(selected,nearest(ev,$("drawLine")));
-});
-for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
- $("drawLine").addEventListener(eventName,()=>drag=false);
+// Distinguish a quick tap/click from a drag. The threshold is measured in
+// CSS pixels so the action feels the same on touchscreens and desktops.
+const CIRCLE_DRAG_THRESHOLD=9;
+function toggleEndpoint(side,{restoreFocus=false}={}){
+ if(locked||!draft)return;
+ if(draft.direction==="between"){
+   const key=side==="left"?"lowerIncluded":"upperIncluded";
+   draft[key]=!draft[key];
+ }else{
+   draft.included=!draft.included;
+ }
+ selected=side;
+ syncInputs();
+ renderLine($("drawLine"),draft);
+ if(restoreFocus)$("drawLine")
+   .querySelector?.('[data-endpoint="'+side+'"]')?.focus?.({preventScroll:true});
 }
+$("drawLine").addEventListener("pointermove",event=>{
+ const gesture=drag;
+ if(!gesture||locked||event.pointerId!==gesture.pointerId)return;
+ const distance=Math.hypot(event.clientX-gesture.startX,
+   event.clientY-gesture.startY);
+ if(distance>CIRCLE_DRAG_THRESHOLD)gesture.moved=true;
+ if(gesture.moved)setEndpoint(gesture.side,nearest(event,$("drawLine")));
+});
+$("drawLine").addEventListener("pointerup",event=>{
+ const gesture=drag;
+ if(!gesture||event.pointerId!==gesture.pointerId)return;
+ drag=null;
+ const distance=Math.hypot(event.clientX-gesture.startX,
+   event.clientY-gesture.startY);
+ if(gesture.moved||distance>CIRCLE_DRAG_THRESHOLD){
+   setEndpoint(gesture.side,nearest(event,$("drawLine")));
+ }else{
+   toggleEndpoint(gesture.side);
+ }
+});
+$("drawLine").addEventListener("pointercancel",event=>{
+ if(drag?.pointerId===event.pointerId)drag=null;
+});
+$("drawLine").addEventListener("lostpointercapture",event=>{
+ if(drag?.pointerId===event.pointerId)drag=null;
+});
 function nearest(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
  const transformed=pt.matrixTransform(svg.getScreenCTM().inverse());
@@ -436,9 +533,10 @@ function check(){
  if(assisted||hintsShown)save.hints+=hintsShown;
  save.attempts+=attempts;
  store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
- $("checkButton").hidden=true;$("nextButton").hidden=false;
- $("nextButton").textContent=save.done===questionCount(activePicture())?"Reveal the artwork ✦":"Next row →";
- $("nextButton").focus();
+ $("checkButton").disabled=true;
+ $("checkButton").textContent=q.mode==="tutorial"?"✓ Correct — continuing…":
+   save.done===questionCount(activePicture())?"✓ Correct — revealing…":"✓ Correct — next row…";
+ scheduleRowAdvance();
 }
 function hint(){
  if(locked)return;
@@ -586,6 +684,8 @@ function showRevealFinished(){
   }
   $("revealRowCount").textContent="";
   $("skipReveal").hidden=true;
+  $("revealDialog").classList.add("is-celebrated");
+  board.classList.add("is-celebrated");
 }
 function playRevealRows(picture,rows){
   const total=rows.length,delay=370,between=155;
@@ -648,6 +748,8 @@ function playRevealRows(picture,rows){
       step.classList.add("done");
     }
     $("skipReveal").hidden=true;
+    $("revealDialog").classList.add("is-celebrated");
+    $("revealBoard").classList.add("is-celebrated");
   },detailTime+stages.length*420+250);
 }
 function openReveal({animate=true}={}){
@@ -657,7 +759,8 @@ function openReveal({animate=true}={}){
     board=$("revealBoard"),half=picture.family==="half";
   if(dialog.open)dialog.close();
   board.className="reveal-board";
-  board.classList.remove("has-colour");
+  board.classList.remove("has-colour","is-celebrated");
+  $("revealDialog").classList.remove("is-celebrated");
   board.style.aspectRatio=width+" / "+height;
   $("revealBuildLayer").hidden=false;
   $("revealBuildLayer").style.width=half?"50%":"100%";
@@ -698,6 +801,7 @@ function closeReveal(){
   $("replayReveal").focus?.({preventScroll:true});
 }
 function finish({animate=false}={}){
+  cancelRowAdvance();
   clearRevealTimers();
   const picture=activePicture();
   save.completed=true;store();
@@ -713,6 +817,7 @@ function finish({animate=false}={}){
   openReveal({animate});
 }
 function restart(){
+ cancelRowAdvance();
  clearRevealTimers();
  if(!confirm("Start this picture again? Your progress on other pictures will be kept."))return;
  const replay=(save.replay||0)+1;
@@ -759,12 +864,12 @@ $("startButton").onclick=()=>start();
 $("skipTutorialButton").onclick=()=>start({skip:true});
 $("skipPractice").onclick=()=>{save.tutorial=tutorialFor(state.activeLevel).length;save.tutorialDone=true;store();question();};
 $("checkButton").onclick=check;
-$("nextButton").onclick=()=>{if(save.done===questionCount(activePicture()))finish({animate:true});else question();};
 $("hintButton").onclick=hint;
 $("restartButton").onclick=restart;
 $("changeLevelButton").onclick=chooseLevel;
 $("chooseLevelButton").onclick=chooseLevel;
 $("playAgain").onclick=()=>{
+ cancelRowAdvance();
  clearRevealTimers();
  const replay=(save.replay||0)+1;
  state.progress[activeKey()]=blank();

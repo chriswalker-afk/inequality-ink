@@ -213,3 +213,76 @@ body.reveal-open{overflow:hidden}
   .reveal-final-art,.reveal-board,.reveal-step,
   .reveal-final-art [data-detail-stage]{transition:none!important}
 }
+
+
+/* A truly celebratory desktop experience, using the same full-screen
+   staged reveal as phones but giving the art significantly more presence. */
+@media (min-width:900px) and (min-height:650px){
+  .reveal-dialog{
+    background:
+      radial-gradient(circle at 10% 24%,#516890 0,transparent 34%),
+      radial-gradient(circle at 89% 72%,#396e6a 0,transparent 38%),
+      radial-gradient(circle at 52% 54%,#334e68 0,transparent 58%),
+      #1b2840;
+  }
+  .reveal-layout{
+    width:min(100%,1530px);margin-inline:auto;
+    padding:clamp(24px,3vh,42px) clamp(42px,5.3vw,100px);
+    gap:clamp(10px,1.3vh,19px);
+  }
+  .reveal-kicker{font-size:.81rem;letter-spacing:.19em}
+  .reveal-top h2{font-size:clamp(2.1rem,3.1vw,3.25rem);max-width:none}
+  .reveal-close{width:58px;height:58px;flex-basis:58px;font-size:2.15rem}
+  .reveal-picture-space{padding:4px 42px}
+  .reveal-board{
+    width:min(100%,calc(100dvh - 330px),760px);
+    max-height:100%;
+    border-width:12px;
+    box-shadow:0 0 0 4px #72918f,0 25px 90px #0a132ab3;
+  }
+  .reveal-board.has-colour{
+    box-shadow:0 0 0 4px #f1c99b,0 0 90px #f9d6a387,
+      0 28px 95px #07152fc2;
+  }
+  .reveal-steps{max-width:570px;gap:10px}
+  .reveal-step{padding:10px 10px;font-size:.78rem}
+  .reveal-stage-text{font-size:1.12rem}
+  .reveal-row-count{font-size:.86rem}
+  .reveal-bottom{gap:9px;padding-bottom:4px}
+  .reveal-close-hint{font-size:.83rem}
+  .reveal-dialog::before,.reveal-dialog::after{
+    position:fixed;z-index:0;pointer-events:none;
+    color:#f7deb2;opacity:.65;
+    font-size:clamp(3rem,5vw,6rem);
+    text-shadow:0 0 24px #e0f1df8a,0 0 55px #ffd9a062;
+  }
+  .reveal-dialog::before{content:"✦";top:23%;left:9%;transform:rotate(-15deg)}
+  .reveal-dialog::after{content:"✧";bottom:25%;right:9%;transform:rotate(18deg)}
+  .reveal-dialog.is-celebrated::before{
+    animation:celebration-sparkle-left 2.8s ease-in-out infinite alternate;
+  }
+  .reveal-dialog.is-celebrated::after{
+    animation:celebration-sparkle-right 2.4s ease-in-out infinite alternate;
+  }
+  .reveal-layout{position:relative;z-index:1}
+}
+@keyframes celebration-sparkle-left{
+  from{transform:scale(.85) rotate(-17deg);opacity:.38}
+  to{transform:scale(1.2) rotate(8deg);opacity:1}
+}
+@keyframes celebration-sparkle-right{
+  from{transform:scale(.8) rotate(18deg);opacity:.45}
+  to{transform:scale(1.18) rotate(-5deg);opacity:1}
+}
+/* The endpoint circle is a genuine one-tap button, while the entire number
+   line remains draggable and interactive on both desktop and mobile. */
+.draw-line-holder svg [data-endpoint]{cursor:pointer;touch-action:none}
+.draw-line-holder svg [data-endpoint]:focus-visible circle:last-child{
+  stroke:#427f92;stroke-width:3.5;
+}
+/* Keep result confirmation readable during the automatic row transition. */
+#checkButton:disabled{opacity:.88;cursor:default;transform:none}
+@media(prefers-reduced-motion:reduce){
+  .reveal-dialog.is-celebrated::before,
+  .reveal-dialog.is-celebrated::after{animation:none!important}
+}
