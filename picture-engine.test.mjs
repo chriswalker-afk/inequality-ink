@@ -155,7 +155,7 @@ test("Pictures have connected, correctly reflected masks and isolated background
        assert.equal(colour,pictureColourAt(picture,width-1-x,y,{full:true}));
      }
    }
-   assert.equal(questionCount(picture),14);
+   assert.ok([6,8,10,12,14].includes(questionCount(picture)));
    assert.ok(baseWidth>0);
  }
 });
@@ -163,7 +163,7 @@ test("Final details and their animation stages are picture data, not engine bran
  for(const picture of PICTURE_LIBRARY){
    const stages=pictureDetailStages(picture),details=pictureFinalDetails(picture);
    assert.ok(stages.length>=2);
-   assert.ok(details.length>=6);
+   assert.ok(details.length>=(questionCount(picture)<=8?4:6));
    for(const stage of stages)assert.ok(details.some(d=>d.group===stage));
    for(const d of details){
      assert.ok(picturePixelAt(picture,d.x,d.y,{full:true}));
@@ -193,10 +193,10 @@ test("Five new pictures are registered with exactly the intended modes and dimen
     ["enchanted-potion","full",16,16,["full","solve","mixed"]],
     ["ice-cream-treat","full",16,16,["full","solve","mixed"]]
   ];
-  assert.equal(PICTURE_LIBRARY.length,12);
-  assert.equal(picturesForLevel("mirror").length,4);
+  assert.equal(PICTURE_LIBRARY.length,24);
+  assert.equal(picturesForLevel("mirror").length,8);
   for(const mode of ["full","solve","mixed"])
-    assert.equal(picturesForLevel(mode).length,5);
+    assert.equal(picturesForLevel(mode).length,9);
   for(const [id,family,halfWidth,fullWidth,levels] of expected){
     const picture=pictureById(id);
     assert.equal(picture.family,family);
@@ -210,7 +210,7 @@ test("Five new pictures are registered with exactly the intended modes and dimen
       id+" needs visually meaningful finishing details");
   }
   const combinations=PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0);
-  assert.equal(combinations,22);
+  assert.equal(combinations,42);
 });
 test("New Mirror Mode pictures balance both ray directions and open/closed circles",()=>{
   for(const id of ["coral-crab","twilight-owl"]){
@@ -303,4 +303,16 @@ test("Equivalent integer pixels do not make a wrong real inequality correct",()=
     picturePaintedValues(cat,q));
   assert.equal(identicalSolution(wrong,q.answer),false,
     "Open and closed real endpoints are marked mathematically, not pixelwise");
+});
+
+
+test("Invalid progression metadata is rejected without changing old pictures",()=>{
+ const cat=pictureById("cat-cameo");
+ assert.throws(()=>validatePicture({...cat,progression:{mirror:6}}),
+   /invalid progression stage/);
+ assert.throws(()=>validatePicture({...cat,progression:{paint:1}}),
+   /invalid progression stage/);
+ const p=pictureById("mushroom-mystery");
+ assert.equal(questionCount(p),14);
+ assert.equal(pictureWidth(p),16);
 });
