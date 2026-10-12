@@ -48,8 +48,11 @@ function parseLine(line){
 }
 function renderNodes(nodes){return nodes.map(renderNode).join("");}
 function asOperand(node){
-  // Parentheses in a fraction or superscript are grouping instructions.
-  return node.kind==="group"?renderNodes(node.items):renderNode(node);
+  // Parentheses group the numerator, denominator or exponent.
+  if(node.kind==="group"){
+    return node.items.length?renderNodes(node.items):"<mi>□</mi>";
+  }
+  return renderNode(node);
 }
 function renderNode(node){
   switch(node.kind){
@@ -87,7 +90,10 @@ export function insertMathWorking(value,start,end,key){
     insert=selection?"("+selection+")/()":"()/()";
     offset=selection?insert.length-1:1;
   }else if(key==="square"){
-    insert=selection?"("+selection+")^2":"^2";offset=insert.length;
+    // If the caret follows a variable, square it; otherwise insert x squared.
+    insert=selection?"("+selection+")^2":
+      /[A-Za-z0-9)]$/.test(source.slice(0,left))?"^2":"x^2";
+    offset=insert.length;
   }else if(key==="newline"){
     insert="\n";offset=1;
   }else if(key==="backspace"){
