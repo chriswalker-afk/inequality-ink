@@ -168,13 +168,32 @@ function answerCurrent(picture,index,level,replay=0){
     globalThis.setTimeout=nativeSetTimeout;
   }
 }
+const LEGACY_ORDER={
+ mirror:["cat-cameo","heart-glow","coral-crab","twilight-owl"],
+ full:["mushroom-mystery","rocket-launch","flower-pot",
+   "enchanted-potion","ice-cream-treat"],
+ solve:["mushroom-mystery","rocket-launch","flower-pot",
+   "enchanted-potion","ice-cream-treat"],
+ mixed:["mushroom-mystery","rocket-launch","flower-pot",
+   "enchanted-potion","ice-cream-treat"],
+ paint:["paint-rocket","paint-flower","paint-robot"]
+};
 function select(level,index){
-  const button=levels.find(el=>el.dataset.level===level);
-  button.click();
-  const options=$("picturePicker").children;
-  assert.equal(options.length,level==="mirror"?4:level==="paint"?3:5,
-    "Each difficulty should list all of its available mystery pictures");
-  options[index].click();
+ const button=levels.find(el=>el.dataset.level===level);
+ button.click();
+ const options=$("picturePicker").children;
+ assert.equal(options.length,5,"Every mode must present five ordered steps");
+ const id=LEGACY_ORDER[level][index],picture=pictureById(id);
+ const all=[...options,...$("extraPicturePicker").children];
+ const card=all.find(el=>el.children[1]?.children[0]?.textContent===picture.clue);
+ assert.ok(card,"Legacy picture not accessible after progression: "+id);
+ card.click();
+}
+function selectStage(level,stage){
+ const button=levels.find(el=>el.dataset.level===level);
+ button.click();
+ assert.equal($("picturePicker").children.length,5);
+ $("picturePicker").children[stage-1].click();
 }
 function complete(level,index,id,{animated=false}={}){
   select(level,index);
@@ -235,25 +254,39 @@ function complete(level,index,id,{animated=false}={}){
   assert.equal($("introScreen").hidden,false);
 }
 
-test("Picker displays playful clues, without spoiling unfinished pictures",()=>{
-  for(const level of ["mirror","full","solve","mixed","paint"]){
-    select(level,0);
-    const first=$("picturePicker").children[0];
-    const picture=pictureById(level==="mirror"?"cat-cameo":
-      level==="paint"?"paint-rocket":"mushroom-mystery");
-    const heading=first.children[1].children[0].textContent;
-    const caption=first.children[1].children[1].textContent;
-    const accessible=first.getAttribute("aria-label");
-    assert.equal(heading,picture.clue);
-    assert.ok(accessible.startsWith(picture.clue+", "));
-    assert.ok(![heading,caption,accessible].join(" ").includes(picture.name),
-      "True name leaked before completion: "+picture.name);
-    assert.ok(!heading.startsWith("Mystery "));
-  }
-  select("mirror",0);
+test("Choose a picture shows five quick-win steps with accurate row and colour counts",()=>{
+ for(const level of ["mirror","full","solve","mixed","paint"]){
+   selectStage(level,1);
+   const first=$("picturePicker").children[0];
+   const expected=pictureById(level==="mirror"?"mirror-star-starter":
+     level==="paint"?"paint-heart-starter":"full-star-starter");
+   const heading=first.children[1].children[0].textContent;
+   const description=first.children[1].children[1].textContent;
+   const meta=first.children[1].children[2].textContent;
+   assert.equal(heading,expected.clue);
+   assert.ok(first.getAttribute("aria-label").startsWith(expected.clue+", "));
+   assert.ok(![heading,description,meta].join(" ").includes(expected.name));
+   assert.ok(meta.includes("6 rows"));
+   assert.ok(meta.includes("Starter"));
+   if(level==="paint")assert.ok(meta.includes("2 colours"));
+   assert.equal($("pictureStepTrack").children.length,5);
+   assert.ok($("picturePathProgress").textContent.includes("0 of 5"));
+   assert.ok($("pictureSummary").textContent.includes("Quick win"));
+   const legacy=LEGACY_ORDER[level];
+   assert.equal($("extraPicturePicker").children.length,
+     level==="mirror"?3:level==="paint"?2:4);
+   for(const id of legacy){
+     const pic=pictureById(id);
+     const selectable=[...$("picturePicker").children,
+       ...$("extraPicturePicker").children];
+     assert.ok(selectable.some(card=>
+       card.children[1]?.children[0]?.textContent===pic.clue));
+   }
+ }
+ select("mirror",0);
 });
 test("Student can complete seven distinct picture/difficulty journeys independently",()=>{
-  assert.equal($("picturePicker").children.length,4);
+  assert.equal($("picturePicker").children.length,5);
   complete("mirror",1,"heart-glow");
   complete("solve",1,"rocket-launch");
   // Five new picture definitions must work end-to-end, including read,
@@ -265,7 +298,8 @@ test("Student can complete seven distinct picture/difficulty journeys independen
   complete("solve",3,"enchanted-potion");
   complete("mixed",4,"ice-cream-treat");
   select("mirror",1);
-  const finishedHeart=$("picturePicker").children[1];
+  const finishedHeart=$("extraPicturePicker").children.find(card=>
+    card.children[1]?.children[0]?.textContent===pictureById("heart-glow").clue);
   assert.equal(finishedHeart.children[1].children[0].textContent,
     pictureById("heart-glow").clue);
   assert.equal(finishedHeart.children[1].children[1].textContent,
@@ -701,7 +735,7 @@ function choosePaintKey(key){
 }
 test("Paint students can swipe the active row, erase, clear and resume a partly painted row",()=>{
  select("paint",0);
- assert.equal($("picturePicker").children.length,3);
+ assert.equal($("picturePicker").children.length,5);
  $("startButton").click();
  assert.equal($("paintScreen").hidden,false);
  assert.equal($("paintTitle").textContent,
