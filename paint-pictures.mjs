@@ -8,7 +8,7 @@ const gardenSky={name:"Sky",hex:"#e5f1e3"};
 
 const definitions=[
  {
-  id:"paint-rocket",name:"Rainbow Rocket",mystery:"Mystery 01",
+  id:"paint-rocket",name:"Rainbow Rocket",clue:"To the Moon",
   description:"Paint a spacecraft and its launch flames, one row at a time.",
   family:"full",levels:["paint"],window:{min:-5,max:5},height:16,
   rows:Array.from({length:14},()=>[0,9]),
@@ -39,7 +39,7 @@ const definitions=[
   ]
  },
  {
-  id:"paint-flower",name:"Blooming Garden",mystery:"Mystery 02",
+  id:"paint-flower",name:"Blooming Garden",clue:"Petal Parade",
   description:"Grow a bright flower in a little clay pot.",
   family:"full",levels:["paint"],window:{min:-5,max:5},height:16,
   rows:Array.from({length:14},()=>[0,9]),
@@ -70,7 +70,7 @@ const definitions=[
   ]
  },
  {
-  id:"paint-robot",name:"Friendly Robot",mystery:"Mystery 03",
+  id:"paint-robot",name:"Friendly Robot",clue:"Beep Beep Buddy",
   description:"Assemble a colourful, friendly little robot.",
   family:"full",levels:["paint"],window:{min:-5,max:5},height:16,
   rows:Array.from({length:14},()=>[0,9]),
