@@ -247,3 +247,73 @@ test("iOS Safari reveals the finished SVG by removing its real hidden attribute"
   assert.ok(reset.includes('setRevealFinalArtVisible(false)'));
   assert.ok(css.includes('[hidden]{display:none!important}'));
 });
+
+
+test("The student's unconfirmed inequality drives both full-size and mobile ghost art",()=>{
+  assert.ok(html.includes('id="canvasStage"'));
+  assert.ok(html.includes('id="mobilePreviewStrip"'));
+  assert.ok(html.includes('id="mobilePixelCanvas"'));
+  assert.ok(html.includes('Live picture preview'));
+  const render=getSection('function sprite(', 'sprite($("introPixelArt"),{intro:true});');
+  assert.ok(render.includes('livePreviewLayers.set(svg'));
+  assert.ok(render.includes('svg===$("pixelCanvas")||svg===$("mobilePixelCanvas")'));
+  const ghost=getSection('function drawLivePreview(candidate,phase="ghost"){','function previewStudentAnswer(candidate){');
+  assert.ok(ghost.includes('picturePaintedValues(picture,q,candidate)'));
+  assert.ok(ghost.includes('livePreviewLayers.values()'));
+  assert.ok(!ghost.includes('picturePixelAt('),
+    "The guess must not be corrected/clipped against secret art");
+  assert.ok(!ghost.includes('save.done'));
+  const options=getSection('function renderOptions(){','// The number line has');
+  assert.ok(options.includes('previewStudentAnswer(opt.value)'));
+  const controls=getSection('function toggleEndpoint(side,','function misconception(){');
+  assert.ok(controls.includes('previewStudentAnswer(draft)'));
+  assert.ok(controls.includes('if(preview)previewStudentAnswer(draft)'));
+  assert.ok(controls.includes('function setEndpoint('));
+  assert.ok(controls.includes('function setDirection('));
+  const question=getSection('function question(){','function selectLevel(');
+  assert.ok(question.includes('setDraft(draft,{preview:false})'),
+    "Don't show an unchosen initial guess as the student's answer");
+  assert.ok(question.includes('cancelPreviewFlash()'));
+  assert.ok(question.includes('initProgress()'));
+});
+test("Incorrect checks flash orange then restore the unchanged ghost",()=>{
+  const check=getSection('function check(){','function hint(){');
+  assert.ok(check.includes('flashWrongPreview()'));
+  assert.ok(check.indexOf('flashWrongPreview()')<check.indexOf('locked=true'));
+  const wrong=getSection('function flashWrongPreview(){','function flashCorrectThenCommit(){');
+  assert.ok(wrong.includes('drawLivePreview(candidate,"incorrect")'));
+  assert.ok(wrong.includes('},580)'));
+  assert.ok(wrong.includes('drawLivePreview(currentStudentAnswer(),"ghost")'));
+  assert.ok(wrong.includes('cancelPreviewFlash()'));
+  assert.ok(css.includes('.ink-live-preview--incorrect .ink-preview-pixel'));
+  assert.ok(css.includes('fill:#f4a244'));
+  assert.ok(css.includes('@keyframes ink-rejected-flash'));
+});
+test("Correct checks flash green, then commit only the accepted slate-blue row",()=>{
+  const good=getSection('function flashCorrectThenCommit(){','function initProgress(');
+  assert.ok(good.includes('drawLivePreview(q.answer,"correct")'));
+  assert.ok(good.includes('sprite($("pixelCanvas"),{completed:save.done,animate:!reduced})'));
+  assert.ok(good.includes('sprite($("mobilePixelCanvas"),{completed:save.done,animate:!reduced})'));
+  assert.ok(good.includes('doneAtCheck'));
+  const check=getSection('function check(){','function hint(){');
+  assert.ok(check.includes('initProgress({animate:false,redraw:q.mode==="tutorial"})'));
+  assert.ok(check.includes('flashCorrectThenCommit()'));
+  assert.ok(check.includes('scheduleRowAdvance()'));
+  assert.ok(css.includes('.ink-live-preview--correct .ink-preview-pixel'));
+  assert.ok(css.includes('fill:#56c78d'));
+  assert.ok(css.includes('fill:painted?(colour?pictureColourAt(picture,x,y):"#64738e")')||
+    app.includes('pictureColourAt(picture,x,y):"#64738e"'));
+  assert.ok(css.includes('@keyframes ink-accepted-flash'));
+  assert.ok(css.includes('prefers-reduced-motion:reduce'));
+});
+test("Phone users can see their ghosts while adjusting the number line",()=>{
+  assert.ok(css.includes('.mobile-preview-strip{display:none}'));
+  assert.ok(css.includes('@media(max-width:740px)'));
+  assert.ok(css.includes('position:sticky'));
+  assert.ok(css.includes('safe-area-inset-top'));
+  assert.ok(css.includes('.mobile-preview-strip svg'));
+  assert.ok(css.includes('.mobile-preview-strip.ink-stage--incorrect'));
+  assert.ok(css.includes('.mobile-preview-strip.ink-stage--correct'));
+  const redraw=getSection('function initProgress(', 'function question(){');
+  assert.ok(redraw.includes('sprite($("mobilePixelCanvas")'));
+});
