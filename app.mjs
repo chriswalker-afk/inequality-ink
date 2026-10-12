@@ -61,7 +61,7 @@ const syncProgress=()=>{
 };
 const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let paintQuestion=null,paintBrush=null,paintLocked=false,paintAdvanceTimer=null,
- paintErrorTimer=null,paintPointer=null,paintCells=[];
+ paintErrorTimer=null,paintPointer=null,paintCells=[],paintFocusCells=[];
 function cancelPaintTimers(){
  if(paintAdvanceTimer!==null){clearTimeout(paintAdvanceTimer);paintAdvanceTimer=null;}
  if(paintErrorTimer!==null){clearTimeout(paintErrorTimer);paintErrorTimer=null;}
@@ -107,7 +107,12 @@ function scheduleRowAdvance(){
  },reduced?340:q?.artMode==="mirror"?1170:820);
 }
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
-const show=id=>{["introScreen","playScreen","paintScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
+const show=id=>{
+ ["introScreen","playScreen","paintScreen","finishScreen"].forEach(
+   name=>$(name).hidden=name!==id);
+ document.body.classList.toggle("paint-session",id==="paintScreen");
+ screen=id;
+};
 function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
  const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
  const half=picture.family==="half";
@@ -422,6 +427,7 @@ function drawPaintCanvas(){
    activeY=picture.paint.grid.length-save.done;
  host.replaceChildren();
  host.style.gridTemplateColumns="repeat("+width+",minmax(0,1fr))";
+ host.style.aspectRatio=width+" / "+height;
  paintCells=[];
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
    const finished=y>=1&&y<=picture.paint.grid.length&&y>activeY;
@@ -446,6 +452,27 @@ function drawPaintCanvas(){
    }
    host.append(cell);
  }
+ // The overview and enlarged row show the SAME draft, with shared values
+ // and strict one-row locking. This avoids tiny touch targets on a phone.
+ const focus=$("paintFocusRow");
+ focus.replaceChildren();
+ focus.style.gridTemplateColumns="repeat("+width+",minmax(0,1fr))";
+ paintFocusCells=[];
+ for(let x=0;x<width;x++){
+   const key=save.paintDraft?.[x]??null;
+   const cell=document.createElement("button");
+   cell.type="button";
+   cell.className="paint-cell paint-focus-cell paint-cell--active";
+   cell.dataset.col=String(x);
+   cell.dataset.row=String(activeY);
+   cell.disabled=paintLocked;
+   cell.textContent=String(picture.window.min+x);
+   cell.setAttribute("aria-label",describePaintCell(x,key));
+   paintCellStyle(cell,key);
+   cell.onclick=()=>paintSquare(x);
+   paintFocusCells[x]=cell;
+   focus.append(cell);
+ }
 }
 function showPaintFeedback(message,success=false){
  const el=$("paintFeedback");
@@ -457,7 +484,7 @@ function updatePaintBrush(){
  $("paintSelectedLabel").textContent="Selected brush: "+name;
  $("paintEraser").classList.toggle("selected",paintBrush===null);
  $("paintEraser").setAttribute("aria-pressed",String(paintBrush===null));
- for(const b of [...$("paintRules").children,...$("paintQuickPalette").children]){
+ for(const b of $("paintRules").children){
    const selected=b.dataset.colour===(paintBrush===null?"erase":paintBrush);
    b.classList.toggle("selected",selected);
    b.setAttribute("aria-pressed",String(selected));
@@ -488,28 +515,7 @@ function renderPaintRules(){
    button.onclick=()=>selectPaintBrush(rule.key);
    host.append(button);
  }
- const quick=$("paintQuickPalette");
- quick.replaceChildren();
- const used=new Set();
- for(const rule of paintQuestion.rules){
-   if(used.has(rule.key))continue;
-   used.add(rule.key);
-   const brush=document.createElement("button");
-   brush.type="button";brush.className="paint-quick-brush";
-   brush.dataset.colour=rule.key;
-   brush.title=rule.name;brush.setAttribute("aria-label","Use "+rule.name+" brush");
-   const dot=document.createElement("span");
-   dot.style.backgroundColor=rule.colour;dot.setAttribute("aria-hidden","true");
-   brush.append(dot);
-   brush.onclick=()=>selectPaintBrush(rule.key);
-   quick.append(brush);
- }
- const eraser=document.createElement("button");
- eraser.type="button";eraser.className="paint-quick-brush paint-quick-erase";
- eraser.dataset.colour="erase";eraser.textContent="⌫";
- eraser.setAttribute("aria-label","Use eraser brush");
- eraser.onclick=()=>selectPaintBrush(null);
- quick.append(eraser);
+ // Inequality rule buttons double as the colour palette.
  updatePaintBrush();
 }
 function startPaintRow(){
@@ -523,9 +529,7 @@ function startPaintRow(){
  if(!valid)save.paintDraft=Array(width).fill(null);
  paintBrush=paintQuestion.rules[0].key;
  $("paintCheck").disabled=false;
- $("paintCheckMobile").disabled=false;
  $("paintCheck").textContent="Check row →";
- $("paintCheckMobile").textContent="Check row →";
  showPaintFeedback("");
  updatePaintProgress();
  renderPaintRules();
@@ -538,14 +542,14 @@ function paintSquare(col){
  const old=save.paintDraft[col];
  if(old===paintBrush)return;
  save.paintDraft[col]=paintBrush;
- const cell=paintCells[col];
- if(cell){
+ for(const cell of [paintCells[col],paintFocusCells[col]]){
+   if(!cell)continue;
    paintCellStyle(cell,paintBrush);
    cell.setAttribute("aria-label",describePaintCell(col,paintBrush));
  }
  if(paintErrorTimer!==null){
    clearTimeout(paintErrorTimer);paintErrorTimer=null;
-   for(const c of paintCells)c?.classList.remove("paint-cell--wrong");
+   for(const c of [...paintCells,...paintFocusCells])c?.classList.remove("paint-cell--wrong");
  }
  showPaintFeedback("");
  store();
@@ -565,11 +569,14 @@ function checkPaintAnswer(){
    showPaintFeedback(result.unpainted.length?
      "Some squares are still unpainted. Check the inequalities and try again.":
      "Not quite. The orange squares need another look. Try again.");
-   for(const col of result.wrong)paintCells[col]?.classList.add("paint-cell--wrong");
+   for(const col of result.wrong){
+     paintCells[col]?.classList.add("paint-cell--wrong");
+     paintFocusCells[col]?.classList.add("paint-cell--wrong");
+   }
    if(paintErrorTimer!==null)clearTimeout(paintErrorTimer);
    paintErrorTimer=setTimeout(()=>{
      paintErrorTimer=null;
-     for(const c of paintCells)c?.classList.remove("paint-cell--wrong");
+     for(const c of [...paintCells,...paintFocusCells])c?.classList.remove("paint-cell--wrong");
    },600);
    return;
  }
@@ -582,11 +589,9 @@ function checkPaintAnswer(){
  store();
  updatePaintProgress();
  $("paintCheck").disabled=true;
- $("paintCheckMobile").disabled=true;
  $("paintCheck").textContent=save.completed?"✓ Correct — revealing…":"✓ Correct — next row…";
- $("paintCheckMobile").textContent=$("paintCheck").textContent;
  showPaintFeedback("Correct! Watch the numbers disappear and the colours stay.",true);
- for(const cell of paintCells){
+ for(const cell of [...paintCells,...paintFocusCells]){
    cell.disabled=true;
    cell.classList.add("paint-cell--correct");
  }
@@ -597,41 +602,38 @@ function checkPaintAnswer(){
    if(screen!=="paintScreen"||activeKey()!==savedKey||
       save.done!==nextCount)return;
    if(save.completed)finish({animate:true});
-   else{
-     startPaintRow();
-     if(window.matchMedia?.("(max-width: 740px)")?.matches){
-       $("paintStep").scrollIntoView?.({
-         behavior:reduced?"instant":"smooth",block:"start"
-       });
-     }
-   }
+   else startPaintRow(); // New row activates in the same fixed workspace.
  },reduced?280:850);
 }
-// Pointer capture stays on the stable board; the user can swipe across
-// multiple small squares without accidentally scrolling the page.
-$("paintCanvas").addEventListener("pointerdown",event=>{
- if(screen!=="paintScreen"||paintLocked||
-   event.pointerType==="mouse"&&event.button!==0)return;
- const square=event.target.closest?.(".paint-cell");
- if(!square||square.disabled||square.dataset.row!==String(paintQuestion?.row))return;
- paintPointer=event.pointerId;
- paintSquare(Number(square.dataset.col));
- $("paintCanvas").setPointerCapture?.(event.pointerId);
- event.preventDefault();
-});
-$("paintCanvas").addEventListener("pointermove",event=>{
- if(paintPointer!==event.pointerId||paintLocked)return;
- const square=document.elementFromPoint?.(event.clientX,event.clientY)
-   ?.closest?.(".paint-cell");
- if(square&&!square.disabled&&square.dataset.row===String(paintQuestion?.row))
+// Paint on either the miniature overview or the larger integer-labelled row.
+// Both use the same saved draft; swipes use pointer capture for mobile.
+for(const boardId of ["paintCanvas","paintFocusRow"]){
+ const board=$(boardId);
+ board.addEventListener("pointerdown",event=>{
+   if(screen!=="paintScreen"||paintLocked||
+     event.pointerType==="mouse"&&event.button!==0)return;
+   const square=event.target.closest?.(".paint-cell");
+   if(!square||square.disabled||
+      square.dataset.row!==String(paintQuestion?.row))return;
+   paintPointer=event.pointerId;
    paintSquare(Number(square.dataset.col));
-});
-for(const eventName of ["pointerup","pointercancel","lostpointercapture"])
- $("paintCanvas").addEventListener(eventName,event=>{
-   if(paintPointer===event.pointerId)paintPointer=null;
+   board.setPointerCapture?.(event.pointerId);
+   event.preventDefault();
  });
+ board.addEventListener("pointermove",event=>{
+   if(paintPointer!==event.pointerId||paintLocked)return;
+   const square=document.elementFromPoint?.(event.clientX,event.clientY)
+     ?.closest?.(".paint-cell");
+   if(square&&!square.disabled&&
+      square.dataset.row===String(paintQuestion?.row))
+     paintSquare(Number(square.dataset.col));
+ });
+ for(const eventName of ["pointerup","pointercancel","lostpointercapture"])
+   board.addEventListener(eventName,event=>{
+     if(paintPointer===event.pointerId)paintPointer=null;
+   });
+}
 $("paintCheck").onclick=checkPaintAnswer;
-$("paintCheckMobile").onclick=checkPaintAnswer;
 $("paintClear").onclick=clearPaintRow;
 $("paintEraser").onclick=()=>selectPaintBrush(null);
 $("paintBack").onclick=chooseLevel;
