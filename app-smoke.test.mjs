@@ -412,7 +412,7 @@ test("Dragging a circle still moves the endpoint but never toggles its inclusion
   $("changeLevelButton").click();
 });
 test("Incorrect checks never auto-advance, and pending timers are cancelled on navigation",()=>{
-  select("full",0); // Unplayed mushroom, first tutorial asks for x >= -2.
+  select("full",1); // Unplayed Rocket in Full mode; first tutorial asks for x >= -2.
   $("startButton").click();
   const nativeSetTimeout=globalThis.setTimeout;
   const nativeClearTimeout=globalThis.clearTimeout;
