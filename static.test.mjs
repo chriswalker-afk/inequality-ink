@@ -111,3 +111,41 @@ test("the picture name is held back until the end of the flip reveal",()=>{
  assert.ok(html.includes('id="playTitle">Mystery Picture'));
  assert.ok(!html.includes('RIGHT HALF FOR PIXELS'));
 });
+
+
+test("finishing details never appear in the question canvas or before the colour stage",()=>{
+  const inGame=script.slice(script.indexOf("function sprite("),script.indexOf('sprite($("introPixelArt"),{intro:true});'));
+  assert.ok(!inGame.includes("appendFinalDetails"));
+  assert.ok(!inGame.includes("revealAllDetails"));
+  const finish=script.slice(script.indexOf("function renderFinishedArt(){"),
+    script.indexOf("function playCatReveal(){"));
+  assert.ok(finish.includes("appendFinalDetails(svg,cat?"));
+  const catReveal=script.slice(script.indexOf("function playCatReveal(){"),
+    script.indexOf("function finish({animate=false}",script.indexOf("function playCatReveal(){")));
+  assert.ok(catReveal.indexOf('shell.classList.add("is-colouring")')<
+    catReveal.indexOf('scheduleDetailReveal("cat"'),
+    "Details should begin after the full-colour cat is visible");
+  const mushroom=script.slice(script.indexOf("function playMushroomReveal(){"),
+    script.indexOf("function playCatReveal(){"));
+  assert.ok(mushroom.includes('scheduleDetailReveal("mushroom"'));
+  assert.ok(script.includes('revealAllDetails()'),
+    "Returning to finished pictures and reduced-motion finishes must include details");
+});
+test("only completed images receive their symmetric pastel backgrounds",()=>{
+  assert.ok(script.includes('colour?finishedBackgroundAt(cat?"cat":"mushroom",x,y)'),
+    "Mushroom background should only appear in finished-colour rendering");
+  assert.ok(script.includes('fill:filled?catColourAt(x,y):finishedBackgroundAt("cat",x,y)'),
+    "Cat background should be painted around, not over, its final silhouette");
+  assert.ok(!html.includes("finishedBackgroundAt"),
+    "Do not reveal internal background mechanics in student instructions");
+});
+test("both completion screens and downloaded PNGs include backgrounds and facial details",()=>{
+  assert.ok(script.includes('sprite.querySelectorAll("[data-detail-stage]").forEach('));
+  assert.ok(script.includes('group.setAttribute("opacity","1")'));
+  assert.ok(script.includes('canvas.width=width*scale;canvas.height=HEIGHT*scale'));
+  assert.ok(script.includes('sprite.setAttribute("height",HEIGHT*scale)'));
+  assert.ok(script.includes('sprite.setAttribute("width",width*scale)'));
+  assert.ok(html.includes('id="replayReveal"'));
+  assert.ok(html.includes("Replay the reveal"));
+  assert.ok(css.includes('[data-detail-stage]'));
+});

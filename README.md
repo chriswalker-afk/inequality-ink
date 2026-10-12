@@ -21,9 +21,10 @@ During all 14 questions, students produce **only one half** of a mystery picture
 1. The complete half-picture is shown in monochrome.
 2. A reflected copy folds open about a **vertical axis**.
 3. The complete symmetric picture is shown in monochrome.
-4. The full picture fades into colour.
+4. The full picture fades into colour, with a softly coloured pixel-art background.
+5. The finishing details appear in stages: pink inner ears, eyes, nose and whiskers for the cat.
 
-The finished first Mirror Mode picture is the symmetrical **Cat Cameo**, **20 × 16** pixels. Its name and colourful details are withheld until the end of the reveal. There is a replay button, a PNG download and a reduced-motion alternative.
+The finished first Mirror Mode picture is the symmetrical **Cat Cameo**, **20 × 16** pixels. Its name and colourful details are withheld until the final reveal. The background is soft blue and the decorative details appear **only after the base artwork has been reflected and coloured**. There is a reveal-replay button, a PNG download and a reduced-motion alternative.
 
 ### Other difficulty modes
 
@@ -34,7 +35,9 @@ The finished first Mirror Mode picture is the symmetrical **Cat Cameo**, **20 ×
 | **Solve & Paint** | Solve compound linear inequalities before representing them | The original mushroom |
 | **Mixed Challenge** | One-sided and double-ended questions, including algebra | The original mushroom |
 
-The other three levels and their saved progress are preserved. Progress from the previous Mirror Mode is reset because its picture and number-line window changed.
+For **Full Picture**, **Solve & Paint** and **Mixed Challenge**, the mushroom retains its existing mathematical silhouette. Its completed picture gets a soft green background, followed by cap spots and a little face (eyes and a smile).
+
+The other three levels and their saved progress are preserved. Progress from the previous Mirror Mode was reset when its picture and number-line window changed; this decorative update does **not** reset progress.
 
 ## The engineering model
 
@@ -45,6 +48,9 @@ The other three levels and their saved progress are preserved. Progress from the
 - The student's number line displays ticks only from **−5 to 5**, with a standard open or filled endpoint and one correct ray. No extra endpoints, half-line highlights or pixel mapping explanations appear.
 - All drawing controls (clickable number-line ticks, draggable endpoint, numeric steppers, circle and direction selectors) use the visible window.
 - `localStorage` saves progress separately for each difficulty. No student accounts or server backend.
+- Base silhouette, base colour, coloured background and character details are separate layers. Background colours only appear in completed artwork, and details are only revealed once colour is visible. They do **not** change which pixels are shaded by any inequality.
+- `finalDetailsFor(artwork)` supplies mirrored, validated character details; `finishedBackgroundAt(artwork,x,y)` supplies symmetric, softly shaded backgrounds. Both layers are included in saved PNGs, including if the student saves while the animation is running.
+- Reduced-motion settings show the completed artwork with all details immediately. Replaying the reveal restarts the colour/details sequence without losing the finished picture.
 
 ## Running and testing
 
@@ -64,7 +70,7 @@ node --check app.mjs
 node --check model.mjs
 ```
 
-GitHub Actions runs the mathematical checks on pushes and pull requests. Tests include the exact requested `x < 3` example, both strict and non-strict half-lines, configurable windows, all generated replay questions, the connected half-sprite and full-colour reflection, and student-facing UI checks.
+GitHub Actions runs the mathematical checks on pushes and pull requests. Tests include the exact requested `x < 3` example, both strict and non-strict half-lines, configurable windows, all generated replay questions, the connected half-sprite and full-colour reflection, validation of every symmetric finishing detail/background pixel, and student-facing UI checks.
 
 ## Publishing
 

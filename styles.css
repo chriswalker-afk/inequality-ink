@@ -69,3 +69,12 @@
   .cat-flip-stage.is-flipping .cat-flip-left{animation:none;transform:rotateY(0deg);opacity:1}
   .finished-art-shell.is-revealing #finishedArt{transition:none}
 }
+
+
+/* Final character details live in independent, staged SVG groups. None
+   appear on the mathematical canvas or before the full-colour reveal. */
+#finishedArt [data-detail-stage]{pointer-events:none;transform-box:fill-box;transform-origin:center;shape-rendering:crispEdges}
+#finishedArt [data-detail-stage] rect{shape-rendering:crispEdges}
+@media(prefers-reduced-motion:reduce){
+  #finishedArt [data-detail-stage]{transition:none!important}
+}

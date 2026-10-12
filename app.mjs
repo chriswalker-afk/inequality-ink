@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,finishedBackgroundAt,finalDetailsFor,detailStagesFor,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
 const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
@@ -53,6 +53,7 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
     const active=cat?catHalfPixelAt(x,y):pixelAt(x,y);
     const solved=intro?active&&y>=7:active&&(colour||(drawn.get(y)?.has(x)??false));
     const fill=solved?(colour?(cat?catColourAt(x+CAT_HALF_WIDTH,y):colourAt(x,y)):"#64738e")
+      :colour?finishedBackgroundAt(cat?"cat":"mushroom",x,y)
       :(intro&&active?"#d0d6dd":"#e9e5df");
     const attrs={x,y,width:1,height:1,fill,
       stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
@@ -386,23 +387,83 @@ function drawCatPanel(svg,left=false){
       stroke:"#f7f3ed","stroke-width":0.035},svg);
   }
 }
+// Decorations are independent of both the mathematical silhouette and its
+// base-colour layer. The same final details appear in an animation, a reload,
+// reduced-motion mode, and a downloaded PNG.
+function appendFinalDetails(svg,artwork){
+  for(const stage of detailStagesFor(artwork)){
+    const group=mk("g",{"data-detail-stage":stage,"aria-hidden":"true",opacity:0},svg);
+    for(const detail of finalDetailsFor(artwork)){
+      if(detail.group!==stage)continue;
+      const height=detail.height;
+      mk("rect",{x:detail.x,y:detail.y+(1-height)/2,width:1,height,
+        fill:detail.color,"shape-rendering":"crispEdges"},group);
+    }
+  }
+}
+function resetFinalDetails(){
+  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
+    group.style.transition="none";
+    group.setAttribute("opacity","0");
+  });
+}
+function revealAllDetails(){
+  $("finishedArt").querySelectorAll("[data-detail-stage]").forEach(group=>{
+    group.style.transition="none";
+    group.setAttribute("opacity","1");
+  });
+}
+function scheduleDetailReveal(artwork,onComplete){
+  const stages=detailStagesFor(artwork);
+  stages.forEach((stage,i)=>{
+    later(()=>{
+      const group=Array.from($("finishedArt").querySelectorAll("[data-detail-stage]"))
+        .find(element=>element.getAttribute("data-detail-stage")===stage);
+      if(!group)return;
+      group.style.transition="opacity .37s ease-out";
+      group.setAttribute("opacity","1");
+    },i*370);
+  });
+  later(onComplete,stages.length*370+280);
+}
 function renderFinishedArt(){
-  if(state.activeLevel!=="mirror"){
-    sprite($("finishedArt"),{colour:true,completed:14});
-    $("finishedArt").setAttribute("aria-label","A completed full-colour mushroom.");
+  const svg=$("finishedArt"),cat=state.activeLevel==="mirror";
+  if(!cat){
+    sprite(svg,{colour:true,completed:14});
+    svg.setAttribute("aria-label","A full-colour mushroom with spots, expressive eyes and a smiling face.");
+  }else{
+    svg.replaceChildren();
+    svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
+    svg.classList.remove("half-canvas");
+    svg.setAttribute("aria-label","A symmetrical ginger pixel-art cat with eyes, ears, nose and whiskers.");
+    for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
+      const filled=catPixelAt(x,y);
+      mk("rect",{x,y,width:1,height:1,
+        fill:filled?catColourAt(x,y):finishedBackgroundAt("cat",x,y),
+        stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
+    }
+  }
+  appendFinalDetails(svg,cat?"cat":"mushroom");
+}
+function playMushroomReveal(){
+  if(state.activeLevel==="mirror")return;
+  clearRevealTimers();
+  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+  $("catFlipStage").hidden=true;
+  $("finishedArt").hidden=false;
+  resetFinalDetails();
+  $("replayReveal").hidden=true;
+  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+    revealAllDetails();
+    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
+    $("replayReveal").hidden=false;
     return;
   }
-  const svg=$("finishedArt");
-  svg.replaceChildren();
-  svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
-  svg.classList.remove("half-canvas");
-  svg.setAttribute("aria-label","A fully symmetrical coloured cat face, reflected from its right half.");
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
-    const filled=catPixelAt(x,y);
-    mk("rect",{x,y,width:1,height:1,
-      fill:filled?catColourAt(x,y):"#e9e5df",
-      stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
-  }
+  $("finishNote").textContent="The colour is in. Look out for the finishing touches…";
+  later(()=>scheduleDetailReveal("mushroom",()=>{
+    $("finishNote").textContent="Your mushroom is ready — complete with spots, eyes and a smile!";
+    $("replayReveal").hidden=false;
+  }),600);
 }
 function playCatReveal(){
   if(state.activeLevel!=="mirror")return;
@@ -412,6 +473,7 @@ function playCatReveal(){
   drawCatPanel($("catFlipRight"),false);
   stage.className="cat-flip-stage";
   shell.classList.remove("is-revealing","is-colouring");
+  resetFinalDetails();
   art.hidden=true;stage.hidden=false;
   $("catFlipStatus").textContent="Your completed drawing…";
   $("replayReveal").hidden=true;
@@ -421,6 +483,7 @@ function playCatReveal(){
     $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
     stage.hidden=true;
     art.hidden=false;
+    revealAllDetails();
     $("replayReveal").hidden=false;
     return;
   }
@@ -440,10 +503,13 @@ function playCatReveal(){
     $("catFlipStatus").textContent="And now… colour!";
   },2390);
   later(()=>{
-    $("replayReveal").hidden=false;
-    $("catFlipStatus").textContent="Cat Cameo — complete!";
-    $("finishTitle").textContent="Cat Cameo!";
-    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
+    $("catFlipStatus").textContent="One more thing… the little details!";
+    scheduleDetailReveal("cat",()=>{
+      $("replayReveal").hidden=false;
+      $("catFlipStatus").textContent="Eyes, nose and whiskers — Cat Cameo complete!";
+      $("finishTitle").textContent="Cat Cameo!";
+      $("finishNote").textContent="Your picture now has its final details: bright eyes, pink ears, a nose and whiskers.";
+    });
   },3500);
 }
 function finish({animate=false}={}){
@@ -455,7 +521,7 @@ function finish({animate=false}={}){
   $("finishedArtShell").classList.remove("is-revealing","is-colouring");
   $("catFlipStage").hidden=true;
   $("finishedArt").hidden=false;
-  $("replayReveal").hidden=!cat;
+  $("replayReveal").hidden=animate;
   renderFinishedArt();
   $("firstTryStat").textContent=save.firstTry+"/14";
   $("hintsStat").textContent=save.hints;
@@ -463,7 +529,13 @@ function finish({animate=false}={}){
     ?(animate?"Every inequality is complete. Watch your picture come together.":"Your drawing became a colourful, symmetrical cat!")
     :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
      :"The whole picture is complete. Every mistake you corrected was part of the learning.";
-  if(cat&&animate)playCatReveal();
+  if(animate){
+    if(cat)playCatReveal();
+    else playMushroomReveal();
+  }else{
+    // Reloaded/completed games show the entire finished illustration.
+    revealAllDetails();
+  }
   window.scrollTo({top:0,behavior:"instant"});
 }
 function restart(){
@@ -476,10 +548,38 @@ function restart(){
  store();start();
 }
 function saveArt(){
- const s=$("finishedArt").cloneNode(true);s.setAttribute("xmlns",SVG);s.setAttribute("width","512");s.setAttribute("height","512");
- const xml=new XMLSerializer().serializeToString(s),url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
- const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=c.height=512;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0,512,512);URL.revokeObjectURL(url);
- c.toBlob(blob=>{if(!blob)return;const link=document.createElement("a"),a=URL.createObjectURL(blob);link.href=a;link.download=state.activeLevel==="mirror"?"inequality-ink-cat-cameo.png":"inequality-ink-mushroom.png";link.click();setTimeout(()=>URL.revokeObjectURL(a),1000);},"image/png");};img.src=url;
+  const sprite=$("finishedArt").cloneNode(true);
+  const width=state.activeLevel==="mirror"?CAT_FULL_WIDTH:WIDTH,scale=40;
+  sprite.removeAttribute("hidden");
+  sprite.setAttribute("xmlns",SVG);
+  sprite.setAttribute("width",width*scale);
+  sprite.setAttribute("height",HEIGHT*scale);
+  // A saved image is always finished, even if exported during the reveal.
+  sprite.querySelectorAll("[data-detail-stage]").forEach(group=>{
+    group.style.transition="none";
+    group.setAttribute("opacity","1");
+  });
+  const xml=new XMLSerializer().serializeToString(sprite);
+  const url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
+  const img=new Image();
+  img.onload=()=>{
+    const canvas=document.createElement("canvas");
+    canvas.width=width*scale;canvas.height=HEIGHT*scale;
+    const ctx=canvas.getContext("2d");
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(blob=>{
+      if(!blob)return;
+      const link=document.createElement("a"),a=URL.createObjectURL(blob);
+      link.href=a;
+      link.download=state.activeLevel==="mirror"?"inequality-ink-cat-cameo.png":"inequality-ink-mushroom.png";
+      link.click();
+      setTimeout(()=>URL.revokeObjectURL(a),1000);
+    },"image/png");
+  };
+  img.onerror=()=>URL.revokeObjectURL(url);
+  img.src=url;
 }
 document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
@@ -502,7 +602,7 @@ $("playAgain").onclick=()=>{
  store();start();
 };
 $("downloadArt").onclick=saveArt;
-$("replayReveal").onclick=playCatReveal;
+$("replayReveal").onclick=()=>state.activeLevel==="mirror"?playCatReveal():playMushroomReveal();
 $("helpButton").onclick=()=>$("helpDialog").showModal();
 $("closeHelp").onclick=()=>$("helpDialog").close();
 $("doneHelp").onclick=()=>$("helpDialog").close();
