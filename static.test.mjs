@@ -206,7 +206,7 @@ test("One Check & paint press handles correctness, progression and the final rev
   assert.ok(advance.includes('scrollIntoView?.('));
   assert.ok(app.includes('function cancelRowAdvance(){'));
   for(const segment of [
-    getSection('function chooseLevel(){','function start('),
+    getSection('function chooseLevel(){','function practiceQuestionsFor('),
     getSection('function restart(){','function saveArt(){'),
     getSection('function question(){','function selectLevel(')
   ])assert.ok(segment.includes('cancelRowAdvance()'));
@@ -474,17 +474,31 @@ test("Five visible progression steps lead from six to fourteen rows, and extras 
  assert.ok(css.includes(".picture-option-meta"));
  assert.ok(css.includes(".more-pictures"));
 });
-test("The starter immediately asks a real six-row question, not required practice",()=>{
- const start=getSection('function start({skip=false}={}){','function feedback(');
- assert.ok(start.includes('progressionStep(activePicture(),state.activeLevel)===1'));
- assert.ok(start.includes('save.tutorialDone=true'));
- assert.ok(start.includes('save.tutorial=tutorialFor(state.activeLevel).length'));
- assert.ok(app.includes('$("skipTutorialButton").hidden=state.activeLevel==="paint"||step===1'));
- assert.ok(app.includes('step===1?" · Quick win"'));
- const finish=getSection('function finish({animate=false}={}){','function restart(){');
- assert.ok(finish.includes('progressionForLevel(state.activeLevel)'));
- assert.ok(finish.includes('$("nextPictureButton").hidden=!next'));
- assert.ok(app.includes('$("nextPictureButton").onclick=()=>'));
+test("Starting any picture is immediate; optional practice never marks the picture",()=>{
+  const start=getSection('function start(){','function startPractice(){');
+  const practice=getSection('function startPractice(){','function feedback(');
+  const next=getSection('function question(){','function selectLevel(');
+  const check=getSection('function check(){','function hint(){');
+  assert.ok(html.includes('id="practiceButton"'));
+  assert.ok(html.includes('>Just for practice</button>'));
+  assert.ok(html.includes('id="practiceStatus"'));
+  assert.ok(html.includes('id="exitPracticeButton"'));
+  assert.ok(!html.includes('skipTutorialButton'));
+  assert.ok(!html.includes('Skip practice'));
+  assert.ok(start.includes('practiceOnly=false;practiceIndex=0'));
+  assert.ok(start.includes('show("playScreen");question();'));
+  assert.ok(!start.includes('tutorialFor('),"Start must not include the tutorial");
+  assert.ok(practice.includes('practiceOnly=true;practiceIndex=0'));
+  assert.ok(next.includes('const tutorial=practiceOnly;'));
+  assert.ok(next.includes('practiceQuestionsFor(picture,state.activeLevel)'));
+  assert.ok(app.includes('$("practiceButton").hidden=state.activeLevel==="paint"'));
+  assert.ok(check.includes('if(q.mode!=="tutorial"){'));
+  assert.ok(app.includes('if(practiceOnly){'));
+  assert.ok(app.includes('step===1?" · Quick win"'));
+  const finish=getSection('function finish({animate=false}={}){','function restart(){');
+  assert.ok(finish.includes('progressionForLevel(state.activeLevel)'));
+  assert.ok(finish.includes('$("nextPictureButton").hidden=!next'));
+  assert.ok(app.includes('$("nextPictureButton").onclick=()=>'));
 });
 test("Existing picture progress and historical saves never migrate to a different starter",()=>{
  assert.ok(app.includes('const HISTORICAL_DEFAULT_IDS='));
