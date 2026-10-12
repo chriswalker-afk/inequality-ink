@@ -62,6 +62,10 @@ const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let screen="intro", q=null, draft=null, selected="left", chosen=null,
   locked=false, hintsShown=0, attempts=0, assisted=false, drag=null;
 let rowAdvanceTimer=null;
+let livePreviewLayer=null,previewFlashTimer=null;
+function cancelPreviewFlash(){
+ if(previewFlashTimer!==null){clearTimeout(previewFlashTimer);previewFlashTimer=null;}
+}
 function cancelRowAdvance(){
  if(rowAdvanceTimer!==null){
    clearTimeout(rowAdvanceTimer);
@@ -91,7 +95,7 @@ function scheduleRowAdvance(){
        });
      }
    }
- },reduced?340:820);
+ },reduced?340:q?.artMode==="mirror"?1170:820);
 }
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
@@ -134,8 +138,70 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
      stroke:"#6ca69b","stroke-width":.13,
      "stroke-dasharray":".32 .25",opacity:.95},svg);
  }
+ if(svg===$("pixelCanvas")){
+   livePreviewLayer=mk("g",{"class":"ink-live-preview","aria-hidden":"true"},svg);
+ }
+
 }
 sprite($("introPixelArt"),{intro:true});
+// Live candidate pixels are projected from the student's attempted solution,
+// NOT clipped to the secret silhouette. Incorrect guesses remain visible only
+// as temporary ghosts and never become committed or saved pixels.
+function setPreviewPhase(phase){
+ const stage=$("canvasStage");
+ stage.classList.remove("ink-stage--incorrect","ink-stage--correct");
+ if(phase==="incorrect"||phase==="correct")
+   stage.classList.add("ink-stage--"+phase);
+ if(livePreviewLayer)
+   livePreviewLayer.setAttribute("class","ink-live-preview ink-live-preview--"+phase);
+}
+function drawLivePreview(candidate,phase="ghost"){
+ if(!livePreviewLayer)return;
+ livePreviewLayer.replaceChildren();
+ setPreviewPhase(phase);
+ if(!candidate||!q?.pictureId||q.mode==="tutorial")return;
+ const picture=activePicture();
+ for(const value of picturePaintedValues(picture,q,candidate)){
+   mk("rect",{x:value-picture.window.min,y:q.row,width:1,height:1,
+     "class":"ink-preview-pixel","shape-rendering":"crispEdges"},livePreviewLayer);
+ }
+}
+function previewStudentAnswer(candidate){
+ if(locked||q?.mode==="tutorial")return;
+ cancelPreviewFlash();
+ drawLivePreview(candidate,"ghost");
+}
+function currentStudentAnswer(){
+ return q?.mode==="read"?q.options?.[chosen]?.value:draft;
+}
+function flashWrongPreview(){
+ const candidate=currentStudentAnswer();
+ if(!candidate||!q?.pictureId)return;
+ cancelPreviewFlash();
+ drawLivePreview(candidate,"incorrect");
+ const currentQuestion=q,pictureKey=activeKey();
+ previewFlashTimer=setTimeout(()=>{
+   previewFlashTimer=null;
+   if(!locked&&q===currentQuestion&&screen==="playScreen"&&
+      pictureKey===activeKey())
+     drawLivePreview(currentStudentAnswer(),"ghost");
+ },580);
+}
+function flashCorrectThenCommit(){
+ if(!q?.pictureId)return;
+ cancelPreviewFlash();
+ const currentQuestion=q,pictureKey=activeKey(),doneAtCheck=save.done;
+ drawLivePreview(q.answer,"correct");
+ const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ previewFlashTimer=setTimeout(()=>{
+   previewFlashTimer=null;
+   if(locked&&q===currentQuestion&&screen==="playScreen"&&
+      pictureKey===activeKey()&&save.done===doneAtCheck){
+     sprite($("pixelCanvas"),{completed:save.done,animate:!reduced});
+     $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
+   }
+ },reduced?130:340);
+}
 function initProgress({animate=false}={}){
  const total=questionCount(activePicture());
  $("progressMarkers").replaceChildren();
