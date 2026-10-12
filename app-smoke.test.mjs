@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {identicalSolution} from "./model.mjs";
-import {pictureById,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
+import {pictureById,pictureWidth,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
 import {paintTarget,makePaintQuestion} from "./paint-engine.mjs";
 
 // Dependency-free miniature DOM for exercising the actual app module in Node.
