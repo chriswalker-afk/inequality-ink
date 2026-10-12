@@ -205,7 +205,7 @@ test("Number-line circles distinguish quick click/tap, drag and keyboard interac
 });
 test("Desktop celebration is as immersive as mobile, with enlarged artwork and final sparkles",()=>{
   assert.ok(css.includes('@media (min-width:900px) and (min-height:650px)'));
-  assert.ok(css.includes('width:min(100%,69dvh,760px)'));
+  assert.ok(css.includes('width:min(100%,calc(100dvh - 330px),760px)'));
   assert.ok(css.includes('.reveal-dialog.is-celebrated::before'));
   assert.ok(css.includes('.reveal-dialog.is-celebrated::after'));
   assert.ok(css.includes('@keyframes celebration-sparkle-left'));
