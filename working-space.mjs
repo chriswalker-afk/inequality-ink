@@ -25,7 +25,8 @@ function parseLine(line){
       index++;return {kind:"root",items:sequence(")")};
     }
     return {kind:/^\d/.test(raw)?"number":/^[A-Za-z]+$/.test(raw)?
-      "identifier":/^[^A-Za-z0-9]$/.test(raw)?"operator":"text",value:raw};
+      "identifier":(Object.hasOwn(mathOps,raw)||/^[^A-Za-z0-9]$/.test(raw))?
+      "operator":"text",value:raw};
   }
   function sequence(stop=null){
     const items=[];
