@@ -51,7 +51,7 @@ test("integer pixels do not replace correct real-number endpoint marking",()=>{
  assert.equal(identicalSolution(oneSidedA,oneSidedB),false);
 });
 test("every mode and replay paints the same exact connected sprite",()=>{
- assert.deepEqual(LEVEL_IDS.sort(),["full","mirror","mixed","solve"].sort());
+ assert.deepEqual([...LEVEL_IDS].sort(),["full","mirror","mixed","solve"]);
  const mirrorMarks={left:0,right:0,strict:0,closed:0};
  for(const level of LEVEL_IDS){
    assert.ok(LEVELS[level].name);
