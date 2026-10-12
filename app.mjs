@@ -35,6 +35,7 @@ function question(){
  attempts=0;hintsShown=0;assisted=false;chosen=null;locked=false;selected="left";
  draft={direction:q.answer.direction||"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
  $("workingArea").value="";
+ document.querySelectorAll(".endpoint-card button,.direction-chooser button").forEach(e=>e.disabled=false);
  $("questionStep").textContent=tutorial?"LET'S PRACTISE":`ROW ${save.done+1} OF 14`;
  $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
