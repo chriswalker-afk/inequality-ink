@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,finalDetailsFor,detailStagesFor,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,finishedBackgroundAt,finalDetailsFor,detailStagesFor,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
 const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
@@ -53,6 +53,7 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
     const active=cat?catHalfPixelAt(x,y):pixelAt(x,y);
     const solved=intro?active&&y>=7:active&&(colour||(drawn.get(y)?.has(x)??false));
     const fill=solved?(colour?(cat?catColourAt(x+CAT_HALF_WIDTH,y):colourAt(x,y)):"#64738e")
+      :colour?finishedBackgroundAt(cat?"cat":"mushroom",x,y)
       :(intro&&active?"#d0d6dd":"#e9e5df");
     const attrs={x,y,width:1,height:1,fill,
       stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
@@ -438,7 +439,7 @@ function renderFinishedArt(){
     for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
       const filled=catPixelAt(x,y);
       mk("rect",{x,y,width:1,height:1,
-        fill:filled?catColourAt(x,y):"#e9e5df",
+        fill:filled?catColourAt(x,y):finishedBackgroundAt("cat",x,y),
         stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
     }
   }
