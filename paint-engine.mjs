@@ -2,6 +2,7 @@
 // Rules are genuine inequalities on the integer-labelled canvas; display
 // clipping never changes their mathematical solution over the real numbers.
 import {isInInterval,formatInterval} from "./model.mjs";
+import {mathematicalStage,paintStrictPreference} from "./math-progression.mjs";
 
 const hex=s=>typeof s==="string"&&/^#[0-9a-f]{6}$/i.test(s);
 export function paintTarget(picture,index){
@@ -10,9 +11,9 @@ export function paintTarget(picture,index){
    throw Error("Invalid paint question");
  return [...grid[grid.length-1-index]]; // Draw from the bottom upwards.
 }
-function makeRunSolution(picture,run,index,replay,runIndex,count){
+function makeRunSolution(picture,run,index,replay,runIndex,count,stage){
  const {min}=picture.window;
- const strict=(index+replay+runIndex)%2===0;
+ const strict=paintStrictPreference(stage,index,replay,runIndex,"lower");
  if(count===1)return {
    direction:"left",at:min+run.end+(strict?1:0),included:!strict
  };
@@ -22,7 +23,7 @@ function makeRunSolution(picture,run,index,replay,runIndex,count){
  if(runIndex===count-1)return {
    direction:"right",at:min+run.start-(strict?1:0),included:!strict
  };
- const upperStrict=(index+runIndex+replay)%3===0;
+ const upperStrict=paintStrictPreference(stage,index,replay,runIndex,"upper");
  return {
    direction:"between",
    lower:min+run.start-(strict?1:0),
@@ -37,9 +38,10 @@ export function makePaintQuestion(picture,index,replay=0){
      runs.push({start:col,end:col,key:target[col]});
    else runs[runs.length-1].end=col;
  }
+ const stage=mathematicalStage(picture,"paint");
  const rules=runs.map((run,i)=>{
    const swatch=picture.paint.colours[run.key];
-   const solution=makeRunSolution(picture,run,index,replay,i,runs.length);
+   const solution=makeRunSolution(picture,run,index,replay,i,runs.length,stage);
    return {
      key:run.key,colour:swatch.hex,name:swatch.name,
      inequality:formatInterval(solution),solution,
