@@ -149,6 +149,7 @@ function updateLevelSelector(){
  $("startButton").innerHTML=save.completed?"View completed picture ↗":count?"Continue drawing ↗":"Start drawing ↗";
 }
 function chooseLevel(){
+ clearRevealTimers();
  show("introScreen");updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
@@ -373,16 +374,100 @@ function hint(){
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
  $("hintButton").disabled=hintsShown===3;
 }
-function finish(){
- save.completed=true;store();show("finishScreen");
- $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
- sprite($("finishedArt"),{colour:true,completed:14});
- $("firstTryStat").textContent=save.firstTry+"/14";
- $("hintsStat").textContent=save.hints;
- $("finishNote").textContent=save.firstTry===14?"A perfect first-try picture — brilliant precision!":"The whole picture is complete. Every mistake you corrected was part of the learning.";
- window.scrollTo({top:0,behavior:"instant"});
+// Mirror Mode never reflects during play; the finished half-cat unfolds only now.
+let revealTimers=[];
+function clearRevealTimers(){
+  for(const timer of revealTimers)clearTimeout(timer);
+  revealTimers=[];
+}
+function later(callback,delay){revealTimers.push(setTimeout(callback,delay));}
+function drawCatPanel(svg,left=false){
+  svg.replaceChildren();
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_HALF_WIDTH;x++){
+    const halfX=left?CAT_HALF_WIDTH-1-x:x;
+    const filled=catHalfPixelAt(halfX,y);
+    mk("rect",{x,y,width:1,height:1,fill:filled?"#64738e":"#e9e5df",
+      stroke:"#f7f3ed","stroke-width":0.035},svg);
+  }
+}
+function renderFinishedArt(){
+  if(state.activeLevel!=="mirror"){
+    sprite($("finishedArt"),{colour:true,completed:14});
+    $("finishedArt").setAttribute("aria-label","A completed full-colour mushroom.");
+    return;
+  }
+  const svg=$("finishedArt");
+  svg.replaceChildren();
+  svg.setAttribute("viewBox","0 0 16 16");
+  svg.classList.remove("half-canvas");
+  svg.setAttribute("aria-label","A fully symmetrical coloured cat face, reflected from its right half.");
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
+    const filled=catPixelAt(x,y);
+    mk("rect",{x,y,width:1,height:1,
+      fill:filled?catColourAt(x,y):"#e9e5df",
+      stroke:filled?"none":"#f7f3ed","stroke-width":filled?0:0.035},svg);
+  }
+}
+function playCatReveal(){
+  if(state.activeLevel!=="mirror")return;
+  clearRevealTimers();
+  const stage=$("catFlipStage"),shell=$("finishedArtShell"),art=$("finishedArt");
+  drawCatPanel($("catFlipLeft"),true);
+  drawCatPanel($("catFlipRight"),false);
+  stage.className="cat-flip-stage";
+  shell.classList.remove("is-revealing","is-colouring");
+  art.hidden=true;stage.hidden=false;
+  $("catFlipStatus").textContent="Your finished half-cat…";
+  $("replayReveal").hidden=true;
+  // Reduced-motion users get the complete accessible artwork without any flip.
+  if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+    stage.hidden=true;
+    art.hidden=false;
+    $("replayReveal").hidden=false;
+    return;
+  }
+  later(()=>{
+    $("catFlipStatus").textContent="Watch your drawing unfold!";
+    stage.classList.add("is-flipping");
+  },550);
+  later(()=>{
+    stage.classList.add("is-revealed");
+    $("catFlipStatus").textContent="The whole cat! Still monochrome…";
+  },1850);
+  later(()=>{
+    shell.classList.add("is-revealing");
+    art.hidden=false;
+    void art.getBoundingClientRect();
+    shell.classList.add("is-colouring");
+    $("catFlipStatus").textContent="Now add the colours!";
+  },2390);
+  later(()=>{
+    $("replayReveal").hidden=false;
+    $("catFlipStatus").textContent="Cat Cameo — complete!";
+  },3500);
+}
+function finish({animate=false}={}){
+  clearRevealTimers();
+  save.completed=true;store();show("finishScreen");
+  const cat=state.activeLevel==="mirror";
+  $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
+  $("finishTitle").textContent=cat?"Your cat is complete!":"You painted it!";
+  $("finishedArtShell").classList.remove("is-revealing","is-colouring");
+  $("catFlipStage").hidden=true;
+  $("finishedArt").hidden=false;
+  $("replayReveal").hidden=!cat;
+  renderFinishedArt();
+  $("firstTryStat").textContent=save.firstTry+"/14";
+  $("hintsStat").textContent=save.hints;
+  $("finishNote").textContent=cat
+    ?"Fourteen one-sided inequalities built a half-cat. Reflection made it whole!"
+    :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
+     :"The whole picture is complete. Every mistake you corrected was part of the learning.";
+  if(cat&&animate)playCatReveal();
+  window.scrollTo({top:0,behavior:"instant"});
 }
 function restart(){
+ clearRevealTimers();
  if(!confirm("Start a new picture? Your current row progress will be reset."))return;
  const replay=(save.replay||0)+1;
  state.progress[state.activeLevel]=blank();
@@ -394,7 +479,7 @@ function saveArt(){
  const s=$("finishedArt").cloneNode(true);s.setAttribute("xmlns",SVG);s.setAttribute("width","512");s.setAttribute("height","512");
  const xml=new XMLSerializer().serializeToString(s),url=URL.createObjectURL(new Blob([xml],{type:"image/svg+xml"}));
  const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=c.height=512;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0,512,512);URL.revokeObjectURL(url);
- c.toBlob(blob=>{if(!blob)return;const link=document.createElement("a"),a=URL.createObjectURL(blob);link.href=a;link.download="inequality-ink-mushroom.png";link.click();setTimeout(()=>URL.revokeObjectURL(a),1000);},"image/png");};img.src=url;
+ c.toBlob(blob=>{if(!blob)return;const link=document.createElement("a"),a=URL.createObjectURL(blob);link.href=a;link.download=state.activeLevel==="mirror"?"inequality-ink-cat-cameo.png":"inequality-ink-mushroom.png";link.click();setTimeout(()=>URL.revokeObjectURL(a),1000);},"image/png");};img.src=url;
 }
 document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
@@ -403,12 +488,13 @@ $("startButton").onclick=()=>start();
 $("skipTutorialButton").onclick=()=>start({skip:true});
 $("skipPractice").onclick=()=>{save.tutorial=2;save.tutorialDone=true;store();question()};
 $("checkButton").onclick=check;
-$("nextButton").onclick=()=>{if(save.done===14)finish();else question();};
+$("nextButton").onclick=()=>{if(save.done===14)finish({animate:true});else question();};
 $("hintButton").onclick=hint;
 $("restartButton").onclick=restart;
 $("changeLevelButton").onclick=chooseLevel;
 $("chooseLevelButton").onclick=chooseLevel;
 $("playAgain").onclick=()=>{
+ clearRevealTimers();
  const replay=(save.replay||0)+1;
  state.progress[state.activeLevel]=blank();
  save=state.progress[state.activeLevel];
@@ -416,6 +502,7 @@ $("playAgain").onclick=()=>{
  store();start();
 };
 $("downloadArt").onclick=saveArt;
+$("replayReveal").onclick=playCatReveal;
 $("helpButton").onclick=()=>$("helpDialog").showModal();
 $("closeHelp").onclick=()=>$("helpDialog").close();
 $("doneHelp").onclick=()=>$("helpDialog").close();
