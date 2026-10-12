@@ -52,6 +52,17 @@ Picture-specific artistic data is kept in `pictures.mjs`. Adding another picture
 
 The validator rejects invalid shapes, disconnected images, invalid row bounds, forbidden modes, offscreen endpoints, ambiguous reading options, invalid colours, unsymmetrical finishing details or question variants that paint the wrong columns. It checks every available mode against every authored row across replay variants.
 
+### Fluid question flow and direct endpoint controls
+
+The **Check & paint** button is the only confirmation needed for an inequality. If an answer is incorrect, the student stays on that question and receives targeted feedback. If correct, the completed row is painted and the next question arrives automatically after a short acknowledgement; on the last row, the full-screen reveal opens automatically. This also applies to the introductory practice questions. No separate *Next row* button is needed.
+
+On the interactive number line:
+
+- **Left-click (mouse) or quick tap (touch)** an endpoint circle to switch directly between **open** and **closed** without changing its number.
+- **Drag** the same circle to move the endpoint **without** changing whether it is open or closed. The tap-versus-drag threshold is based on CSS pixels, so the interaction is consistent across devices.
+- **Press Enter/Space** while an endpoint circle is keyboard-focused to toggle its state. The numbered ticks, +/- steppers and Open/Closed buttons are retained as alternate controls.
+- On narrow mobile screens the game scrolls the new question into view automatically after a correct answer. Any pending transition is cancelled when the student switches activities or restarts.
+
 ### Full-screen celebration before results
 
 After answering the last inequality, the game opens a **full-screen picture reveal** rather than taking the student straight to their score. This is intentional on both mobile and desktop; the completed picture is the reward and must be clearly visible without downloading it.
@@ -62,7 +73,7 @@ After answering the last inequality, the game opens a **full-screen picture reve
 4. The picture's **eyes, spots, whiskers, bubbles or other details** are added in separate finishing stages.
 5. The result stays on screen until the student presses **×**, which closes the reveal and displays the results/summary screen.
 
-The reveal has a large touch-friendly close control, a **Show the finished picture** button to skip animation without skipping the picture screen, mobile safe-area support and a reduced-motion alternative. The completed picture is also available through **View the reveal again** on the summary.
+The reveal is **equally immersive on desktop**: its full-screen artwork scales with available screen height and gains decorative sparkles at completion. On mobile it retains touch-friendly safe-area spacing. Both have a large close control, a **Show the finished picture** button to skip animation without skipping the picture screen, and a reduced-motion alternative. The completed picture is also available through **View the reveal again** on the summary.
 
 Finished pictures can be saved as PNG files with their full colour, backdrop and details.
 
