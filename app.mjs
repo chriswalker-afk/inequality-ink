@@ -1,6 +1,7 @@
 import {LEVELS,LEVEL_IDS,tutorialFor,identicalSolution,formatInterval,fmt} from "./model.mjs";
 import {
  PICTURE_LIBRARY,pictureById,picturesForLevel,defaultPictureForLevel,
+ progressionForLevel,extraPicturesForLevel,progressionStep,PICTURE_TIERS,
  pictureWidth,fullPictureWidth,pictureHeight,questionCount,pictureAxis,
  makePictureQuestion,picturePaintedValues,picturePixelAt,pictureColourAt,
  pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
@@ -11,6 +12,11 @@ const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
 const KEY="inequality-ink-v5", PREVIOUS_KEY="inequality-ink-v4";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false,paintDraft:[]});
 const defaultSelection=()=>Object.fromEntries(LEVEL_IDS.map(level=>[level,defaultPictureForLevel(level).id]));
+// Keep per-level saves from v1–v4 attached to their ORIGINAL pictures.
+const HISTORICAL_DEFAULT_IDS={
+ mirror:"cat-cameo",full:"mushroom-mystery",solve:"mushroom-mystery",
+ mixed:"mushroom-mystery",paint:"paint-rocket"
+};
 const defaults=()=>({activeLevel:"mirror",selectedPictures:defaultSelection(),progress:{}});
 const progressKey=(level,pictureId)=>level+":"+pictureId;
 let state=defaults();
@@ -41,14 +47,14 @@ try{
    if(previous&&typeof previous==="object"&&LEVELS[previous.activeLevel]&&previous.progress){
      state.activeLevel=previous.activeLevel;
      for(const level of LEVEL_IDS){
-       const picture=defaultPictureForLevel(level),old=previous.progress[level];
+       const picture=pictureById(HISTORICAL_DEFAULT_IDS[level]),old=previous.progress[level];
        if(old)state.progress[progressKey(level,picture.id)]=safeProgress(old,picture);
      }
    }else{
      const legacy=JSON.parse(localStorage.getItem("inequality-ink-v1"));
      if(legacy&&typeof legacy==="object")
-       state.progress[progressKey("mixed",defaultPictureForLevel("mixed").id)]=
-         safeProgress(legacy,defaultPictureForLevel("mixed"));
+       state.progress[progressKey("mixed",HISTORICAL_DEFAULT_IDS.mixed)]=
+         safeProgress(legacy,pictureById(HISTORICAL_DEFAULT_IDS.mixed));
    }
  }
 }catch{}
@@ -308,35 +314,74 @@ function selectPicture(id){
  syncProgress();store();updateLevelSelector();
 }
 function renderPicturePicker(){
- const picker=$("picturePicker"),pictures=picturesForLevel(state.activeLevel);
- picker.replaceChildren();
- $("picturePickerStatus").textContent=pictures.length+
-   (pictures.length===1?" picture available":" pictures available");
- for(const [index,picture] of pictures.entries()){
-   const isSelected=activePicture().id===picture.id;
-   const p=state.progress[progressKey(state.activeLevel,picture.id)]||blank();
+ const level=state.activeLevel,core=progressionForLevel(level),
+   extras=extraPicturesForLevel(level),
+   picker=$("picturePicker"),bonus=$("extraPicturePicker");
+ picker.replaceChildren();bonus.replaceChildren();
+ $("picturePickerStatus").textContent="5 steps · "+extras.length+
+   (extras.length===1?" more picture":" more pictures");
+ $("pictureJourneyHelp").textContent=level==="paint"?
+   "Start with two colours and work up to five. Every finished picture counts.":
+   "Start with six quick questions. Each picture grows a little bigger.";
+ const complete=core.filter(p=>
+   state.progress[progressKey(level,p.id)]?.completed).length;
+ const next=core.find(p=>!state.progress[progressKey(level,p.id)]?.completed);
+ $("picturePathProgress").textContent=complete+" of 5 completed"+
+   (next?" · Next: "+next.clue:" · All five finished!");
+ const track=$("pictureStepTrack");
+ track.replaceChildren();
+ for(const [i,picture] of core.entries()){
+   const progress=state.progress[progressKey(level,picture.id)]||blank();
+   const dot=document.createElement("span");
+   dot.className="picture-step"+(progress.completed?" picture-step--done":
+     picture.id===next?.id?" picture-step--next":"");
+   dot.textContent=progress.completed?"✓":String(i+1);
+   dot.setAttribute("aria-label",PICTURE_TIERS[i]+": "+
+     picture.clue+(progress.completed?", completed":", "+questionCount(picture)+" rows"));
+   track.append(dot);
+ }
+ const cardFor=picture=>{
+   const selected=activePicture().id===picture.id,
+     progress=state.progress[progressKey(level,picture.id)]||blank(),
+     step=progressionStep(picture,level),total=questionCount(picture),
+     colours=picture.paint?Object.keys(picture.paint.colours).length:null;
+   const meta=(step?PICTURE_TIERS[step-1]:"More pictures")+" · "+
+     (colours===null?"":colours+" colours · ")+total+" rows";
    const card=document.createElement("button");
-   card.type="button";card.className="picture-option"+(isSelected?" selected":"");
-   card.setAttribute("aria-pressed",String(isSelected));
-   card.setAttribute("aria-label",picture.clue+", "+
-     (p.completed?picture.name+" completed":p.done+" of "+questionCount(picture)+" rows finished"));
+   card.type="button";
+   card.className="picture-option"+(selected?" selected":"")+
+     (picture.id===next?.id?" picture-option--next":"");
+   card.setAttribute("aria-pressed",String(selected));
+   card.setAttribute("aria-label",picture.clue+", "+meta+", "+
+     (progress.completed?picture.name+" completed":
+       progress.done+" of "+total+" rows finished"));
    const icon=document.createElement("span");
-   icon.className="picture-option-icon";icon.setAttribute("aria-hidden","true");
-   icon.textContent=p.completed?"✦":"?";
-   const contents=document.createElement("span");contents.className="picture-option-copy";
-   const title=document.createElement("strong");
-   title.textContent=picture.clue;
+   icon.className="picture-option-icon";
+   icon.setAttribute("aria-hidden","true");
+   icon.textContent=progress.completed?"✓":step?String(step):"✦";
+   const contents=document.createElement("span");
+   contents.className="picture-option-copy";
+   const title=document.createElement("strong");title.textContent=picture.clue;
    const caption=document.createElement("small");
-   caption.textContent=p.completed?picture.name+" — completed":
-     p.done?p.done+" / "+questionCount(picture)+" rows finished":
-     "A new mystery picture";
-   contents.append(title,caption);
-   const status=document.createElement("span");status.className="picture-option-status";
-   status.textContent=p.completed?"✓":isSelected?"●":"○";
+   caption.textContent=progress.completed?picture.name+" — completed":
+     progress.done?progress.done+" / "+total+" rows finished":
+     step===1?"Quick win · Ready to start":!step?"Bonus picture":
+     picture.id===next?.id?"Suggested next":"Not started";
+   const detail=document.createElement("span");
+   detail.className="picture-option-meta";detail.textContent=meta;
+   contents.append(title,caption,detail);
+   const status=document.createElement("span");
+   status.className="picture-option-status";
+   status.textContent=progress.completed?"✓":selected?"●":"○";
    card.append(icon,contents,status);
    card.addEventListener("click",()=>selectPicture(picture.id));
-   picker.append(card);
- }
+   return card;
+ };
+ for(const picture of core)picker.append(cardFor(picture));
+ for(const picture of extras)bonus.append(cardFor(picture));
+ $("morePicturesSection").hidden=extras.length===0;
+ $("morePicturesToggle").textContent="More pictures ("+extras.length+")";
+ if(extras.some(p=>p.id===activePicture().id))$("morePicturesSection").open=true;
 }
 function updateLevelSelector(){
  document.querySelectorAll("[data-level]").forEach(button=>{
