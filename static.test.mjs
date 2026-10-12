@@ -381,7 +381,8 @@ test("Overview and enlarged labelled row share one draft, no answer leakage",()=
 test("Mobile rule cards are the palette and the check action stays beside the canvas",()=>{
  const rules=getSection('function renderPaintRules(){','function startPaintRow(){');
  assert.ok(rules.includes('button.dataset.colour=rule.key'));
- assert.ok(rules.includes('button.onclick=()=>selectPaintBrush(rule.key)'));
+ assert.ok(rules.includes('button.onclick=()=>selectPaintBrush(rule.key,index)'));
+ assert.ok(rules.includes('button.dataset.ruleIndex=String(index)'));
  assert.ok(!rules.includes('paintQuickPalette'));
  const pointer=getSection('for(const boardId of ["paintCanvas","paintFocusRow"])',
    '$("paintCheck").onclick=checkPaintAnswer;');
@@ -403,6 +404,32 @@ test("Mobile rule cards are the palette and the check action stays beside the ca
  assert.ok(css.includes('@media(max-width:740px)'));
  assert.ok(css.includes('@media(max-height:450px)'));
  assert.ok(css.includes('body.paint-session{overflow:hidden}'));
+});
+test("The paint rule palette uses compact cards and selects exact inequalities",()=>{
+ const cssRules=css.slice(css.indexOf(".paint-rules{"),css.indexOf(".paint-rule{"));
+ const cssCard=css.slice(css.indexOf(".paint-rule{"),css.indexOf(".paint-rule:hover{"));
+ assert.ok(cssRules.includes("display:flex;flex-direction:column"),
+   "Palette entries must not stretch to fill a tall canvas");
+ assert.ok(!cssRules.includes("grid-auto-rows:minmax(0,1fr)"),
+   "Equal-height grid rows recreated giant cards on iPhone");
+ assert.ok(cssRules.includes("flex:0 1 auto"));
+ assert.ok(cssRules.includes("overflow-y:auto"),
+   "Four compact rules need a safe scroll fallback on short phones");
+ assert.ok(cssCard.includes("flex:0 0 auto"));
+ assert.ok(css.includes(".paint-rule.selected::after"));
+ assert.ok(css.includes(".paint-rule{min-height:51px;"),
+   "Phone-sized colour cards should be compact and touch friendly");
+ const selection=getSection('function updatePaintBrush(){','function renderPaintRules(){');
+ assert.ok(selection.includes('paintSelectedRuleIndex'));
+ assert.ok(selection.includes('Number(b.dataset.ruleIndex)===paintSelectedRuleIndex'));
+ assert.ok(!selection.includes('b.dataset.colour===(paintBrush'),
+   "Same-colour inequalities must not all be highlighted");
+ assert.ok(selection.includes('b.setAttribute("aria-pressed",String(selected))'));
+ assert.ok(selection.includes('paintSelectedRuleIndex=null'));
+ assert.ok(app.includes('paintSelectedRuleIndex=0;'),
+   "The first rule should be selected at the start of each row");
+ assert.ok(app.includes('rule?" · "+rule.inequality'),
+   "Selected brush label should distinguish same-colour inequalities");
 });
 test("Paint mode uses the existing full-screen coloured artwork reveal",()=>{
  assert.ok(app.includes('if(picture.paint&&!picturePixelAt(picture,column,question.row))continue'));

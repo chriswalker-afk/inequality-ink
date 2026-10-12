@@ -461,7 +461,7 @@ body.paint-session{overflow:hidden}
   0%,100%{box-shadow:inset 0 0 0 0 #5abf8a}
   35%,68%{box-shadow:inset 0 0 0 100px #5ac58a9a}
 }
-.paint-rule-area{display:flex;flex-direction:column;min-height:0;min-width:0}
+.paint-rule-area{display:flex;flex-direction:column;justify-content:flex-start;min-height:0;min-width:0}
 .paint-rule-heading{
   display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;gap:3px 8px;min-height:17px;
@@ -471,12 +471,16 @@ body.paint-session{overflow:hidden}
 }
 .paint-rule-heading span{font-size:.72rem;color:#71818b}
 .paint-rules{
-  display:grid;grid-auto-rows:minmax(0,1fr);
-  min-height:0;flex:1;gap:clamp(5px,.7dvh,10px);margin-top:7px;
+  /* Never stretch two or three short rules to fill a tall picture canvas.
+     Keep each equation in a compact, touch-friendly card at the top. */
+  display:flex;flex-direction:column;align-items:stretch;
+  flex:0 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;
+  gap:clamp(5px,.7dvh,10px);margin-top:7px;scrollbar-width:thin;
 }
 .paint-rule{
-  display:flex;align-items:center;gap:11px;min-height:40px;min-width:0;
-  border:2px solid #e7e4e0;border-radius:11px;padding:7px 11px;
+  display:flex;align-items:center;gap:11px;min-height:56px;min-width:0;
+  flex:0 0 auto;
+  border:2px solid #e7e4e0;border-radius:11px;padding:8px 11px;
   background:#fffefa;color:#344154;text-align:left;
   transition:background .12s,border-color .12s;overflow:hidden;
 }
@@ -484,6 +488,9 @@ body.paint-session{overflow:hidden}
 .paint-rule.selected{
   border-color:#398b78;background:#e9f7f0;
   box-shadow:inset 0 0 0 1px #398b7844,0 0 0 2px #56a38e18;
+}
+.paint-rule.selected::after{
+  content:"✓";margin-left:auto;color:#28745b;font-size:.88rem;font-weight:900;
 }
 .paint-rule:focus-visible{outline:3px solid #4f819d;outline-offset:2px}
 .paint-swatch{
@@ -578,7 +585,7 @@ body.paint-session{overflow:hidden}
   .paint-rule-heading strong{font-size:.68rem}
   .paint-rule-heading span{font-size:.59rem;line-height:1.15}
   .paint-rules{margin-top:4px;gap:4px}
-  .paint-rule{min-height:36px;border-radius:8px;padding:5px 6px;gap:6px}
+  .paint-rule{min-height:51px;border-radius:8px;padding:7px 7px;gap:7px}
   .paint-swatch{width:23px;height:23px;flex-basis:23px;border-radius:5px}
   .paint-rule-copy{gap:3px}
   .paint-rule-copy strong{font-size:clamp(.6rem,2.4vw,.73rem)}
@@ -611,7 +618,7 @@ body.paint-session{overflow:hidden}
   .paint-studio-panel{gap:3px;padding:6px}
   .paint-overview-label{margin-bottom:2px}
   .paint-rule-heading span{display:none}
-  .paint-rule{min-height:30px;padding:3px 5px}
+  .paint-rule{min-height:43px;padding:4px 5px}
   .paint-rules{gap:3px;margin-top:3px}
   .paint-focus-heading{margin-bottom:2px}
   .paint-controls{min-height:35px}

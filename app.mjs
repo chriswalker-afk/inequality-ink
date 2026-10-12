@@ -67,7 +67,8 @@ const syncProgress=()=>{
 };
 const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let paintQuestion=null,paintBrush=null,paintLocked=false,paintAdvanceTimer=null,
- paintErrorTimer=null,paintPointer=null,paintCells=[],paintFocusCells=[];
+ paintErrorTimer=null,paintPointer=null,paintCells=[],paintFocusCells=[],
+ paintSelectedRuleIndex=null;
 function cancelPaintTimers(){
  if(paintAdvanceTimer!==null){clearTimeout(paintAdvanceTimer);paintAdvanceTimer=null;}
  if(paintErrorTimer!==null){clearTimeout(paintErrorTimer);paintErrorTimer=null;}
@@ -536,27 +537,42 @@ function showPaintFeedback(message,success=false){
 }
 function updatePaintBrush(){
  const name=paintBrush===null?"Eraser":activePicture().paint.colours[paintBrush].name;
- $("paintSelectedLabel").textContent="Selected brush: "+name;
+ const rule=paintSelectedRuleIndex===null?null:
+   paintQuestion?.rules[paintSelectedRuleIndex];
+ $("paintSelectedLabel").textContent="Selected brush: "+name+
+   (rule?" · "+rule.inequality:"");
  $("paintEraser").classList.toggle("selected",paintBrush===null);
  $("paintEraser").setAttribute("aria-pressed",String(paintBrush===null));
  for(const b of $("paintRules").children){
-   const selected=b.dataset.colour===(paintBrush===null?"erase":paintBrush);
+   // Colours can repeat in different inequalities: visually select exactly
+   // the rule the student tapped, never its same-colour neighbours.
+   const selected=paintSelectedRuleIndex!==null&&
+     Number(b.dataset.ruleIndex)===paintSelectedRuleIndex;
    b.classList.toggle("selected",selected);
    b.setAttribute("aria-pressed",String(selected));
  }
 }
-function selectPaintBrush(key){
+function selectPaintBrush(key,ruleIndex=null){
  if(paintLocked)return;
  paintBrush=key;
+ if(key===null){
+   paintSelectedRuleIndex=null;
+ }else{
+   const rules=paintQuestion?.rules||[];
+   const index=Number.isInteger(ruleIndex)&&rules[ruleIndex]?.key===key?
+     ruleIndex:rules.findIndex(rule=>rule.key===key);
+   paintSelectedRuleIndex=index>=0?index:null;
+ }
  updatePaintBrush();
 }
 function renderPaintRules(){
  const host=$("paintRules");
  host.replaceChildren();
- for(const rule of paintQuestion.rules){
+ paintQuestion.rules.forEach((rule,index)=>{
    const button=document.createElement("button");
    button.type="button";button.className="paint-rule";
    button.dataset.colour=rule.key;
+   button.dataset.ruleIndex=String(index);
    const swatch=document.createElement("span");
    swatch.className="paint-swatch";swatch.style.backgroundColor=rule.colour;
    swatch.setAttribute("aria-hidden","true");
@@ -567,10 +583,10 @@ function renderPaintRules(){
    copy.append(colour,equation);
    button.append(swatch,copy);
    button.setAttribute("aria-label",rule.name+", "+rule.inequality);
-   button.onclick=()=>selectPaintBrush(rule.key);
+   button.onclick=()=>selectPaintBrush(rule.key,index);
    host.append(button);
- }
- // Inequality rule buttons double as the colour palette.
+ });
+ // Each inequality is an individual brush choice, even when colours repeat.
  updatePaintBrush();
 }
 function startPaintRow(){
@@ -583,6 +599,7 @@ function startPaintRow(){
    save.paintDraft.every(key=>key==null||picture.paint.colours[key]);
  if(!valid)save.paintDraft=Array(width).fill(null);
  paintBrush=paintQuestion.rules[0].key;
+ paintSelectedRuleIndex=0;
  $("paintCheck").disabled=false;
  $("paintCheck").textContent="Check row →";
  showPaintFeedback("");
