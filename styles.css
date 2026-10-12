@@ -43,7 +43,7 @@
 .intro-sprite.half-canvas{max-width:172px}
 .cat-flip-stage{width:100%;position:relative}
 .cat-flip-panels{display:flex;width:100%;aspect-ratio:1;perspective:760px;transform-style:preserve-3d;position:relative}
-.cat-flip-left,.cat-flip-right{
+.finished-art-shell .cat-flip-left,.finished-art-shell .cat-flip-right{
   width:50%;height:100%;flex:0 0 50%;display:block;image-rendering:pixelated;
   shape-rendering:crispEdges;backface-visibility:visible;
 }
