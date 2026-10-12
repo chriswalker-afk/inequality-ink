@@ -105,8 +105,9 @@ test("half artwork has exactly 10 columns, with 20 columns at full reveal",()=>{
 test("the picture name is held back until the end of the flip reveal",()=>{
  const reveal=script.slice(script.indexOf('function playCatReveal(){'),
    script.indexOf('function finish({animate=false}',script.indexOf('function playCatReveal(){')));
- assert.ok(reveal.indexOf('stage.classList.add("is-revealed")')<
-   reveal.indexOf('$("finishTitle").textContent="Cat Cameo!"'));
+ assert.ok(reveal.lastIndexOf('$("finishTitle").textContent="Cat Cameo!"')>
+   reveal.indexOf('shell.classList.add("is-colouring")'),
+   "Animated reveal must not name the picture before the colour stage");
  assert.ok(html.includes('id="playTitle">Mystery Picture'));
  assert.ok(!html.includes('RIGHT HALF FOR PIXELS'));
 });
