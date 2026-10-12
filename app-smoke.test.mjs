@@ -51,6 +51,7 @@ class FakeElement {
     return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};
   }
   getScreenCTM(){return {inverse(){return {};}};}
+  closest(selector){return selector===".paint-cell"&&this.className.includes("paint-cell")?this:null;}
   querySelector(selector){
     if(selector===".cat-flip-panels")return new FakeElement("div");
     return this.querySelectorAll(selector)[0]||null;
@@ -78,7 +79,7 @@ Object.defineProperty(finalSvg,"hidden",{
   get(){return this.hasAttribute("hidden");},
   set(_value){ /* deliberate no-op like WebKit on an SVG element */ }
 });
-const levels=["mirror","full","solve","mixed"].map(id=>{
+const levels=["mirror","full","solve","mixed","paint"].map(id=>{
   const el=new FakeElement("button");el.dataset.level=id;return el;
 });
 const directions=["left","between","right"].map(id=>{
@@ -170,7 +171,7 @@ function select(level,index){
   const button=levels.find(el=>el.dataset.level===level);
   button.click();
   const options=$("picturePicker").children;
-  assert.equal(options.length,level==="mirror"?4:5,
+  assert.equal(options.length,level==="mirror"?4:level==="paint"?3:5,
     "Each difficulty should list all of its available mystery pictures");
   options[index].click();
 }
