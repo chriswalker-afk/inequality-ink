@@ -30,12 +30,29 @@
         <div class="intro-copy">
           <div class="eyebrow"><span class="spark-dot"></span> THE NUMBER-LINE ART STUDIO</div>
           <h1 id="introTitle">Every inequality<br><em>paints a line.</em></h1>
-          <p class="intro-lead">Draw the solution on a number line. Watch each correct interval become a row of a mystery pixel picture.</p>
+          <p class="intro-lead">Draw an inequality on a number line. Paint one half and mirror it, or draw the whole interval — all routes reveal the same picture.</p>
           <div class="intro-steps">
             <div><span>01</span><p><b>Read or solve</b> the inequality.</p></div>
             <div><span>02</span><p><b>Plot the endpoints</b> with the right circles.</p></div>
             <div><span>03</span><p><b>Reveal the colours</b> when the picture is complete.</p></div>
           </div>
+          
+          <div class="level-heading"><span class="eyebrow">CHOOSE YOUR CHALLENGE</span><span id="levelProgress" aria-live="polite"></span></div>
+          <div class="level-grid" role="group" aria-label="Difficulty level">
+            <button type="button" data-level="mirror" class="level-card selected" aria-pressed="true">
+              <span class="level-icon" aria-hidden="true">◧</span><span><b>Mirror Mode</b><small>One-sided inequalities</small></span><span class="level-badge">START HERE</span>
+            </button>
+            <button type="button" data-level="full" class="level-card" aria-pressed="false">
+              <span class="level-icon" aria-hidden="true">↔</span><span><b>Full Picture</b><small>Two endpoints to draw</small></span>
+            </button>
+            <button type="button" data-level="solve" class="level-card" aria-pressed="false">
+              <span class="level-icon" aria-hidden="true">✳</span><span><b>Solve &amp; Paint</b><small>Algebra then a number line</small></span>
+            </button>
+            <button type="button" data-level="mixed" class="level-card" aria-pressed="false">
+              <span class="level-icon" aria-hidden="true">✦</span><span><b>Mixed Challenge</b><small>All three skills together</small></span>
+            </button>
+          </div>
+          <p id="levelDescription" class="level-description">Only one half is drawn from your number line; the other half reflects automatically.</p>
           <div class="intro-buttons">
             <button type="button" class="button button-primary button-large" id="startButton">Start drawing <span aria-hidden="true">↗</span></button>
             <button type="button" class="button button-light" id="skipTutorialButton">Skip the practice</button>
@@ -60,7 +77,10 @@
             <h1 id="playTitle">Mushroom Mystery<span class="heading-spark" aria-hidden="true">✦</span></h1>
             <p id="playSubtitle" class="subhead">Build your picture one inequality at a time.</p>
           </div>
-          <button type="button" class="button button-light reset-button" id="restartButton">↺ Start over</button>
+          <div class="play-heading-actions">
+            <button type="button" class="button button-light reset-button" id="changeLevelButton">↔ Change level</button>
+            <button type="button" class="button button-light reset-button" id="restartButton">↺ Start over</button>
+          </div>
         </div>
         <div class="progress-shell" aria-label="Puzzle progress">
           <div class="progress-heading">
@@ -79,6 +99,10 @@
               <div class="board-corner bottom-right" aria-hidden="true">✳</div>
             </div>
             <div class="canvas-under"><span class="canvas-legend"><i></i> Painted pixels</span><span id="activeRowText">Current row: 14</span></div>
+            <div id="mirrorNotice" class="mirror-notice" hidden>
+              <span class="mirror-symbol" aria-hidden="true">◧</span>
+              <span id="mirrorNoticeText">Right half first. The left half will be its reflection.</span>
+            </div>
             <div class="canvas-tip" id="canvasTip"><span aria-hidden="true">✦</span> The picture grows from the bottom. Keep going!</div>
           </section>
 
@@ -87,6 +111,7 @@
             <p class="question-prompt" id="questionPrompt">Move the points to draw the solution.</p>
             <div class="equation-card" id="equationCard"><span class="equation-label">YOUR INEQUALITY</span><div class="equation" id="equationText"></div></div>
 
+            <div id="mirrorExplainer" class="mirror-explainer" hidden><b id="mirrorSideLabel">RIGHT HALF FIRST</b><span>Draw the complete inequality. Only the highlighted half is sampled for pixels, then reflected across the centre.</span></div>
             <div id="readArea" class="read-area" hidden>
               <div class="section-label">LOOK AT THIS NUMBER LINE</div>
               <div class="numberline-holder"><svg id="readLine" viewBox="0 0 660 142" role="img" aria-label="The given number line"></svg></div>
@@ -155,6 +180,7 @@
       <section id="finishScreen" class="finish-screen" hidden aria-labelledby="finishTitle">
         <div class="finish-card">
           <div class="finish-stamp">MASTERPIECE COMPLETE ✦</div>
+          <p id="finishLevelLabel" class="finish-level-label">Mirror Mode</p>
           <h1 id="finishTitle">You painted it!</h1>
           <p>Every coloured pixel is there because you represented an inequality correctly.</p>
           <div class="finished-art-shell"><svg id="finishedArt" viewBox="0 0 16 16" role="img" aria-label="Your completed full-colour mushroom pixel art"></svg></div>
@@ -167,6 +193,7 @@
           <div class="finish-actions">
             <button type="button" class="button button-primary" id="playAgain">Play again ↻</button>
             <button type="button" class="button button-light" id="downloadArt">Save picture ↓</button>
+            <button type="button" class="button button-light" id="chooseLevelButton">Choose another level ↔</button>
           </div>
         </div>
       </section>
@@ -181,6 +208,7 @@
       <div class="help-rule"><span class="open-circle"></span><div><b>Open circle</b><p>The endpoint is excluded: &lt; or &gt;.</p></div></div>
       <div class="help-rule"><span class="closed-circle"></span><div><b>Closed circle</b><p>The endpoint is included: ≤ or ≥.</p></div></div>
       <div class="help-rule"><span class="help-star">↔</span><div><b>Between two endpoints</b><p>Place both circles and shade the segment between them.</p></div></div>
+      <div class="help-rule"><span class="help-star">◧</span><div><b>Mirror Mode</b><p>Draw the full one-sided solution (such as x ≤ 3). We use only the indicated half of the number line to colour the picture, then reflect it. The inequality itself is not made into a bounded interval.</p></div></div>
       <p class="dialog-foot">Click a number-line tick or use the +/− buttons to move an endpoint. For an inequality involving a negative multiplier, remember to reverse the signs when solving.</p>
       <button type="button" class="button button-primary dialog-done" id="doneHelp">Got it!</button>
     </div>
