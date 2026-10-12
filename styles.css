@@ -333,3 +333,37 @@ body.reveal-open{overflow:hidden}
   .canvas-stage.ink-stage--incorrect,
   .canvas-stage.ink-stage--correct{animation:none!important}
 }
+
+
+/* On phones the large board sits above the controls. Keep a small copy
+   sticky INSIDE the question card so a changed answer can be seen immediately
+   without jumping back up the page. Both boards share the same ghost pixels. */
+.mobile-preview-strip{display:none}
+@media(max-width:740px){
+  .mobile-preview-strip{
+    display:flex;align-items:center;gap:12px;
+    position:sticky;top:calc(env(safe-area-inset-top,0px) + 5px);z-index:8;
+    background:#f6faf9f5;border:1px solid #d6e8e3;
+    border-radius:13px;padding:7px 12px;margin:0 0 14px;
+    box-shadow:0 5px 20px #354e5716;
+    backdrop-filter:blur(9px);
+  }
+  .mobile-preview-strip svg{
+    display:block;flex:0 0 auto;height:72px;max-width:84px;
+    width:auto;image-rendering:pixelated;shape-rendering:crispEdges;
+    background:#e9e5df;border:2px solid #e8e2dc;border-radius:4px;
+  }
+  .mobile-preview-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .mobile-preview-copy strong{font-size:.82rem;color:#354f60}
+  .mobile-preview-copy small{font-size:.68rem;color:#70838c;line-height:1.35}
+  .mobile-preview-strip.ink-stage--incorrect{animation:ink-stage-warning .55s ease-in-out both}
+  .mobile-preview-strip.ink-stage--correct{animation:ink-stage-success .34s ease-out both}
+}
+@media(max-width:390px){
+  .mobile-preview-strip svg{height:59px;max-width:70px}
+  .mobile-preview-copy small{font-size:.64rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .mobile-preview-strip.ink-stage--incorrect,
+  .mobile-preview-strip.ink-stage--correct{animation:none!important}
+}
