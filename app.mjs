@@ -666,13 +666,23 @@ function setRevealStage(index,message){
   });
   $("revealStageText").textContent=message;
 }
+function setRevealFinalArtVisible(visible){
+  // SVGElement.hidden is not consistently implemented in mobile Safari.
+  // Change the ACTUAL attribute: [hidden]{display:none!important} is
+  // applied globally, so a property-only assignment can leave the
+  // coloured SVG invisible even after all animation stages finish.
+  const art=$("revealFinalArt");
+  if(visible)art.removeAttribute("hidden");
+  else art.setAttribute("hidden","");
+  art.setAttribute("aria-hidden",visible?"false":"true");
+}
 function showRevealFinished(){
   if(!$("revealDialog").open)return;
   clearRevealTimers();
   const picture=activePicture(),board=$("revealBoard"),art=$("revealFinalArt");
   $("revealBuildLayer").hidden=true;
   $("revealMirrorLayer").hidden=true;
-  art.hidden=false;
+  setRevealFinalArtVisible(true);
   board.classList.add("has-colour");
   setDetailsVisible(art,true);
   $("revealHeading").textContent=picture.name+"!";
@@ -722,10 +732,19 @@ function playRevealRows(picture,rows){
     setRevealStage(colourIndex,"Now the background and colours appear!");
     $("revealRowCount").textContent="";
     const art=$("revealFinalArt");
-    art.hidden=false;
+    setRevealFinalArtVisible(true);
+    // Force Safari to paint the now-visible SVG at opacity 0 before
+    // starting the colour cross-fade to opacity 1.
     void art.getBoundingClientRect();
     $("revealBoard").classList.add("has-colour");
   },colourTime);
+  // Retire the monochrome artwork only after the colour has faded in.
+  // This prevents any SVG stacking discrepancies on Safari from leaving
+  // the completed reveal stuck displaying its first, grey layer.
+  later(()=>{
+    $("revealBuildLayer").hidden=true;
+    $("revealMirrorLayer").hidden=true;
+  },colourTime+1050);
   const detailTime=colourTime+1150,stages=pictureDetailStages(picture);
   later(()=>setRevealStage(colourIndex+1,
     "The finishing touches are bringing your picture to life!"),detailTime);
@@ -768,7 +787,7 @@ function openReveal({animate=true}={}){
   $("revealMirrorLayer").className="reveal-mirror-layer";
   $("revealMirrorLayer").classList.remove("is-unfolding","is-open");
   $("revealMirrorLayer").hidden=true;
-  $("revealFinalArt").hidden=true;
+  setRevealFinalArtVisible(false);
   finishedArtwork($("revealFinalArt"),picture);
   setDetailsVisible($("revealFinalArt"),false);
   drawHalfPanel($("revealMirrorLeft"),true);

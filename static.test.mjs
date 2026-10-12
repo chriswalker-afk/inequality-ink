@@ -219,3 +219,31 @@ test("Desktop celebration is as immersive as mobile, with enlarged artwork and f
   assert.ok(full.includes('openReveal({animate})'),
     "All desktop and mobile completions should open the full-screen reveal first");
 });
+
+
+test("iOS Safari reveals the finished SVG by removing its real hidden attribute",()=>{
+  const setter=getSection('function setRevealFinalArtVisible(visible){','function showRevealFinished(){');
+  assert.ok(setter.includes('art.removeAttribute("hidden")'),
+    "Safari may ignore assigning SVGElement.hidden=false");
+  assert.ok(setter.includes('art.setAttribute("hidden","")'),
+    "A replay must hide the SVG using the same attribute");
+  assert.ok(setter.includes('art.setAttribute("aria-hidden",visible?"false":"true")'),
+    "The visibility state must be accessible");
+  assert.ok(!app.includes('$("revealFinalArt").hidden='),
+    "Never assign SVGElement.hidden directly; this fails on some iPhones");
+  const complete=getSection('function showRevealFinished(){','function playRevealRows(picture,rows){');
+  assert.ok(complete.includes('setRevealFinalArtVisible(true)'));
+  assert.ok(complete.includes('$("revealBuildLayer").hidden=true'));
+  assert.ok(complete.includes('setDetailsVisible(art,true)'));
+  const rows=getSection('function playRevealRows(picture,rows){','function openReveal({animate=true}={}){');
+  assert.ok(rows.includes('setRevealFinalArtVisible(true)'));
+  assert.ok(rows.includes('art.getBoundingClientRect()'),
+    "Safari should repaint before starting the colour fade");
+  assert.ok(rows.includes('colourTime+1050'),
+    "The monochrome row layer must retire after the colour cross-fade");
+  assert.ok(rows.includes('$("revealBuildLayer").hidden=true'));
+  assert.ok(rows.includes('$("revealMirrorLayer").hidden=true'));
+  const reset=getSection('function openReveal({animate=true}={}){','function closeReveal(){');
+  assert.ok(reset.includes('setRevealFinalArtVisible(false)'));
+  assert.ok(css.includes('[hidden]{display:none!important}'));
+});
