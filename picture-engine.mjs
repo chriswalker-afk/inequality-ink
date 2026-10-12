@@ -244,7 +244,7 @@ export function validatePicture(picture){
   if(typeof picture.name!=="string"||!picture.name.trim())
     throw Error(picture.id+": missing final picture name");
   if(typeof picture.clue!=="string"||picture.clue.trim().length<3||
-     picture.clue.length>35||/\\bmystery\\s*\\d+\\b/i.test(picture.clue)||
+     picture.clue.length>35||/\bmystery\s*\d+\b/i.test(picture.clue)||
      picture.clue.trim().toLowerCase()===picture.name.trim().toLowerCase())
     throw Error(picture.id+": clue must be a short, non-numbered, non-spoiler title");
   if(!["half","full"].includes(picture.family))throw Error(picture.id+": invalid family");
