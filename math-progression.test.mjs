@@ -39,7 +39,7 @@ test("Solve starter builds from addition to a single simple sign reversal",()=>{
   }
 });
 test("Higher stages increase sign-reversal algebra",()=>{
-  for(const [step,n] of [[1,1],[2,2],[3,3],[4,4]]){
+  for(const [step,n] of [[1,1],[2,2],[3,3],[4,5]]){
     const p=progressionForLevel("solve")[step-1];
     const qs=p.rows.map((_,i)=>makePictureQuestion(p,i,0,"solve"));
     assert.equal(qs.filter(q=>q.transformed.a<0).length,n);
