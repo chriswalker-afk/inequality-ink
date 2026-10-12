@@ -40,7 +40,23 @@ test("Changing picture never changes the student's chosen mathematical mode",()=
  assert.ok(select.includes('syncProgress()'));
  assert.ok(!select.includes('state.activeLevel='));
  assert.ok(app.includes('defaultPictureForLevel(level).id'));
- assert.ok(app.includes('picture.mystery'));
+ assert.ok(app.includes('picture.clue'));
+  assert.ok(!app.includes('picture.mystery'));
+  assert.ok(app.includes('title.textContent=picture.clue'));
+  assert.ok(app.includes('p.completed?picture.name+" — completed"'));
+});
+test("Numbered mystery placeholders are replaced in all visible game surfaces",()=>{
+  const paintData=load("paint-pictures.mjs");
+  assert.ok(!definitions.includes('mystery:"Mystery '));
+  assert.ok(!paintData.includes('mystery:"Mystery '));
+  assert.ok(!html.includes('MYSTERY 01 / MUSHROOM'));
+  assert.ok(html.includes('id="playEyebrow">YOUR NEXT CREATION'));
+  assert.ok(app.includes('picture.clue.toUpperCase()'));
+  assert.ok(app.includes('picture.clue+" — colour studio"'));
+  assert.ok(app.includes('card.setAttribute("aria-label",picture.clue'));
+  assert.ok(app.includes('title.textContent=picture.clue'));
+  assert.ok(app.includes('p.completed?picture.name+" — completed"'));
+  assert.ok(app.includes('$("finishTitle").textContent=picture.name+"!"'));
 });
 test("The picture renderer and question generator do not use hardcoded cats or mushrooms",()=>{
  assert.ok(app.includes('from "./picture-engine.mjs"'));
