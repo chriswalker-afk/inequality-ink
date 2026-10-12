@@ -4,9 +4,9 @@ A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundatio
 
 **Live site:** https://chriswalker-afk.github.io/inequality-ink/
 
-> **Proposed next development:** [Picture Progression Plan](PICTURE_PROGRESSION_PLAN.md) — reorganise the picker as **Choose a picture**, add short 6/8/10/12/14-question journeys across all modes, introduce 2-to-5-colour Paint starters, and retain existing pictures and student progress. **This is a plan only; the current live game has not yet changed.**
+> **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
-## Choose a difficulty and a mystery picture
+## Choose a challenge and a picture
 
 | Difficulty | Mathematics | Pictures included |
 | --- | --- | --- |
@@ -16,7 +16,19 @@ A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundatio
 | **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | All five full pictures |
 | **Paint by Inequalities** | Read 2–4 colour inequalities per row and directly paint the integer-labelled squares. Only the current row can be edited; correct rows lock with their numbers removed. | **To the Moon**, **Petal Parade**, **Beep Beep Buddy** |
 
-The library now contains **twelve unique pictures** offering **22 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+The library now contains **twenty-four unique pictures** offering **42 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+
+### New quick wins and colour progression
+
+Every mode now has a **Starter → Step Up → Building → Challenge → Big Finish** path requiring **6 → 8 → 10 → 12 → 14 real picture questions**. Students get a proper colour reveal after six correct starter rows, with an optional Next picture action, and can choose any picture in any order.
+
+- **Mirror:** Twinkle Time → Heart in a Hurry → Bounce Around → Petal Pop → Whisker Wink.
+- **Full:** Star in a Flash → Wrapped with Wonder → Bouncy Business → Flower Burst → Woodland Wonder.
+- **Solve:** The same four small silhouettes, ending with Blast Off.
+- **Mixed:** The same four small silhouettes, ending with Bubbling Brew.
+- **Paint:** Sweet Heart (2 colours) → Star Splash (2) → Daisy Days (3) → Ready for Launch (4) → Beep Beep Buddy (5).
+
+The large existing pictures are **not removed**. Bonus titles stay accessible in **More pictures** with their saved progress and replay statistics. Existing v1–v5 scores keep their original picture IDs. The site automatically suggests the next unfinished stage but **does not lock** later pictures.
 
 ### Five additional pictures (October 2026)
 
@@ -34,8 +46,8 @@ The five new pictures were authored as independent mathematical silhouettes, wit
 
 Unlike the four original modes, this mode asks students to build a **fully coloured pixel picture** directly.
 
-- Every puzzle has **14 rows and 10 columns**. Each active square shows an integer from **−5 to 4**, and only that row can be edited.
-- Each row has **two to four genuine real-number inequality rules**, each paired with a named colour. For example, a sky-blue swatch might read \`x < −3\` and an orange swatch \`x ≥ −3\`. Rules never overlap or leave uncoloured integers.
+- The pictures have **6–14 rows and 8–10 columns**. Each active square shows its corresponding integer, and only that row can be edited.
+- Each row has **one to four genuine real-number inequality rules**, each paired with a named colour. For example, a sky-blue swatch might read \`x < −3\` and an orange swatch \`x ≥ −3\`. Rules never overlap or leave uncoloured integers.
 - Click/tap a coloured inequality to select that **rule and brush together**, then tap or swipe along the enlarged numbered row (or directly on its highlighted row in the picture). Both painting surfaces use the **same saved draft**. An eraser and Clear row action remain available.
 - **Single-screen workspace:** the full picture stays visible beside the inequality rules, which also act as colour swatches. A large, numbered **active-row strip** underneath mirrors the highlighted row in the picture, making it much easier to paint on a phone. The eraser, Clear row and **one Check row button** stay on the same screen, without scrolling between maths, brushes and canvas. The layout adapts to screen height and falls back to scrolling only on unusually short landscape displays.
 - An incorrect row briefly flashes orange on the incorrect/unpainted cells but stays editable. A correct row flashes green, **loses its integer labels**, and leaves its colours in place before the next row activates automatically.
@@ -52,6 +64,8 @@ The game no longer needs a separate question-writing routine or illustration ren
 - **`pictures.mjs`** — the **declarative picture library**: names, permitted difficulties, number-line windows, row silhouettes, palettes, background and finishing details.
 - **`picture-engine.mjs`** — reusable picture-independent mathematical engine: question creation, replay variants, integer-column sampling, mirror symmetry, colouring, connectivity and content validation.
 - **`paint-pictures.mjs`** — three authored multi-colour pixel grids and palettes.
+- **`starter-pictures.mjs`** — eight small, validated mathematical silhouettes for Mirror, Full, Solve and Mixed.
+- **`paint-starters.mjs`** — four short colour puzzles introducing two, three and four swatches.
 - **`paint-engine.mjs`** — generates exact non-overlapping colour inequalities for every row and verifies painting.
 - **`app.mjs`** — one shared browser interface for selecting, playing, saving and revealing any picture.
 - **`styles.css`**, **`index.html`** — responsive UI and reveal animations.

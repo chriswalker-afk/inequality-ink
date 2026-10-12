@@ -71,6 +71,7 @@ const definitions=[
  },
  {
   id:"paint-robot",name:"Friendly Robot",clue:"Beep Beep Buddy",
+  progression:{paint:5},
   description:"Assemble a colourful, friendly little robot.",
   family:"full",levels:["paint"],window:{min:-5,max:5},height:16,
   rows:Array.from({length:14},()=>[0,9]),

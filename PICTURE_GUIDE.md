@@ -2,9 +2,9 @@
 
 Inequality Ink builds its exercises from pixel-art **silhouette data**, not from a hand-written list of questions. New pictures are declared in [pictures.mjs](pictures.mjs); the engine validates their row shapes and generates the maths. The student only sees ordinary number lines.
 
-## Current library: nine pictures
+## Current library: twenty-four pictures (42 picture–mode combinations)
 
-The gallery currently contains **four Mirror Mode pictures** and **five full-picture designs**. The full designs are independently available in Full Picture, Solve & Paint and Mixed Challenge, giving **19 picture–difficulty combinations** overall.
+Each mode now offers a five-step path of **6, 8, 10, 12 and 14 rows**. Eight new small inequality illustrations live in `starter-pictures.mjs` and four short Paint pictures in `paint-starters.mjs`; the twelve original designs are retained under More pictures.
 
 | Mode family | Pictures (picker order) | Mathematical focus |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ A row such as `██···██` contains two disconnected runs: it cannot cur
 
 ## 2. Design the shape as rows
 
-Every row is `[firstPixel,lastPixel]`, **inclusive**, counting pixel positions from 0 at the **left edge of the authored grid**. Rows are listed from **top to bottom**, but students answer from the bottom upwards. The rest of the 16-row canvas is empty.
+Every row is `[firstPixel,lastPixel]`, **inclusive**, counting pixel positions from 0 at the **left edge of the authored grid**. Rows are listed from **top to bottom**, but students answer from the bottom upwards. The number of canvas rows depends on the picture; set height to active rows plus two to leave some empty canvas.
 
 For example, a half-heart uses an 8-column window from −4 to 4:
 
@@ -63,12 +63,13 @@ Open `PICTURE_DEFINITIONS` in [pictures.mjs](pictures.mjs). Copy the structure o
 | `id` | Unique lowercase hyphenated slug; used for progress and PNG filename |
 | `name` | The true picture name, revealed on completion |
 | `clue` | A playful, non-spoiler title such as `To the Moon`; shown in the picture picker and activity heading until completion |
+| `progression` | Optional mode-specific positions, e.g. `{full:1,solve:1,mixed:1}` for a starter or `{mirror:5}` for a final picture; absent means More pictures |
 | `description` | Short non-spoiler metadata |
 | `family` | `"half"` or `"full"` |
 | `levels` | Half: `["mirror"]`; full: any combination of `"full"`, `"solve"`, `"mixed"` |
 | `window` | `{min,max}` integer number-line bounds; the pixel count is `max-min` |
 | `axis` | Optional larger visible number line, e.g. `{min:-9,max:8}` for the existing 16-pixel mushroom |
-| `height` | Canvas height; 16 works well |
+| `height` | Canvas height; typically `rows.length+2` for the small progressions |
 | `rows` | Top-to-bottom pairs of inclusive first/last pixel indices |
 | `palette` | Hex `base`, `edge`, optional `bands` with `{from,to,fill}` for selected rows |
 | `background` | Hex `base`, `light`, `shade`, `sparkle` colours for the completed artwork |
@@ -81,6 +82,15 @@ All example picture definitions live in one place: no JavaScript functions are n
 
 **Details are symmetrical:** Author one mark per side pair. If the full width is 16 and you place a mark at `x=3,y=7`, the engine adds its reflected mark at `x=12,y=7`. Each must land inside the final silhouette. Height may be a fraction, such as `0.25`, for short whisker strokes.
 
+### Five-stage quick-win artwork
+
+Each mode has exactly five core pictures. The stages are **Starter (6 rows)**, **Step Up (8)**, **Building (10)**, **Challenge (12)** and **Big Finish (14)**. The engine rejects duplicate or missing stage positions.
+
+New symmetric, contiguous-interval full pictures can be reused in Full Picture, Solve & Paint and Mixed Challenge. Small Mirror sprites must still be connected with every half-row touching an edge. Keep exact real-number endpoints visible even when a strict ray endpoint lies just outside the painted columns.
+
+Paint by Inequalities also grows from **two to five distinct swatches** (including its actively painted background), progressing 2, 2, 3, 4, 5. Paint grids may have 6–14 rows. A complete one-colour row may have a single genuine inequality; the rule validator still checks every integer is painted exactly once.
+
+Preserve all existing picture IDs and row counts so saved student progress remains valid. A picture without a mode-specific progression position is always offered as a bonus under More pictures.
 ## 4. Optional first-question control
 
 The engine can derive valid questions automatically. Usually no additional math data is needed, but the picture may supply:

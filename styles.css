@@ -629,3 +629,61 @@ body.paint-session{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .paint-cell--wrong,.paint-cell--correct{animation:none!important}
 }
+
+
+/* Picture journey: five clearly ordered quick wins, plus an optional
+   expandable collection preserving every older picture and saved score. */
+.picture-journey-help{
+  color:#6d798a;font-size:.78rem;line-height:1.5;margin:0 0 9px;
+}
+.picture-path-heading{
+  display:flex;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;margin:0 0 8px;font-size:.75rem;color:#536d81;
+}
+.picture-path-heading strong{color:#354960;font-size:.78rem}
+.picture-path-heading span{font-size:.72rem}
+.picture-step-track{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:6px;margin:0 0 13px;
+}
+.picture-step{
+  display:grid;place-items:center;min-width:0;height:23px;
+  background:#eee9e4;border:1px solid #e0dbd3;
+  border-radius:7px;color:#71818c;
+  font-size:.74rem;font-weight:900;line-height:1;
+}
+.picture-step--next{
+  background:#e0f1e9;border:2px solid #64a090;color:#397969;
+}
+.picture-step--done{
+  background:#48907a;border-color:#438574;color:#fff;
+}
+.picture-option{position:relative}
+.picture-option--next:not(.selected){
+  border-color:#a7c8bc;background:#f5faf7;
+}
+.picture-option-icon{font-size:.9rem}
+.picture-option-meta{
+  display:block;color:#648295;font-size:.66rem;line-height:1.25;
+  font-weight:750;
+}
+.picture-option.selected .picture-option-meta{color:#477f74}
+.more-pictures{
+  margin:13px 0 0;background:#f7f7f5;
+  border:1px solid #e8e7e0;border-radius:12px;padding:0 12px;
+}
+.more-pictures summary{
+  cursor:pointer;list-style:revert;
+  padding:12px 3px;font-size:.78rem;font-weight:850;color:#526b7e;
+}
+.more-pictures summary:focus-visible{
+  outline:3px solid #83aabc;outline-offset:2px;
+}
+.extra-picture-picker{
+  padding:3px 0 13px;grid-template-columns:repeat(2,minmax(0,1fr));
+}
+@media(max-width:400px){
+  .picture-step-track{gap:4px}
+  .picture-step{height:20px}
+  .extra-picture-picker{grid-template-columns:1fr}
+}

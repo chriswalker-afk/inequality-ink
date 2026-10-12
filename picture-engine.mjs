@@ -13,12 +13,26 @@ export function pictureById(id){
   if(!result)throw Error("Unknown picture: "+id);
   return result;
 }
-export function picturesForLevel(level){
+export const PICTURE_TIERS=Object.freeze([
+  "Starter","Step Up","Building","Challenge","Big Finish"
+]);
+export const progressionStep=(picture,level)=>picture.progression?.[level]??null;
+export function progressionForLevel(level){
   if(!LEVELS_FOR_PICTURE.includes(level))throw Error("Unknown difficulty: "+level);
-  return PICTURE_LIBRARY.filter(p=>p.levels.includes(level));
+  return PICTURE_LIBRARY.filter(p=>p.levels.includes(level)&&
+    Number.isInteger(progressionStep(p,level)))
+    .sort((a,b)=>progressionStep(a,level)-progressionStep(b,level));
+}
+export function extraPicturesForLevel(level){
+  if(!LEVELS_FOR_PICTURE.includes(level))throw Error("Unknown difficulty: "+level);
+  return PICTURE_LIBRARY.filter(p=>p.levels.includes(level)&&
+    !Number.isInteger(progressionStep(p,level)));
+}
+export function picturesForLevel(level){
+  return [...progressionForLevel(level),...extraPicturesForLevel(level)];
 }
 export function defaultPictureForLevel(level){
-  const pictures=picturesForLevel(level);
+  const pictures=progressionForLevel(level);
   if(!pictures.length)throw Error("No pictures support level "+level);
   return pictures[0];
 }
@@ -261,6 +275,11 @@ export function validatePicture(picture){
     throw Error(picture.id+": invalid active rows");
   if(!picture.levels.length||picture.levels.some(level=>!LEVELS_FOR_PICTURE.includes(level)))
     throw Error(picture.id+": unknown level");
+  for(const [level,step] of Object.entries(picture.progression||{})){
+    if(!picture.levels.includes(level)||!Number.isInteger(step)||
+       step<1||step>PICTURE_TIERS.length)
+      throw Error(picture.id+": invalid progression stage for "+level);
+  }
   if(picture.family==="half"&&(picture.levels.length!==1||picture.levels[0]!=="mirror"))
     throw Error(picture.id+": half pictures require Mirror Mode");
   if(picture.paint)validatePaintPicture(picture);
@@ -348,6 +367,21 @@ export function validatePictureLibrary(){
       if(labels.has(key))throw Error(
         picture.id+": duplicate clue title in "+level+" (also "+labels.get(key)+")");
       labels.set(key,picture.id);
+    }
+  }
+  for(const level of LEVELS_FOR_PICTURE){
+    const path=progressionForLevel(level);
+    if(path.length!==5)throw Error(level+": expected exactly five core progression pictures");
+    for(let i=0;i<path.length;i++){
+      if(progressionStep(path[i],level)!==i+1)
+        throw Error(level+": progression must contain stages 1 through 5");
+      if(questionCount(path[i])!==6+2*i)
+        throw Error(level+": wrong progression question count at step "+(i+1));
+      if(level==="paint"){
+        const colours=Object.keys(path[i].paint?.colours||{}).length;
+        if(colours!==[2,2,3,4,5][i])
+          throw Error(level+": expected "+[2,2,3,4,5][i]+" colours at step "+(i+1));
+      }
     }
   }
   return PICTURE_LIBRARY.map(validatePicture);

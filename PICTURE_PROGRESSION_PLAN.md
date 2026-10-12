@@ -1,6 +1,6 @@
 # Picture Progression Plan
 
-**Status:** Proposed implementation plan — **not implemented**
+**Status:** **Quick-win progression implemented** — five accessible picture stages in every mode; classroom evaluation and optional soft unlocking remain future considerations.
 **Scope:** Inequality Ink, all five challenge modes
 **Goal:** Make early successes happen after only a handful of questions, then visibly build towards more demanding pictures, while keeping the mathematical integrity and the existing saved work.
 **Related live site:** https://chriswalker-afk.github.io/inequality-ink/
@@ -299,8 +299,8 @@ The row count of an **existing** picture remains unchanged, avoiding invalidatin
 
 ## 9. Definition of done
 
-A student choosing any of the five modes sees a clear **five-picture journey**, starts with an accessible small picture, can achieve a **full reveal after six correct picture questions**, knows exactly what is next, and can progress toward a larger 14-question finale. In Paint by Inequalities, the visible progression moves through **two to five colours**. Nothing from the existing twelve-picture library or its saved progress is lost.
+A student choosing any of the five modes sees a clear **five-picture journey**, starts with an accessible small picture, can achieve a **full reveal after six correct picture questions**, knows exactly what is next, and can progress toward a larger 14-question finale. In Paint by Inequalities, the visible progression moves through **two to five colours**. The original twelve-picture library and its saved progress are retained within the new twenty-four-picture gallery.
 
 ---
 
-**Implementation note:** This document is a **working implementation proposal for review**, not a claim that new sprites, sorting, unlocking or row-count changes have already been coded. The present game should continue operating unchanged until the development phases are implemented and tested.
+**Implementation note:** The five-stage gallery, twelve new small pictures, dynamic row and colour counts, six-question Starter flow, Next picture action and preservation of existing saved work have now been implemented. The delivery phases remain as a record of the design process. Classroom testing and optional soft unlocking are still future improvements; no picture is forcibly locked.

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {identicalSolution} from "./model.mjs";
-import {pictureById,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
+import {pictureById,pictureWidth,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
 import {paintTarget,makePaintQuestion} from "./paint-engine.mjs";
 
 // Dependency-free miniature DOM for exercising the actual app module in Node.
@@ -168,13 +168,32 @@ function answerCurrent(picture,index,level,replay=0){
     globalThis.setTimeout=nativeSetTimeout;
   }
 }
+const LEGACY_ORDER={
+ mirror:["cat-cameo","heart-glow","coral-crab","twilight-owl"],
+ full:["mushroom-mystery","rocket-launch","flower-pot",
+   "enchanted-potion","ice-cream-treat"],
+ solve:["mushroom-mystery","rocket-launch","flower-pot",
+   "enchanted-potion","ice-cream-treat"],
+ mixed:["mushroom-mystery","rocket-launch","flower-pot",
+   "enchanted-potion","ice-cream-treat"],
+ paint:["paint-rocket","paint-flower","paint-robot"]
+};
 function select(level,index){
-  const button=levels.find(el=>el.dataset.level===level);
-  button.click();
-  const options=$("picturePicker").children;
-  assert.equal(options.length,level==="mirror"?4:level==="paint"?3:5,
-    "Each difficulty should list all of its available mystery pictures");
-  options[index].click();
+ const button=levels.find(el=>el.dataset.level===level);
+ button.click();
+ const options=$("picturePicker").children;
+ assert.equal(options.length,5,"Every mode must present five ordered steps");
+ const id=LEGACY_ORDER[level][index],picture=pictureById(id);
+ const all=[...options,...$("extraPicturePicker").children];
+ const card=all.find(el=>el.children[1]?.children[0]?.textContent===picture.clue);
+ assert.ok(card,"Legacy picture not accessible after progression: "+id);
+ card.click();
+}
+function selectStage(level,stage){
+ const button=levels.find(el=>el.dataset.level===level);
+ button.click();
+ assert.equal($("picturePicker").children.length,5);
+ $("picturePicker").children[stage-1].click();
 }
 function complete(level,index,id,{animated=false}={}){
   select(level,index);
@@ -235,25 +254,39 @@ function complete(level,index,id,{animated=false}={}){
   assert.equal($("introScreen").hidden,false);
 }
 
-test("Picker displays playful clues, without spoiling unfinished pictures",()=>{
-  for(const level of ["mirror","full","solve","mixed","paint"]){
-    select(level,0);
-    const first=$("picturePicker").children[0];
-    const picture=pictureById(level==="mirror"?"cat-cameo":
-      level==="paint"?"paint-rocket":"mushroom-mystery");
-    const heading=first.children[1].children[0].textContent;
-    const caption=first.children[1].children[1].textContent;
-    const accessible=first.getAttribute("aria-label");
-    assert.equal(heading,picture.clue);
-    assert.ok(accessible.startsWith(picture.clue+", "));
-    assert.ok(![heading,caption,accessible].join(" ").includes(picture.name),
-      "True name leaked before completion: "+picture.name);
-    assert.ok(!heading.startsWith("Mystery "));
-  }
-  select("mirror",0);
+test("Choose a picture shows five quick-win steps with accurate row and colour counts",()=>{
+ for(const level of ["mirror","full","solve","mixed","paint"]){
+   selectStage(level,1);
+   const first=$("picturePicker").children[0];
+   const expected=pictureById(level==="mirror"?"mirror-star-starter":
+     level==="paint"?"paint-heart-starter":"full-star-starter");
+   const heading=first.children[1].children[0].textContent;
+   const description=first.children[1].children[1].textContent;
+   const meta=first.children[1].children[2].textContent;
+   assert.equal(heading,expected.clue);
+   assert.ok(first.getAttribute("aria-label").startsWith(expected.clue+", "));
+   assert.ok(![heading,description,meta].join(" ").includes(expected.name));
+   assert.ok(meta.includes("6 rows"));
+   assert.ok(meta.includes("Starter"));
+   if(level==="paint")assert.ok(meta.includes("2 colours"));
+   assert.equal($("pictureStepTrack").children.length,5);
+   assert.ok($("picturePathProgress").textContent.includes("0 of 5"));
+   assert.ok($("pictureSummary").textContent.includes("Quick win"));
+   const legacy=LEGACY_ORDER[level];
+   assert.equal($("extraPicturePicker").children.length,
+     level==="mirror"?3:level==="paint"?2:4);
+   for(const id of legacy){
+     const pic=pictureById(id);
+     const selectable=[...$("picturePicker").children,
+       ...$("extraPicturePicker").children];
+     assert.ok(selectable.some(card=>
+       card.children[1]?.children[0]?.textContent===pic.clue));
+   }
+ }
+ select("mirror",0);
 });
 test("Student can complete seven distinct picture/difficulty journeys independently",()=>{
-  assert.equal($("picturePicker").children.length,4);
+  assert.equal($("picturePicker").children.length,5);
   complete("mirror",1,"heart-glow");
   complete("solve",1,"rocket-launch");
   // Five new picture definitions must work end-to-end, including read,
@@ -265,7 +298,8 @@ test("Student can complete seven distinct picture/difficulty journeys independen
   complete("solve",3,"enchanted-potion");
   complete("mixed",4,"ice-cream-treat");
   select("mirror",1);
-  const finishedHeart=$("picturePicker").children[1];
+  const finishedHeart=$("extraPicturePicker").children.find(card=>
+    card.children[1]?.children[0]?.textContent===pictureById("heart-glow").clue);
   assert.equal(finishedHeart.children[1].children[0].textContent,
     pictureById("heart-glow").clue);
   assert.equal(finishedHeart.children[1].children[1].textContent,
@@ -701,7 +735,7 @@ function choosePaintKey(key){
 }
 test("Paint students can swipe the active row, erase, clear and resume a partly painted row",()=>{
  select("paint",0);
- assert.equal($("picturePicker").children.length,3);
+ assert.equal($("picturePicker").children.length,5);
  $("startButton").click();
  assert.equal($("paintScreen").hidden,false);
  assert.equal($("paintTitle").textContent,
@@ -882,4 +916,186 @@ test("All three paint pictures complete end-to-end and animate to the existing s
  // Existing activities remain independently completed.
  assert.equal(saved.progress["mirror:heart-glow"].done,14);
  assert.equal(saved.progress["solve:rocket-launch"].done,14);
+});
+
+
+test("All four maths modes celebrate a real six-question Starter and offer the next step",()=>{
+ const modes=["mirror","full","solve","mixed"];
+ for(const level of modes){
+   selectStage(level,1);
+   const picture=pictureById(level==="mirror"?"mirror-star-starter":"full-star-starter");
+   const completedBefore=Number($("picturePathProgress").textContent.split(" ")[0]);
+   assert.ok(completedBefore>=0&&completedBefore<5);
+   assert.ok($("pictureSummary").textContent.includes("6 rows"));
+   assert.equal($("skipTutorialButton").hidden,true,
+     "Starter should not require or advertise separate practice");
+   $("startButton").click();
+   assert.equal($("playScreen").hidden,false);
+   assert.equal($("questionStep").textContent,"ROW 1 OF 6",
+     "Starter must begin with a real picture row, not two compulsory tutorials");
+   for(let row=0;row<6;row++){
+     answerCurrent(picture,row,level);
+     assert.equal($("progressText").textContent,(row+1)+" of 6");
+   }
+   assert.equal($("revealDialog").open,true);
+   assert.equal($("finishScreen").hidden,true);
+   assert.equal($("revealFinalArt").hasAttribute("hidden"),false);
+   $("closeReveal").click();
+   assert.equal($("firstTryStat").textContent,"6/6");
+   assert.equal($("finishTitle").textContent,picture.name+"!");
+   assert.equal($("nextPictureButton").hidden,false);
+   const next=level==="mirror"?"mirror-heart-step":"full-gift-step";
+   assert.ok($("nextPictureButton").textContent.includes(pictureById(next).clue));
+   $("nextPictureButton").click();
+   assert.equal($("introScreen").hidden,false);
+   assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
+     .selectedPictures[level],next);
+   assert.ok($("picturePathProgress").textContent.includes((completedBefore+1)+" of 5"));
+   const first=$("picturePicker").children[0];
+   assert.ok(first.children[1].children[1].textContent.includes("completed"));
+   assert.equal(first.children[1].children[0].textContent,picture.clue);
+ }
+});
+test("Paint Starter completes a two-colour six-row heart without scrolling or extra questions",()=>{
+ selectStage("paint",1);
+ const p=pictureById("paint-heart-starter"),width=8,rows=6;
+ const completedBefore=Number($("picturePathProgress").textContent.split(" ")[0]);
+ assert.ok($("pictureSummary").textContent.includes("2 colours"));
+ assert.ok($("pictureSummary").textContent.includes("6 rows"));
+ $("startButton").click();
+ assert.equal($("paintScreen").hidden,false);
+ assert.equal($("paintProgressLabel").textContent,"Row 1 of 6");
+ assert.equal($("paintCanvas").children.length,width*p.height);
+ assert.equal($("paintFocusRow").children.length,width);
+ const set=globalThis.setTimeout,clear=globalThis.clearTimeout;
+ const queue=[];let serial=30000;
+ globalThis.setTimeout=(fn,delay)=>{
+   if(delay===280){const item={id:serial++,fn};queue.push(item);return item.id;}
+   return set(fn,delay);
+ };
+ globalThis.clearTimeout=id=>{if(id>=30000)return;return clear(id);};
+ try{
+   for(let row=0;row<rows;row++){
+     const target=paintTarget(p,row),y=rows-row;
+     assert.equal($("paintFocusRow").children.length,8);
+     assert.equal($("paintStep").textContent,"ROW "+(row+1)+" OF 6");
+     for(let x=0;x<width;x++){
+       choosePaintKey(target[x]);
+       $("paintFocusRow").children[x].click();
+       assert.equal(paintCell(y,x).style.backgroundColor,
+         p.paint.colours[target[x]].hex);
+     }
+     $("paintCheck").click();
+     assert.equal($("paintRowsDone").textContent,(row+1)+" / 6");
+     assert.equal($("paintCheck").disabled,true);
+     const next=queue.shift();
+     assert.ok(next,"Automatic paint progression timer missing");
+     next.fn();
+     if(row<rows-1){
+       assert.equal(paintCell(y,0).textContent,"",
+         "Accepted row must lose its integer labels");
+       assert.equal(paintCell(y-1,0).textContent,String(p.window.min));
+     }
+   }
+   assert.equal($("revealDialog").open,true);
+   assert.equal($("finishScreen").hidden,true);
+   $("closeReveal").click();
+   assert.equal($("firstTryStat").textContent,"6/6");
+   assert.equal($("nextPictureButton").hidden,false);
+   assert.equal($("finishTitle").textContent,p.name+"!");
+   $("nextPictureButton").click();
+   assert.equal($("introScreen").hidden,false);
+   assert.ok($("picturePathProgress").textContent.includes((completedBefore+1)+" of 5"));
+   assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
+     .selectedPictures.paint,"paint-star-step");
+   assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
+     .progress["paint:paint-heart-starter"].done,6);
+ }finally{
+   globalThis.setTimeout=set;
+   globalThis.clearTimeout=clear;
+ }
+});
+
+
+test("Eight, ten and twelve row inequality pictures all advance and reveal in full colour",()=>{
+ for(const [level,stage,id] of [
+   ["mirror",2,"mirror-heart-step"],
+   ["full",3,"full-ball-building"],
+   ["mixed",4,"full-flower-challenge"]
+ ]){
+   selectStage(level,stage);
+   const picture=pictureById(id),n=questionCount(picture);
+   assert.equal(n,stage*2+4);
+   $("skipTutorialButton").click(); // Optional practice remains available on longer puzzles.
+   assert.equal($("playScreen").hidden,false);
+   assert.equal($("questionStep").textContent,"ROW 1 OF "+n);
+   for(let index=0;index<n;index++){
+     answerCurrent(picture,index,level);
+     assert.equal($("progressText").textContent,(index+1)+" of "+n);
+   }
+   assert.equal($("revealDialog").open,true);
+   assert.equal($("finishScreen").hidden,true);
+   assert.equal($("finishedArt").getAttribute("viewBox"),
+     "0 0 "+(level==="mirror"?pictureWidth(picture)*2:pictureWidth(picture))+
+       " "+picture.height);
+   $("closeReveal").click();
+   assert.equal($("firstTryStat").textContent,n+"/"+n);
+   assert.equal($("finishTitle").textContent,picture.name+"!");
+   $("chooseLevelButton").click();
+   assert.equal($("introScreen").hidden,false);
+ }
+});
+test("The eight, ten and twelve row Paint stages colour and lock each integer square",()=>{
+ for(const [stage,id,swatches] of [
+   [2,"paint-star-step",2],
+   [3,"paint-daisy-building",3],
+   [4,"paint-rocket-challenge",4]
+ ]){
+   selectStage("paint",stage);
+   const picture=pictureById(id),n=questionCount(picture),w=pictureWidth(picture);
+   assert.equal(n,stage*2+4);
+   assert.equal(Object.keys(picture.paint.colours).length,swatches);
+   $("startButton").click();
+   assert.equal($("paintScreen").hidden,false);
+   assert.equal($("paintCanvas").children.length,w*picture.height);
+   assert.equal($("paintFocusRow").children.length,w);
+   const oldSetTimeout=globalThis.setTimeout,oldClearTimeout=globalThis.clearTimeout;
+   const pending=[];let serial=40000;
+   globalThis.setTimeout=(fn,delay)=>{
+     if(delay===280){pending.push({id:serial++,fn});return serial-1;}
+     return oldSetTimeout(fn,delay);
+   };
+   globalThis.clearTimeout=id=>id>=40000?undefined:oldClearTimeout(id);
+   try{
+     for(let index=0;index<n;index++){
+       const target=paintTarget(picture,index),y=n-index;
+       for(let x=0;x<w;x++){
+         choosePaintKey(target[x]);
+         $("paintFocusRow").children[x].click();
+         assert.equal(paintCell(y,x).style.backgroundColor,
+           picture.paint.colours[target[x]].hex);
+       }
+       $("paintCheck").click();
+       assert.equal($("paintRowsDone").textContent,(index+1)+" / "+n);
+       const timer=pending.shift();
+       assert.ok(timer,id+" failed to advance row "+index);
+       timer.fn();
+       if(index<n-1){
+         assert.equal(paintCell(y,0).textContent,"");
+         assert.equal(paintCell(y-1,0).disabled,false);
+       }
+     }
+     assert.equal($("revealDialog").open,true);
+     assert.equal($("finishScreen").hidden,true);
+     $("closeReveal").click();
+     assert.equal($("firstTryStat").textContent,n+"/"+n);
+     assert.equal($("finishTitle").textContent,picture.name+"!");
+     assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
+       .progress["paint:"+id].done,n);
+     $("chooseLevelButton").click();
+   }finally{
+     globalThis.setTimeout=oldSetTimeout;
+     globalThis.clearTimeout=oldClearTimeout;
+   }
+ }
 });
