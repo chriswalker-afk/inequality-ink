@@ -13,6 +13,9 @@ export function paintTarget(picture,index){
 function makeRunSolution(picture,run,index,replay,runIndex,count){
  const {min}=picture.window;
  const strict=(index+replay+runIndex)%2===0;
+ if(count===1)return {
+   direction:"left",at:min+run.end+(strict?1:0),included:!strict
+ };
  if(runIndex===0)return {
    direction:"left",at:min+run.end+(strict?1:0),included:!strict
  };
@@ -65,20 +68,20 @@ export function validatePaintPicture(picture){
  if(width<6||width>16||!paint.colours||!paint.colours[paint.backgroundId])
    throw Error(picture.id+": invalid paint palette or width");
  const entries=Object.entries(paint.colours);
- if(entries.length<3||entries.length>8||entries.some(([id,c])=>
+ if(entries.length<2||entries.length>8||entries.some(([id,c])=>
      !/^[A-Z]$/.test(id)||!c||!hex(c.hex)||typeof c.name!=="string"||
      !c.name.trim()))
    throw Error(picture.id+": invalid colour swatches");
  if(!Array.isArray(paint.grid)||paint.grid.length!==picture.rows.length||
-   paint.grid.length!==14)
-   throw Error(picture.id+": expected fourteen painted rows");
+   paint.grid.length<6||paint.grid.length>14)
+   throw Error(picture.id+": expected six to fourteen painted rows");
  for(const [i,line] of paint.grid.entries()){
    const keys=[...line];
    if(keys.length!==width||keys.some(key=>!paint.colours[key]))
      throw Error(picture.id+": invalid colour grid row "+(i+1));
    const runs=keys.filter((v,j)=>j===0||v!==keys[j-1]).length;
-   if(runs<2||runs>4)
-     throw Error(picture.id+": row "+(i+1)+" needs two to four colour intervals");
+   if(runs<1||runs>4)
+     throw Error(picture.id+": row "+(i+1)+" needs one to four colour intervals");
  }
  for(let index=0;index<paint.grid.length;index++){
    for(let replay=0;replay<8;replay++){
