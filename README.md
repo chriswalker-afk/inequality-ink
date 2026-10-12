@@ -1,45 +1,67 @@
 # Inequality Ink
 
-**Inequality Ink** is an interactive pixel-art mathematics game for Pearson Edexcel International GCSE Mathematics A (4MA1), Foundation Tier. Students read, draw and solve inequalities to construct a continuous pixel-art picture. Every row is determined by an inequality solution, rather than merely unlocked as a reward.
+An interactive, browser-based pixel-art game for **Pearson Edexcel International GCSE Mathematics A (4MA1), Foundation Tier**. Students read, draw and solve inequalities; correct number-line solutions generate exact integer pixels.
 
-**Game:** https://chriswalker-afk.github.io/inequality-ink/ (requires GitHub Pages to be enabled in repository settings).
+**Website (when GitHub Pages is enabled):** https://chriswalker-afk.github.io/inequality-ink/
 
-## One picture, four difficulty levels
+## Two designs, four difficulties
 
-All four levels build exactly the same **16 × 16** symmetric mushroom.
-
-| Level | Mathematics | How the picture is constructed |
+| Difficulty | Picture | Mathematics and drawing |
 | --- | --- | --- |
-| **Mirror Mode** (starter) | One-sided inequalities, read then draw | A correct real-number ray is sampled on the indicated left or right half of the pixel grid, then reflected across the central vertical axis |
-| **Full Picture** | Double-ended inequalities, read then draw | The correct two-ended solution determines all pixels in that row |
-| **Solve & Paint** | Solve compound linear inequalities, including dividing by negatives | The correctly solved interval directly paints the entire row |
-| **Mixed Challenge** | All three question styles | Each row uses the corresponding exact mirror or full-interval rule |
+| **Mirror Mode** | **Cat Cameo** | 14 true one-sided inequalities draw only the **right half** of a symmetrical cat. After the final question, the half-cat unfolds across a vertical axis, the full monochrome cat appears, then it gains colour. |
+| **Full Picture** | Mushroom Mystery | Read and draw two-ended inequalities. Each exact interval shades the entire horizontal row. |
+| **Solve & Paint** | Mushroom Mystery | Solve linear compound inequalities before drawing the full interval. |
+| **Mixed Challenge** | Mushroom Mystery | Read, draw and solve questions, including both bounded and one-sided styles. |
 
-**Important mathematical distinction:** In Mirror Mode, for example, students draw the entire real solution \`x ≤ 3\`, *not* an artificially bounded solution such as \`0 ≤ x ≤ 3\`. The website samples the correct ray at integer columns on only the indicated **right half** (columns 0 to 7); it then reflects those pixels onto the left half (columns −8 to −1). The reflection is an art operation, not a claim that the original ray is mathematically equivalent to a bounded interval.
+**Mirror Mode is intentionally different from the old row-by-row mirroring game. No row is reflected while answering questions.** Students first complete an **8 × 16** half-sprite. After all 14 questions, the completed half-sprite rotates around the central vertical axis, revealing a **16 × 16** full cat in monochrome. The game waits until the full shape is visible before fading on symmetric colours.
 
-For a 16-column symmetric sprite with integer column values −8 to 7, the reflection formula for pixel column \`x\` is \`−x−1\`. The centre line lies between −1 and 0.
+### How a one-sided inequality makes pixels
 
-### Exact marking
+For the right half of Cat Cameo, the visible integer columns are **0 through 7**. Students must plot the entire mathematical real-number ray correctly.
 
-Endpoints must have the correct **number** and **open/closed** convention, as well as the correct ray direction or bounded interval. For example, \`x ≤ 3\` and \`x < 4\` paint the same integer columns, but they are different real-number solutions; **only the assigned inequality is correct**.
+For example, \`x > 3\` is an unbounded interval extending rightwards. The artwork uses only the integer columns in its intersection with \`{0,1,2,3,4,5,6,7}\`, namely **4, 5, 6, 7**. The canvas edge clips the *drawing only*: **no second endpoint or upper limit is shown on the number line**.
 
-The pixel artwork is mathematically validated for continuity, row shape, horizontal symmetry, symmetric colouring and exact equivalence between the direct and reflected pixel masks.
+Rows near the top of the cat use right-going rays such as \`x > 3\`, while inner rows use left-going rays such as \`x ≤ 4\`. Both open and closed circles are assessed exactly. For instance, \`x ≤ 4\` and \`x < 5\` paint identical integer pixels but are different real-number solution sets, and the student must represent the assigned one.
 
-### Student experience
+### Cat Cameo row blueprint
 
-- Four selectable difficulties on the landing page; each level has **separate local progress** (changing difficulty doesn't destroy earlier work).
-- 14 question rows per picture; Mirror Mode begins with reading single-sided inequalities, followed by drawing them.
-- Two optional practice questions adapted to the chosen difficulty.
-- Click, drag or use the large +/- controls to place endpoints; choose open or closed circles and shade left, right or between.
-- The highlighted half of the number line indicates which side of the ray will be used for Mirror Mode.
-- Correct answers paint a monochrome row; in Mirror Mode the reflection follows shortly afterwards. The final symmetric sprite reveals its colours when complete.
-- Unlimited retries with misconception-aware feedback and up to three progressive hints.
-- Local browser progress saving, first-try statistics, replay questions and finished PNG download.
-- Responsive layout, accessible control labels and reduced-motion support.
+Half-columns are measured outwards from the centre: 0 closest to the axis and 7 at the outside edge.
+
+| Row (top down) | Half-columns | First-play inequality |
+|---|---|---|
+| 1 | 6–7 | \`x > 5\` |
+| 2 | 5–7 | \`x ≥ 5\` |
+| 3 | 4–7 | \`x > 3\` |
+| 4 | 0–7 | \`x ≥ 0\` |
+| 5 | 0–7 | \`x < 8\` |
+| 6 | 0–6 | \`x ≤ 6\` |
+| 7 | 0–6 | \`x < 7\` |
+| 8 | 0–5 | \`x ≤ 5\` |
+| 9 | 0–5 | \`x < 6\` |
+| 10 | 0–4 | \`x ≤ 4\` |
+| 11 | 0–4 | \`x < 5\` |
+| 12 | 0–3 | \`x ≤ 3\` |
+| 13 | 0–2 | \`x < 3\` |
+| 14 | 0–1 | \`x ≤ 1\` |
+
+Rows are presented to students bottom-up. The first three questions involve reading a completed number line, then students draw their own rays. Two optional practice questions establish the controls.
+
+## Mathematical and artwork integrity
+
+- The answer checker compares **real interval endpoints and inclusivity**, not just which integer pixels are produced.
+- Cat Cameo is a deliberately authored **eight-column, four-connected half-sprite**; every half-row is a contiguous cropped ray.
+- The final reflection maps half-column \(x\) to \(-x-1\) in signed full-column coordinates, with a vertical axis between the middle two columns.
+- The finished symmetrical 16-column cat is connected. Colours never extend outside its mathematical silhouette.
+- Full Picture, Solve & Paint and Mixed Challenge retain their existing mushroom content.
+- Changing difficulty maintains **independent browser progress**. Existing progress from the old Mirror Mode is reset because the sprite and questions have changed; other difficulty progress is migrated.
+- Correct answers accumulate one half-row at a time without reflecting during gameplay.
+- After completion, flip, full silhouette and colour are deliberately separate stages. A **Watch the flip again** control is available.
+- The experience works on mobile and desktop, with hints, keyboard-friendly endpoint controls and reduced-motion support.
+- Finished colour art can be downloaded as a PNG.
 
 ## Running locally
 
-The site is **zero-dependency**, with plain HTML, CSS and ES modules. Serve it through HTTP rather than opening HTML directly:
+No JavaScript dependencies or build process. Serve the project via HTTP (ES modules cannot reliably be loaded over \`file://\`):
 
 \`\`\`bash
 python3 -m http.server 8000
@@ -49,7 +71,7 @@ Open http://localhost:8000/.
 
 ### Tests
 
-Requires Node.js 20+:
+Requires Node.js 20+.
 
 \`\`\`bash
 node --test *.test.mjs
@@ -57,24 +79,10 @@ node --check app.mjs
 node --check model.mjs
 \`\`\`
 
-The mathematical tests exhaustively check all four levels across hundreds of replay variations. The static contract tests check the referenced HTML IDs and important interface controls. GitHub Actions runs these tests automatically on pushes and pull requests.
+GitHub Actions runs these checks on pushes and pull requests. Tests verify clipped rays across many replay variations, symmetry, connected artwork, the exact \`x > 3\` question, and the final reveal structure.
 
-## Publishing on GitHub Pages
+## Publish
 
-From **Settings → Pages**, set source to **Deploy from a branch**, branch \`main\`, directory \`/(root)\` and save.
+Go to **Settings → Pages**, choose **Deploy from a branch**, branch \`main\`, directory \`/(root)\` and save.
 
-No student accounts or server-side services are used. Progress is stored only in the browser on that device.
-
-## Files
-
-- \`index.html\` — entry point and all accessible controls
-- \`styles.css\` — responsive layout and reflection animations
-- \`model.mjs\` — authoritative sprite, mathematical interval logic, mirroring, question generation, validation
-- \`app.mjs\` — game interactions, exact marking, persistence, artwork and finish
-- \`model.test.mjs\` — mathematical content and reflection regression tests
-- \`static.test.mjs\` — interface consistency tests
-- \`.github/workflows/verify.yml\` — automated verification
-
-## Future additions
-
-Multiple-polygon and multiple-interval silhouettes, a teacher picture builder, additional themed art, full working-step feedback and optional class-level reports.
+The app uses no logins or backend. Progress is stored in the browser's \`localStorage\` on the student's device.
