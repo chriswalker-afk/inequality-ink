@@ -657,11 +657,13 @@ function openReveal({animate=true}={}){
     board=$("revealBoard"),half=picture.family==="half";
   if(dialog.open)dialog.close();
   board.className="reveal-board";
+  board.classList.remove("has-colour");
   board.style.aspectRatio=width+" / "+height;
   $("revealBuildLayer").hidden=false;
   $("revealBuildLayer").style.width=half?"50%":"100%";
   $("revealBuildLayer").style.left=half?"50%":"0";
   $("revealMirrorLayer").className="reveal-mirror-layer";
+  $("revealMirrorLayer").classList.remove("is-unfolding","is-open");
   $("revealMirrorLayer").hidden=true;
   $("revealFinalArt").hidden=true;
   finishedArtwork($("revealFinalArt"),picture);
