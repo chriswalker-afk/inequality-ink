@@ -1,18 +1,18 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
-const KEY="inequality-ink-v3", PREVIOUS_KEY="inequality-ink-v2", LEGACY_KEY="inequality-ink-v1";
+const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false});
 const defaults=()=>({activeLevel:"mirror",progress:Object.fromEntries(LEVEL_IDS.map(id=>[id,blank()]))});
 let state=defaults();
 try{
   const current=JSON.parse(localStorage.getItem(KEY));
-  const previous=current||JSON.parse(localStorage.getItem(PREVIOUS_KEY));
+  const previous=current||JSON.parse(localStorage.getItem(PREVIOUS_KEY))||JSON.parse(localStorage.getItem("inequality-ink-v2"));
   if(previous && LEVELS[previous.activeLevel] && previous.progress && typeof previous.progress==="object"){
     state.activeLevel=previous.activeLevel;
     for(const id of LEVEL_IDS){
-      // Old Mirror Mode used a mushroom with immediate row reflection.
-      // When migrating, reset that mode; preserve the three other difficulties.
+      // The Mirror Mode art and number-line window have changed.
+      // Reset only the previous Mirror Mode; retain the other three levels.
       if(!current && id==="mirror")continue;
       const p=previous.progress[id];
       if(p && Number.isInteger(p.done) && p.done>=0 && p.done<=14 &&
@@ -37,14 +37,14 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
   svg.setAttribute("viewBox","0 0 "+width+" "+HEIGHT);
   svg.classList.toggle("half-canvas",cat);
   svg.setAttribute("aria-label",cat
-    ?"The right half of a mystery picture, eight columns by sixteen rows; no reflection before completion."
+    ?"A picture in progress. Each correct inequality adds one row."
     :"A sixteen by sixteen full pixel-art canvas.");
   const drawn=new Map();
   if(!intro){
     for(let i=0;i<completed;i++){
       const solvedQuestion=makeQuestion(i,save.replay,state.activeLevel);
       if(!solvedQuestion)continue;
-      const columns=paintedColumns(solvedQuestion).map(v=>cat?v:v-COLUMN_MIN);
+      const columns=paintedColumns(solvedQuestion).map(v=>cat?v-CAT_WINDOW.min:v-COLUMN_MIN);
       drawn.set(solvedQuestion.row,new Set(columns));
     }
   }
@@ -52,7 +52,7 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<width;x++){
     const active=cat?catHalfPixelAt(x,y):pixelAt(x,y);
     const solved=intro?active&&y>=7:active&&(colour||(drawn.get(y)?.has(x)??false));
-    const fill=solved?(colour?(cat?catColourAt(x+8,y):colourAt(x,y)):"#64738e")
+    const fill=solved?(colour?(cat?catColourAt(x+CAT_HALF_WIDTH,y):colourAt(x,y)):"#64738e")
       :(intro&&active?"#d0d6dd":"#e9e5df");
     const attrs={x,y,width:1,height:1,fill,
       stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
@@ -89,12 +89,14 @@ function question(){
  // No prefilled direction or endpoints: the student must construct the solution.
  draft={direction:state.activeLevel==="mirror"?"right":"between",lower:0,upper:1,lowerIncluded:false,upperIncluded:false,at:0,included:false};
  $("workingArea").value="";
+ const {min,max}=visibleAxis();
+ for(const side of ["left","right"]){$(side+"Value").min=min;$(side+"Value").max=max;}
  document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button").forEach(e=>e.disabled=false);
  document.querySelector('[data-direction="between"]').hidden=state.activeLevel==="mirror";
  $("questionStep").textContent=tutorial?"LET'S PRACTISE":("ROW "+(save.done+1)+" OF 14");
- $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror-half"?"Draw the ray":"Draw the interval";
+ $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
- $("modeTag").textContent=tutorial?"TUTORIAL":q.artMode==="mirror-half"?"CAT "+q.mode.toUpperCase():q.artMode==="mirror"?"MIRROR "+q.mode.toUpperCase():q.mode.toUpperCase();
+ $("modeTag").textContent=tutorial?"TUTORIAL":q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
  $("equationText").textContent=q.equation||"";
  $("readArea").hidden=q.mode!=="read";$("drawArea").hidden=q.mode==="read";
@@ -104,24 +106,10 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
- const cat=state.activeLevel==="mirror",legacyMirror=q.artMode==="mirror";
- $("mirrorExplainer").hidden=!cat&&!legacyMirror;
- $("mirrorNotice").hidden=!cat&&!legacyMirror;
- if(cat){
-   $("mirrorSideLabel").textContent="ONE RAY. HALF A CANVAS.";
-   $("mirrorMathNote").textContent="Draw the complete one-sided inequality. The canvas edge simply stops the pixels; it is not another endpoint on your number line.";
-   $("mirrorNoticeText").textContent="You are building the right half of a cat. Finish all 14 rows to unfold the complete picture!";
- }else if(legacyMirror){
-   $("mirrorSideLabel").textContent="ONE SIDE FIRST";
-   $("mirrorMathNote").textContent="Represent the whole inequality. For this mixed question, only the highlighted half is sampled.";
-   $("mirrorNoticeText").textContent="The matching half is reflected to complete this row.";
- }
- $("canvasTip").textContent=cat
-   ?"✦ The correct ray draws only where it crosses the eight-column canvas. No reflection until the very end."
-   :legacyMirror?"✦ Your full ray is marked. The chosen half is reflected for this mixed question."
-     :"✦ Your entire correct interval draws the row.";
- $("playEyebrow").textContent=cat?"MYSTERY 01 / CAT CAMEO":"MYSTERY 01 / MUSHROOM";
- $("playTitle").firstChild.textContent=cat?"Cat Cameo":"Mushroom Mystery";
+ const cat=state.activeLevel==="mirror";
+ $("canvasTip").textContent="✦ Keep solving inequalities to complete the mystery picture.";
+ $("playEyebrow").textContent="MYSTERY 01 / "+LEVELS[state.activeLevel].name.toUpperCase();
+ $("playTitle").firstChild.textContent=cat?"Mystery Picture":"Mushroom Mystery";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
  else setDraft(draft);
@@ -141,10 +129,9 @@ function updateLevelSelector(){
  });
  const count=save.done;
  $("levelProgress").textContent=save.completed?"Artwork finished in this level":count?count+"/14 rows completed":"Fresh picture";
- $("levelDescription").textContent=LEVELS[state.activeLevel].detail+
-   (state.activeLevel==="mirror"?" Your number line is never artificially bounded.":"");
- $("introGridSize").textContent=state.activeLevel==="mirror"?"8 × 16":"16 × 16";
- $("introArtCaption").textContent=state.activeLevel==="mirror"?"Only half a cat… for now":"Solve to paint";
+ $("levelDescription").textContent=LEVELS[state.activeLevel].detail;
+ $("introGridSize").textContent=state.activeLevel==="mirror"?CAT_HALF_WIDTH+" × 16":"16 × 16";
+ $("introArtCaption").textContent=state.activeLevel==="mirror"?"A picture in progress":"Solve to paint";
  sprite($("introPixelArt"),{intro:true});
  $("startButton").innerHTML=save.completed?"View completed picture ↗":count?"Continue drawing ↗":"Start drawing ↗";
 }
@@ -166,20 +153,17 @@ function renderOptions(){
   b.onclick=()=>{chosen=i;renderOptions();};host.append(b);
  });
 }
-const coord=n=>26+(n-AXIS_MIN)*((660-52)/(AXIS_MAX-AXIS_MIN));
+// The number line has only conventional mathematical markings.
+// Its visible limits depend on the picture's chosen window, never on a
+// hidden pixel boundary or any extra endpoint added to the inequality.
+const visibleAxis=()=>state.activeLevel==="mirror"?CAT_WINDOW:{min:AXIS_MIN,max:AXIS_MAX};
+const coord=n=>{
+ const {min,max}=visibleAxis();
+ return 26+(n-min)*608/(max-min);
+};
 function renderLine(svg,interval,readonly=false){
  svg.replaceChildren();
  const group=mk("g",{},svg),axisY=66;
- if(q?.artMode==="mirror"){
-   const right=q.mirrorSide==="right";
-   const x0=right?coord(-.5):26,x1=right?634:coord(-.5);
-   mk("rect",{x:x0,y:23,width:x1-x0,height:66,rx:5,fill:"#e9f5ef"},group);
-   mk("line",{x1:coord(-.5),x2:coord(-.5),y1:25,y2:80,stroke:"#7baeaa",
-      "stroke-width":1.6,"stroke-dasharray":"4 4"},group);
-   const note=mk("text",{x:(x0+x1)/2,y:18,"text-anchor":"middle",
-      fill:"#458478","font-size":13,"font-weight":750},group);
-   note.textContent=right?"RIGHT HALF FOR PIXELS":"LEFT HALF FOR PIXELS";
- }
  mk("line",{x1:26,x2:634,y1:axisY,y2:axisY,stroke:"#7c899b","stroke-width":2},group);
  const isBetween=interval.direction==="between",
    hasLeft=isBetween||interval.direction==="right",
@@ -189,19 +173,29 @@ function renderLine(svg,interval,readonly=false){
  let from=hasLeft?leftX:26,to=hasRight?rightX:634;
  if(interval.direction==="left")from=26;
  if(interval.direction==="right")to=634;
- if(from<=to)mk("line",{x1:from,x2:to,y1:axisY,y2:axisY,stroke:"#538ca2","stroke-width":7,"stroke-linecap":"round"},group);
- if(interval.direction==="left")mk("path",{d:"M 26 66 l 14 -8 M 26 66 l 14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
- if(interval.direction==="right")mk("path",{d:"M 634 66 l -14 -8 M 634 66 l -14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
- for(let n=AXIS_MIN;n<=AXIS_MAX;n++){
+ if(from<=to)mk("line",{x1:from,x2:to,y1:axisY,y2:axisY,
+   stroke:"#538ca2","stroke-width":7,"stroke-linecap":"round"},group);
+ if(interval.direction==="left")
+   mk("path",{d:"M 26 66 l 14 -8 M 26 66 l 14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
+ if(interval.direction==="right")
+   mk("path",{d:"M 634 66 l -14 -8 M 634 66 l -14 8",fill:"none",stroke:"#538ca2","stroke-width":3},group);
+ const {min,max}=visibleAxis();
+ for(let n=min;n<=max;n++){
    const x=coord(n);
    mk("line",{x1:x,x2:x,y1:60,y2:72,stroke:"#768497","stroke-width":1.8},group);
-   const t=mk("text",{x,y:96,"text-anchor":"middle",fill:"#58647a","font-size":15,"font-weight":600},group);
+   const t=mk("text",{x,y:96,"text-anchor":"middle",fill:"#58647a",
+     "font-size":15,"font-weight":600},group);
    t.textContent=fmt(n);
    if(!readonly){
      const tick=mk("rect",{x:x-13,y:35,width:26,height:65,fill:"transparent",
-       "data-number":n,role:"button","aria-label":"Move selected endpoint to "+n,tabindex:-1},group);
+       role:"button","aria-label":"Move selected endpoint to "+n,tabindex:0},group);
      tick.style.cursor="pointer";
      tick.addEventListener("click",()=>setEndpoint(selected,n));
+     tick.addEventListener("keydown",event=>{
+       if(event.key==="Enter"||event.key===" "){
+         event.preventDefault();setEndpoint(selected,n);
+       }
+     });
    }
  }
  const circle=(x,closed,side)=>{
@@ -214,12 +208,9 @@ function renderLine(svg,interval,readonly=false){
      e.style.cursor="grab";
      e.addEventListener("pointerdown",ev=>{
        if(locked)return;
-       selected=side;
-       drag=true;
+       selected=side;drag=true;
        svg.setPointerCapture(ev.pointerId);
-       ev.preventDefault();
-       syncInputs();
-       renderLine(svg,draft);
+       ev.preventDefault();syncInputs();renderLine(svg,draft);
      });
    }
  };
@@ -231,10 +222,8 @@ function renderLine(svg,interval,readonly=false){
    info.textContent="Tap a tick or drag a circle to change your answer";
  }
 }
-// SVG owns pointer capture, not transient endpoint elements, so a drag
-// continues when the SVG children are replaced during movement.
 $("drawLine").addEventListener("pointermove",ev=>{
- if(drag && !locked)setEndpoint(selected,nearest(ev,$("drawLine")));
+ if(drag&&!locked)setEndpoint(selected,nearest(ev,$("drawLine")));
 });
 for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
  $("drawLine").addEventListener(eventName,()=>drag=false);
@@ -242,12 +231,14 @@ for(const eventName of ["pointerup","pointercancel","lostpointercapture"]){
 function nearest(ev,svg){
  const pt=svg.createSVGPoint();pt.x=ev.clientX;pt.y=ev.clientY;
  const transformed=pt.matrixTransform(svg.getScreenCTM().inverse());
- return Math.max(AXIS_MIN,Math.min(AXIS_MAX,Math.round(AXIS_MIN+(transformed.x-26)*(AXIS_MAX-AXIS_MIN)/608)));
+ const {min,max}=visibleAxis();
+ return Math.max(min,Math.min(max,Math.round(min+(transformed.x-26)*(max-min)/608)));
 }
 function setEndpoint(which,n){
  if(locked)return;
  if(!Number.isFinite(n))return;
- n=Math.max(AXIS_MIN,Math.min(AXIS_MAX,Math.round(n)));
+ const {min,max}=visibleAxis();
+ n=Math.max(min,Math.min(max,Math.round(n)));
  if(draft.direction==="between"){
   if(which==="left"){draft.lower=Math.min(n,draft.upper-1);}else{draft.upper=Math.max(n,draft.lower+1);}
  }else draft.at=n;
@@ -338,9 +329,9 @@ function check(){
   save.tutorial++;if(save.tutorial>=2)save.tutorialDone=true;
  }else{
   feedback(q.artMode==="mirror-half"
-    ?"Exactly right! This ray paints one row of your half-cat. The other half stays hidden until the finale."
+    ?"Correct! Another row of your mystery picture is complete."
     :q.artMode==="mirror"
-      ?"Correct! The reflected part completes this Mixed Challenge row."
+      ?"Correct! Another row is complete."
       :"Beautifully done! Your exact interval has painted this row.",true);
   if(attempts===1 && !assisted)save.firstTry++;
   save.done++;
@@ -358,13 +349,13 @@ function hint(){
  const final=formatInterval(q.answer);
  let msg;
  if(hintsShown===1){
-   if(q.artMode==="mirror-half")msg="Represent a full one-sided ray with the correct arrow. Only the canvas edge limits the pixels, never the inequality itself.";
+   if(q.artMode==="mirror-half")msg="Check the direction of the arrow. Does the inequality include its endpoint?";
    else if(q.artMode==="mirror")msg="Work out whether this one-sided solution points left or right.";
    else msg=q.mode==="solve"?"Rearrange all three parts. When dividing by a negative number, reverse both inequality signs."
      :q.mode==="read"?"Open circles exclude endpoints; closed circles include them."
      :"Identify both endpoints and consider whether each is included.";
  }else if(hintsShown===2){
-   if(q.artMode==="mirror-half")msg="Choose the correct arrow, endpoint number and circle. Do not add another circle at the canvas edge.";
+   if(q.artMode==="mirror-half")msg="A filled circle means equality is included; an open circle means it is excluded. Check the endpoint number too.";
    else if(q.artMode==="mirror")msg="Check both the arrow direction and the circle type.";
    else msg=q.mode==="solve"?"Isolate x in the middle, then check both boundaries."
      :q.mode==="read"?"Compare both endpoints and both circle types with your options."
@@ -372,7 +363,7 @@ function hint(){
  }else {
    assisted=true;
    msg="Answer: "+(q.mode==="solve"?q.equation+" simplifies to ":"")+final+
-     (q.artMode==="mirror-half"?". Only the part of this ray inside the right-hand canvas is drawn.":q.artMode==="mirror"?". This mixed question uses a reflected half.":".");
+     ("." );
  }
  $("hintPanel").hidden=false;$("hintPanel").textContent=msg;
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
@@ -387,6 +378,7 @@ function clearRevealTimers(){
 function later(callback,delay){revealTimers.push(setTimeout(callback,delay));}
 function drawCatPanel(svg,left=false){
   svg.replaceChildren();
+  svg.setAttribute("viewBox","0 0 "+CAT_HALF_WIDTH+" "+HEIGHT);
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_HALF_WIDTH;x++){
     const halfX=left?CAT_HALF_WIDTH-1-x:x;
     const filled=catHalfPixelAt(halfX,y);
@@ -402,10 +394,10 @@ function renderFinishedArt(){
   }
   const svg=$("finishedArt");
   svg.replaceChildren();
-  svg.setAttribute("viewBox","0 0 16 16");
+  svg.setAttribute("viewBox","0 0 "+CAT_FULL_WIDTH+" "+HEIGHT);
   svg.classList.remove("half-canvas");
   svg.setAttribute("aria-label","A fully symmetrical coloured cat face, reflected from its right half.");
-  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<CAT_FULL_WIDTH;x++){
     const filled=catPixelAt(x,y);
     mk("rect",{x,y,width:1,height:1,
       fill:filled?catColourAt(x,y):"#e9e5df",
@@ -421,33 +413,37 @@ function playCatReveal(){
   stage.className="cat-flip-stage";
   shell.classList.remove("is-revealing","is-colouring");
   art.hidden=true;stage.hidden=false;
-  $("catFlipStatus").textContent="Your finished half-cat…";
+  $("catFlipStatus").textContent="Your completed drawing…";
   $("replayReveal").hidden=true;
   // Reduced-motion users get the complete accessible artwork without any flip.
   if(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){
+    $("finishTitle").textContent="Cat Cameo!";
+    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
     stage.hidden=true;
     art.hidden=false;
     $("replayReveal").hidden=false;
     return;
   }
   later(()=>{
-    $("catFlipStatus").textContent="Watch your drawing unfold!";
+    $("catFlipStatus").textContent="Watch your picture unfold!";
     stage.classList.add("is-flipping");
   },550);
   later(()=>{
     stage.classList.add("is-revealed");
-    $("catFlipStatus").textContent="The whole cat! Still monochrome…";
+    $("catFlipStatus").textContent="The complete picture — still monochrome…";
   },1850);
   later(()=>{
     shell.classList.add("is-revealing");
     art.hidden=false;
     void art.getBoundingClientRect();
     shell.classList.add("is-colouring");
-    $("catFlipStatus").textContent="Now add the colours!";
+    $("catFlipStatus").textContent="And now… colour!";
   },2390);
   later(()=>{
     $("replayReveal").hidden=false;
     $("catFlipStatus").textContent="Cat Cameo — complete!";
+    $("finishTitle").textContent="Cat Cameo!";
+    $("finishNote").textContent="Your mystery picture became a symmetrical, colourful cat.";
   },3500);
 }
 function finish({animate=false}={}){
@@ -455,7 +451,7 @@ function finish({animate=false}={}){
   save.completed=true;store();show("finishScreen");
   const cat=state.activeLevel==="mirror";
   $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
-  $("finishTitle").textContent=cat?"Your cat is complete!":"You painted it!";
+  $("finishTitle").textContent=cat?(animate?"The big reveal!":"Cat Cameo!"):"You painted it!";
   $("finishedArtShell").classList.remove("is-revealing","is-colouring");
   $("catFlipStage").hidden=true;
   $("finishedArt").hidden=false;
@@ -464,7 +460,7 @@ function finish({animate=false}={}){
   $("firstTryStat").textContent=save.firstTry+"/14";
   $("hintsStat").textContent=save.hints;
   $("finishNote").textContent=cat
-    ?"Fourteen one-sided inequalities built a half-cat. Reflection made it whole!"
+    ?(animate?"Every inequality is complete. Watch your picture come together.":"Your drawing became a colourful, symmetrical cat!")
     :save.firstTry===14?"A perfect first-try picture — brilliant precision!"
      :"The whole picture is complete. Every mistake you corrected was part of the learning.";
   if(cat&&animate)playCatReveal();
