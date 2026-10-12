@@ -995,8 +995,8 @@ function check(){
      .forEach(e=>e.disabled=true);
  }
  if(q.mode==="tutorial"){
-  feedback("Exactly right! You have drawn the full solution set.",true);
-  save.tutorial++;if(save.tutorial>=2)save.tutorialDone=true;
+  feedback("Correct! Your picture progress stays unchanged during practice.",true);
+  practiceIndex++;
  }else{
   feedback(q.artMode==="mirror-half"
     ?"Correct! Another row of your mystery picture is complete."
@@ -1006,16 +1006,20 @@ function check(){
   if(attempts===1 && !assisted)save.firstTry++;
   save.done++;
  }
- if(assisted||hintsShown)save.hints+=hintsShown;
- save.attempts+=attempts;
- store();
+ if(q.mode!=="tutorial"){
+   if(assisted||hintsShown)save.hints+=hintsShown;
+   save.attempts+=attempts;
+   store();
+ }
  // Save correct progress immediately, but allow the student's preview to
  // flash green before we replace it with the accepted slate-blue ink.
  initProgress({animate:false,redraw:q.mode==="tutorial"});
  if(q.mode!=="tutorial")flashCorrectThenCommit();
  updateLevelSelector();
  $("checkButton").disabled=true;
- $("checkButton").textContent=q.mode==="tutorial"?"✓ Correct — continuing…":
+ $("checkButton").textContent=q.mode==="tutorial"?
+   (practiceIndex>=tutorialFor(state.activeLevel).length?
+     "✓ Practice complete — returning…":"✓ Correct — next practice…"):
    save.done===questionCount(activePicture())?"✓ Correct — revealing…":"✓ Correct — next row…";
  scheduleRowAdvance();
 }
@@ -1372,9 +1376,9 @@ function saveArt(){
 document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
 });
-$("startButton").onclick=()=>start();
-$("skipTutorialButton").onclick=()=>start({skip:true});
-$("skipPractice").onclick=()=>{save.tutorial=tutorialFor(state.activeLevel).length;save.tutorialDone=true;store();question();};
+$("startButton").onclick=start;
+$("practiceButton").onclick=startPractice;
+$("exitPracticeButton").onclick=chooseLevel;
 $("checkButton").onclick=check;
 $("hintButton").onclick=hint;
 $("restartButton").onclick=restart;
