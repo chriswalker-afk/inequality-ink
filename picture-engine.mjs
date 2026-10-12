@@ -2,8 +2,9 @@
 // New pictures only require a definition in pictures.mjs.
 import {PICTURE_DEFINITIONS} from "./pictures.mjs";
 import {isInInterval,identicalSolution,formatInterval,formatLinear} from "./model.mjs";
+import {makePaintQuestion,validatePaintPicture} from "./paint-engine.mjs";
 
-export const LEVELS_FOR_PICTURE=Object.freeze(["mirror","full","solve","mixed"]);
+export const LEVELS_FOR_PICTURE=Object.freeze(["mirror","full","solve","mixed","paint"]);
 export const PICTURE_LIBRARY=Object.freeze(PICTURE_DEFINITIONS);
 const PICTURES_BY_ID=new Map(PICTURE_LIBRARY.map(p=>[p.id,p]));
 
@@ -35,6 +36,10 @@ export function picturePixelAt(picture,x,y,{full=false}={}){
   const w=pictureWidth(picture),width=full?fullPictureWidth(picture):w;
   if(x<0||x>=width)return false;
   const local=full&&picture.family==="half"&&x<w?w-1-x:full&&picture.family==="half"?x-w:x;
+  if(picture.paint){
+    const entry=picture.paint.grid[y-1]?.[local];
+    return entry!==undefined&&entry!==picture.paint.backgroundId;
+  }
   const row=picture.rows[y-1];
   return Boolean(row&&local>=row[0]&&local<=row[1]);
 }
@@ -49,6 +54,7 @@ function localColour(picture,x,y){
 }
 export function pictureColourAt(picture,x,y,{full=false}={}){
   if(!picturePixelAt(picture,x,y,{full}))return null;
+  if(picture.paint)return picture.paint.colours[picture.paint.grid[y-1][x]].hex;
   const w=pictureWidth(picture);
   const local=full&&picture.family==="half"?(x<w?w-1-x:x-w):x;
   return localColour(picture,local,y);
@@ -57,6 +63,7 @@ export function pictureBackgroundAt(picture,x,y,{full=true}={}){
   const width=full?fullPictureWidth(picture):pictureWidth(picture);
   if(!Number.isInteger(x)||!Number.isInteger(y)||x<0||x>=width||y<0||y>=picture.height)
     throw Error("Background pixel outside "+picture.id);
+  if(picture.paint)return picture.paint.colours[picture.paint.backgroundId].hex;
   const palette=picture.background,left=Math.min(x,width-1-x);
   if(y===2&&left===Math.floor(width/4))return palette.sparkle;
   if(y===3&&left===Math.floor(width/4)-1)return palette.light;
@@ -148,6 +155,14 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
   if(!picture.levels.includes(level))throw Error(picture.id+" does not support "+level);
   if(!Number.isInteger(index)||index<0||index>=questionCount(picture))return null;
   const row=picturedRow(picture,index);
+  if(level==="paint"){
+    const q=makePaintQuestion(picture,index,replay);
+    // Full-window interval is used only to support the generic monochrome
+    // replay animation. The colour rules and target live in q.rules/q.target.
+    const answer={direction:"between",lower:picture.window.min,
+      upper:picture.window.max-1,lowerIncluded:true,upperIncluded:true};
+    return {...q,answer};
+  }
   let mode,artMode,mirrorSide=null,answer;
   if(picture.family==="half"){
     mode=index<3?"read":"draw";
@@ -242,6 +257,9 @@ export function validatePicture(picture){
     throw Error(picture.id+": unknown level");
   if(picture.family==="half"&&(picture.levels.length!==1||picture.levels[0]!=="mirror"))
     throw Error(picture.id+": half pictures require Mirror Mode");
+  if(picture.paint)validatePaintPicture(picture);
+  if(!picture.paint&&picture.levels.includes("paint"))
+    throw Error(picture.id+": missing Paint by Inequalities grid");
   if(picture.family==="full"&&picture.levels.includes("mirror"))
     throw Error(picture.id+": full pictures cannot use Mirror Mode");
   for(const [i,row] of picture.rows.entries()){
