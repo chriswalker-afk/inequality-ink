@@ -235,7 +235,7 @@ body.reveal-open{overflow:hidden}
   .reveal-close{width:58px;height:58px;flex-basis:58px;font-size:2.15rem}
   .reveal-picture-space{padding:4px 42px}
   .reveal-board{
-    width:min(100%,69dvh,760px);
+    width:min(100%,calc(100dvh - 330px),760px);
     max-height:100%;
     border-width:12px;
     box-shadow:0 0 0 4px #72918f,0 25px 90px #0a132ab3;
