@@ -4,6 +4,8 @@ A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundatio
 
 **Live site:** https://chriswalker-afk.github.io/inequality-ink/
 
+> **Proposed next development:** [Picture Progression Plan](PICTURE_PROGRESSION_PLAN.md) — reorganise the picker as **Choose a picture**, add short 6/8/10/12/14-question journeys across all modes, introduce 2-to-5-colour Paint starters, and retain existing pictures and student progress. **This is a plan only; the current live game has not yet changed.**
+
 ## Choose a difficulty and a mystery picture
 
 | Difficulty | Mathematics | Pictures included |
