@@ -6,11 +6,12 @@ import {
 } from "./model.mjs";
 
 test("Mathematical modes and tutorials are independent from pictures",()=>{
- assert.deepEqual([...LEVEL_IDS],["mirror","full","solve","mixed"]);
+ assert.deepEqual([...LEVEL_IDS],["mirror","full","solve","mixed","paint"]);
  assert.equal(tutorialFor("mirror"),TUTORIAL_MIRROR);
  assert.equal(tutorialFor("full"),TUTORIAL);
  assert.equal(tutorialFor("solve"),TUTORIAL);
- assert.ok(Object.keys(LEVELS).length===4);
+ assert.equal(LEVELS.paint.name,"Paint by Inequalities");
+ assert.ok(Object.keys(LEVELS).length===5);
  assert.equal(TUTORIAL.length,2);
  assert.equal(TUTORIAL_MIRROR.length,2);
 });
