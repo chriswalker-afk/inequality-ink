@@ -1,4 +1,6 @@
 import {PAINT_PICTURES} from "./paint-pictures.mjs";
+import {STARTER_PICTURES} from "./starter-pictures.mjs";
+import {PAINT_STARTERS} from "./paint-starters.mjs";
 // Picture data lives here, separate from question generation and screen logic.
 // Rows are top-to-bottom, each [firstPixel,lastPixel] inclusive. A half-picture's
 // coordinates count away from the future vertical mirror axis.
@@ -34,8 +36,10 @@ const mushroomInitial=[
 }));
 
 export const PICTURE_DEFINITIONS = Object.freeze([
+  ...STARTER_PICTURES,
   {
     id:"cat-cameo",name:"Cat Cameo",clue:"Whisker Wink",
+    progression:{mirror:5},
     description:"A secret character waits until the picture is finished.",
     family:"half",levels:["mirror"],window:{min:-5,max:5},height:16,
     rows:catRows,firstStrict:[true,false,true,false,true,false,true,true,false,true,false,true,false,true],
@@ -81,6 +85,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
   },
   {
     id:"mushroom-mystery",name:"Mushroom Mystery",clue:"Woodland Wonder",
+    progression:{full:5},
     description:"The original mystery picture with two-ended intervals.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -102,6 +107,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
   },
   {
     id:"rocket-launch",name:"Rocket Launch",clue:"Blast Off",
+    progression:{solve:5},
     description:"A new picture for the same full-interval questions.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -214,6 +220,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
   },
   {
     id:"enchanted-potion",name:"Enchanted Potion",clue:"Bubbling Brew",
+    progression:{mixed:5},
     description:"A sparkling magical object appears at the end.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,
@@ -267,5 +274,6 @@ export const PICTURE_DEFINITIONS = Object.freeze([
     ]
   }
 ,
-  ...PAINT_PICTURES
+  ...PAINT_PICTURES,
+  ...PAINT_STARTERS
 ]);
