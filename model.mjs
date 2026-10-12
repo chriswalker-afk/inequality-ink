@@ -83,7 +83,7 @@ function variantForPixels(i, variant) {
 
 
 export const LEVELS = Object.freeze({
-  mirror: {name:"Mirror Mode", subtitle:"Start here · one-sided inequalities", detail:"Make one half of each row, then reflect it."},
+  mirror: {name:"Mirror Mode", subtitle:"Start here · one-sided inequalities", detail:"Create the right half of Cat Cameo. The whole cat appears only after your final answer."},
   full: {name:"Full Picture", subtitle:"Build both ends · bounded inequalities", detail:"Shade an exact interval across the whole picture."},
   solve: {name:"Solve & Paint", subtitle:"Algebra challenge · solve then draw", detail:"Rearrange inequalities before drawing their solutions."},
   mixed: {name:"Mixed Challenge", subtitle:"A little of everything", detail:"Switch between mirrored, bounded and algebra questions."}
@@ -95,10 +95,74 @@ export const LEVEL_IDS = Object.freeze(Object.keys(LEVELS));
 export const reflectColumn = x => -1-x;
 
 export function paintedColumns(question) {
+  if (question.artMode === "mirror-half") return catHalfColumns(question.answer);
   if (question.artMode !== "mirror") return columnsFor(question.answer);
   if (question.mirrorSide !== "left" && question.mirrorSide !== "right") throw Error("Unknown mirror side");
   const half = columnsFor(question.answer).filter(x => question.mirrorSide === "left" ? x < 0 : x >= 0);
   return [...new Set([...half, ...half.map(reflectColumn)])].sort((a,b)=>a-b);
+}
+
+// CAT CAMEO is deliberately a separate 8-column right-half sprite.
+// Every row is formed by clipping one genuine real-number ray to 0..7.
+// The upper/lower canvas boundary is never an additional number-line endpoint.
+export const CAT_HALF_WIDTH=8;
+export const CAT_HALF_ROWS=Object.freeze([
+  [1,6,7,"right",true],  // x > 5   (outer ear)
+  [2,5,7,"right",false], // x >= 5
+  [3,4,7,"right",true],  // x > 3
+  [4,0,7,"right",false], // x >= 0
+  [5,0,7,"left",true],   // x < 8
+  [6,0,6,"left",false],  // x <= 6
+  [7,0,6,"left",true],   // x < 7
+  [8,0,5,"left",false],  // x <= 5
+  [9,0,5,"left",true],   // x < 6
+  [10,0,4,"left",false], // x <= 4
+  [11,0,4,"left",true],  // x < 5
+  [12,0,3,"left",false], // x <= 3
+  [13,0,2,"left",true],  // x < 3
+  [14,0,1,"left",false]  // x <= 1
+].map(([y,from,to,direction,strict])=>Object.freeze({y,from,to,direction,strict}))));
+export const CAT_SEQUENCE=Object.freeze([...CAT_HALF_ROWS].reverse());
+export const catHalfColumns=interval=>Array.from({length:CAT_HALF_WIDTH},(_,i)=>i)
+  .filter(x=>isInInterval(x,interval));
+export function catHalfPixelAt(x,y){
+  const row=CAT_HALF_ROWS.find(r=>r.y===y);
+  return Boolean(row && x>=row.from && x<=row.to);
+}
+export function catPixelAt(x,y){
+  if(!Number.isInteger(x)||x<0||x>=WIDTH)return false;
+  const halfX=x<8?7-x:x-8;
+  return catHalfPixelAt(halfX,y);
+}
+export function catColourAt(x,y){
+  if(!catPixelAt(x,y))return null;
+  const d=x<8?7-x:x-8;
+  const row=CAT_HALF_ROWS.find(r=>r.y===y);
+  const outline="#3b3445",ginger="#eba66d",furLight="#f8cc90",furShadow="#d78960",
+        innerEar="#df8f9b",eye="#302b3b",muzzle="#ffe6b8",nose="#cf657c";
+  if(y<=3){
+    if(d===row.from||d===7||y===1)return outline;
+    return innerEar;
+  }
+  if(d===row.to||y===14)return outline;
+  if(y===4&&d>=5)return outline;
+  if((y===6||y===7)&&d===3)return eye;
+  if(y===8&&d===3)return furLight;
+  if((y===8||y===9)&&d===4)return innerEar;
+  if(y===10&&d===0)return nose;
+  if(y===11&&d===0)return eye;
+  if((y===10||y===11||y===12)&&d<=2)return muzzle;
+  if(y===13)return furShadow;
+  if(y===5&&d>=5)return furShadow;
+  return y%3===0?furLight:ginger;
+}
+function catAnswer(row,replay=0){
+  const strict=replay===0?row.strict:(row.strict !== (replay%2===1));
+  const included=!strict;
+  const at=row.direction==="right"
+    ? row.from-(strict?1:0)
+    : row.to+(strict?1:0);
+  return {direction:row.direction,at,included};
 }
 
 // Different inequality endpoints can select identical integer pixels. Exact number-line
@@ -139,6 +203,18 @@ function readOptions(answer,index,replay) {
 }
 export function makeQuestion(index,replay=0,level="mixed") {
   if (!LEVELS[level]) throw Error("Unknown difficulty: "+level);
+  if(level==="mirror"){
+    const row=CAT_SEQUENCE[index];
+    if(!row)return null;
+    const answer=catAnswer(row,replay),mode=index<3?"read":"draw";
+    const question={index,row:row.y,artMode:"mirror-half",artwork:"cat",
+      mirrorSide:"right",mode,answer};
+    return mode==="read"
+      ? {...question,prompt:"Which one-sided inequality does this number line show?",
+          options:readOptions(answer,index,replay)}
+      : {...question,prompt:"Draw the complete one-sided inequality. Your ray colours the right half of the picture.",
+          equation:formatInterval(answer)};
+  }
   const row=SEQUENCE[index];
   if(!row) return null;
   let artMode="full",mirrorSide=null;
@@ -185,10 +261,10 @@ export function pixelAt(x,y) {
 
 // The colour artwork is strictly constrained by pixelAt(). No decorative colour can create extra pixels.
 export const TUTORIAL_MIRROR = [
-  {mode:"tutorial",prompt:"Draw this one-sided inequality. The arrow must point to the correct side.",equation:"x ≤ 3",
-    answer:{direction:"left",at:3,included:true}},
-  {mode:"tutorial",prompt:"Now try a one-sided inequality with an open circle.",equation:"x > −2",
-    answer:{direction:"right",at:-2,included:false}}
+  {mode:"tutorial",prompt:"Draw the closed circle and shade left. The ray is not cut short.",equation:"x ≤ 4",
+    answer:{direction:"left",at:4,included:true}},
+  {mode:"tutorial",prompt:"Now draw an open circle and shade right.",equation:"x > 3",
+    answer:{direction:"right",at:3,included:false}}
 ];
 export const tutorialFor = level => level==="mirror"?TUTORIAL_MIRROR:TUTORIAL;
 
@@ -238,15 +314,46 @@ export function validatePuzzle() {
     }
   }
   if(flood.size!==positions.size)throw Error("Disconnected sprite");
+  if(CAT_HALF_ROWS.length!==14)throw Error("Expected 14 cat rows");
+  const catCells=new Set();
+  for(const row of CAT_HALF_ROWS){
+    const xs=Array.from({length:CAT_HALF_WIDTH},(_,i)=>i).filter(x=>catHalfPixelAt(x,row.y));
+    if(xs.length!==row.to-row.from+1||xs.some((x,i)=>x!==row.from+i))
+      throw Error("Cat row "+row.y+" is not a single clipped interval");
+    for(const x of xs)catCells.add(x+","+row.y);
+  }
+  const catSeen=new Set(),catStack=[catCells.values().next().value];
+  while(catStack.length){
+    const node=catStack.pop();
+    if(catSeen.has(node))continue;
+    catSeen.add(node);
+    const [x,y]=node.split(",").map(Number);
+    for(const [dx,dy] of [[0,1],[0,-1],[1,0],[-1,0]]){
+      const n=(x+dx)+","+(y+dy);
+      if(catCells.has(n)&&!catSeen.has(n))catStack.push(n);
+    }
+  }
+  if(catSeen.size!==catCells.size)throw Error("Cat half is disconnected");
   for(let n=0;n<14;n++)for(const level of LEVEL_IDS)for(let replay=0;replay<20;replay++){
-    const q=makeQuestion(n,replay,level),expected=columnsFor(ROWS.find(r=>r.y===q.row));
+    const q=makeQuestion(n,replay,level);
+    const expected=level==="mirror"
+      ? Array.from({length:8},(_,i)=>i).filter(x=>catHalfPixelAt(x,q.row))
+      : columnsFor(ROWS.find(r=>r.y===q.row));
     if(JSON.stringify(paintedColumns(q))!==JSON.stringify(expected))
       throw Error("Paint mismatch "+level+" row "+q.row+" replay "+replay);
-    if(q.artMode==="mirror"&&q.answer.direction==="between")throw Error("Mirror mode must be one-sided");
+    if(level==="mirror"){
+      if(q.artMode!=="mirror-half"||q.mirrorSide!=="right"||
+         q.answer.direction==="between")throw Error("Cat mirror mode must be a right-half ray");
+    }else if(q.artMode==="mirror"&&q.answer.direction==="between")
+      throw Error("Mixed mirror question must be one-sided");
     if(q.mode==="read"&&q.options.filter(o=>identicalSolution(o.value,q.answer)).length!==1)
       throw Error("Ambiguous options");
   }
+  for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++){
+    if(catColourAt(x,y)!==catColourAt(WIDTH-1-x,y))throw Error("Cat colour asymmetry");
+    if(catColourAt(x,y)!==null&&!catPixelAt(x,y))throw Error("Cat colour outside silhouette");
+  }
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<WIDTH;x++)
     if(colourAt(x,y)!==colourAt(WIDTH-1-x,y))throw Error("Colour asymmetry at "+x+","+y);
-  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true};
+  return {rows:ROWS.length,pixels:positions.size,connected:true,symmetric:true,catHalfPixels:catCells.size,catConnected:true};
 }
