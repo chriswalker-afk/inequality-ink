@@ -53,7 +53,7 @@ test("Every picture has a unique playful clue which hides its final name",()=>{
   for(const picture of PICTURE_LIBRARY){
     assert.equal(picture.clue,expected[picture.id]);
     assert.ok(picture.clue!==picture.name);
-    assert.doesNotMatch(picture.clue,/mystery\\s*\\d+/i);
+    assert.doesNotMatch(picture.clue,/mystery\s*\d+/i);
     assert.ok(picture.clue.length<=35);
     assert.equal(picture.mystery,undefined,"Do not retain old numbered labels");
   }
