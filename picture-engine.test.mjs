@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
  PICTURE_LIBRARY,pictureById,picturesForLevel,defaultPictureForLevel,
+ progressionForLevel,extraPicturesForLevel,progressionStep,PICTURE_TIERS,
  pictureWidth,fullPictureWidth,pictureHeight,questionCount,picturedRow,
  picturePixelAt,pictureColourAt,pictureBackgroundAt,pictureFinalDetails,
  pictureDetailStages,makePictureQuestion,picturePaintedValues,
@@ -9,33 +10,59 @@ import {
 } from "./picture-engine.mjs";
 import {identicalSolution,isInInterval} from "./model.mjs";
 
-test("All twelve authored pictures validate automatically against their mathematical modes",()=>{
+test("All 24 artworks validate with a five-picture quick-win path in each mode",()=>{
  const reports=validatePictureLibrary();
- assert.deepEqual(reports.map(r=>r.id),
-   ["cat-cameo","heart-glow","mushroom-mystery","rocket-launch",
-    "coral-crab","twilight-owl","flower-pot","enchanted-potion","ice-cream-treat",
-    "paint-rocket","paint-flower","paint-robot"]);
+ assert.equal(reports.length,24);
  for(const report of reports){
-   assert.equal(report.rows,14);
-   assert.ok(report.width>=8);
+   assert.ok([6,8,10,12,14].includes(report.rows));
+   assert.ok(report.width>=6);
    assert.ok(report.modes.length>0);
  }
- assert.deepEqual(picturesForLevel("mirror").map(p=>p.id),
-   ["cat-cameo","heart-glow","coral-crab","twilight-owl"]);
- for(const level of ["full","solve","mixed"]){
-   assert.deepEqual(picturesForLevel(level).map(p=>p.id),
-     ["mushroom-mystery","rocket-launch","flower-pot",
-      "enchanted-potion","ice-cream-treat"]);
+ const primary={
+   mirror:["mirror-star-starter","mirror-heart-step","mirror-ball-building",
+     "mirror-flower-challenge","cat-cameo"],
+   full:["full-star-starter","full-gift-step","full-ball-building",
+     "full-flower-challenge","mushroom-mystery"],
+   solve:["full-star-starter","full-gift-step","full-ball-building",
+     "full-flower-challenge","rocket-launch"],
+   mixed:["full-star-starter","full-gift-step","full-ball-building",
+     "full-flower-challenge","enchanted-potion"],
+   paint:["paint-heart-starter","paint-star-step","paint-daisy-building",
+     "paint-rocket-challenge","paint-robot"]
+ };
+ assert.deepEqual(PICTURE_TIERS,["Starter","Step Up","Building","Challenge","Big Finish"]);
+ for(const [level,ids] of Object.entries(primary)){
+   const path=progressionForLevel(level);
+   assert.deepEqual(path.map(p=>p.id),ids);
+   assert.deepEqual(path.map(p=>questionCount(p)),[6,8,10,12,14]);
+   assert.deepEqual(path.map(p=>progressionStep(p,level)),[1,2,3,4,5]);
+   assert.deepEqual(picturesForLevel(level).slice(0,5).map(p=>p.id),ids);
+   assert.equal(defaultPictureForLevel(level).id,ids[0]);
  }
- assert.deepEqual(picturesForLevel("paint").map(p=>p.id),
-   ["paint-rocket","paint-flower","paint-robot"]);
- assert.equal(defaultPictureForLevel("paint").id,"paint-rocket");
- assert.equal(defaultPictureForLevel("mirror").id,"cat-cameo");
- assert.equal(defaultPictureForLevel("solve").id,"mushroom-mystery");
+ for(const [level,expected] of Object.entries({
+   mirror:3,full:4,solve:4,mixed:4,paint:2
+ })){
+   assert.equal(extraPicturesForLevel(level).length,expected);
+   assert.ok(extraPicturesForLevel(level).every(p=>!p.progression?.[level]));
+ }
+ assert.deepEqual(progressionForLevel("paint").map(p=>
+   Object.keys(p.paint.colours).length),[2,2,3,4,5]);
  assert.throws(()=>pictureById("nonexistent"),/Unknown picture/);
 });
 test("Every picture has a unique playful clue which hides its final name",()=>{
   const expected={
+    "mirror-star-starter":"Twinkle Time",
+    "mirror-heart-step":"Heart in a Hurry",
+    "mirror-ball-building":"Bounce Around",
+    "mirror-flower-challenge":"Petal Pop",
+    "full-star-starter":"Star in a Flash",
+    "full-gift-step":"Wrapped with Wonder",
+    "full-ball-building":"Bouncy Business",
+    "full-flower-challenge":"Flower Burst",
+    "paint-heart-starter":"Sweet Heart",
+    "paint-star-step":"Star Splash",
+    "paint-daisy-building":"Daisy Days",
+    "paint-rocket-challenge":"Ready for Launch",
     "cat-cameo":"Whisker Wink",
     "heart-glow":"Full of Feeling",
     "coral-crab":"Seaside Sidestep",
