@@ -408,14 +408,17 @@ function updateLevelSelector(){
    "<b>Finish the picture</b> to discover the colourful surprise.";
  $("introGridSize").textContent=pictureWidth(picture)+" × "+picture.height;
  $("introArtCaption").textContent="A picture in progress";
- $("pictureSummary").textContent=total+
-   " picture rows • "+(state.activeLevel==="paint"?"Paint all integer squares":"About 15–20 minutes")+" • No login needed";
+ const step=progressionStep(picture,state.activeLevel);
+ const colours=picture.paint?Object.keys(picture.paint.colours).length:null;
+ $("pictureSummary").textContent=(step?PICTURE_TIERS[step-1]:"More pictures")+
+   " · "+(colours===null?"":colours+" colours · ")+total+
+   " rows"+(step===1?" · Quick win":"")+" · No login needed";
  renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
  $("startButton").innerHTML=save.completed?"View completed picture ↗":
    count?"Continue "+(state.activeLevel==="paint"?"painting":"drawing")+" ↗":
    state.activeLevel==="paint"?"Start painting ↗":"Start drawing ↗";
- $("skipTutorialButton").hidden=state.activeLevel==="paint";
+ $("skipTutorialButton").hidden=state.activeLevel==="paint"||step===1;
 }
 function chooseLevel(){
  cancelPaintTimers();
@@ -429,6 +432,13 @@ function start({skip=false}={}){
  cancelRowAdvance();
  cancelPreviewFlash();
  if(save.completed){finish({animate:true});return;}
+ // Six real picture questions to the first celebration, not six plus a
+ // compulsory two-question unrelated tutorial.
+ if(progressionStep(activePicture(),state.activeLevel)===1&&!save.done){
+   save.tutorialDone=true;
+   save.tutorial=tutorialFor(state.activeLevel).length;
+   store();
+ }
  if(skip){
    save.tutorialDone=true;
    save.tutorial=tutorialFor(state.activeLevel).length;
@@ -1246,8 +1256,14 @@ function finish({animate=false}={}){
   save.completed=true;store();
   $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
   $("finishTitle").textContent=picture.name+"!";
-  $("finishNote").textContent="You've completed "+picture.name+
-    ". Revisit your artwork whenever you like!";
+  const step=progressionStep(picture,state.activeLevel),
+   next=step?progressionForLevel(state.activeLevel)
+     .find(p=>progressionStep(p,state.activeLevel)===step+1):null;
+ $("finishNote").textContent=next?
+   "Brilliant! Your next picture, "+next.clue+", is ready.":
+   "You've completed "+picture.name+". Revisit your artwork whenever you like!";
+ $("nextPictureButton").hidden=!next;
+ if(next)$("nextPictureButton").textContent="Next: "+next.clue+" →";
   renderFinishedArt();
   $("firstTryStat").textContent=save.firstTry+"/"+questionCount(picture);
   $("hintsStat").textContent=save.hints;
@@ -1309,6 +1325,14 @@ $("hintButton").onclick=hint;
 $("restartButton").onclick=restart;
 $("changeLevelButton").onclick=chooseLevel;
 $("chooseLevelButton").onclick=chooseLevel;
+$("nextPictureButton").onclick=()=>{
+ const step=progressionStep(activePicture(),state.activeLevel);
+ const next=progressionForLevel(state.activeLevel)
+   .find(p=>progressionStep(p,state.activeLevel)===step+1);
+ if(!next)return;
+ selectPicture(next.id);
+ chooseLevel();
+};
 $("playAgain").onclick=()=>{
  cancelPaintTimers();
  cancelRowAdvance();
