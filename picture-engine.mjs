@@ -181,14 +181,17 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
   return {...basic,prompt:"Solve the inequality, then draw your solution.",
     equation:formatLinear(answer,a,b),transformed:{a,b}};
 }
-export function picturePaintedValues(picture,question){
+export function picturePaintedValues(picture,question,solution=question.answer){
+  // The same projection powers final committed pixels AND the temporary
+  // ghost preview. Previewing a wrong answer must not clip it to the secret
+  // silhouette or imply it was marked correct.
   if(question.pictureId!==picture.id)throw Error("Question/picture mismatch");
   if(question.artMode==="mirror-half")
-    return withinWindow(question.answer,picture.window);
+    return withinWindow(solution,picture.window);
   if(question.artMode==="full")
-    return withinWindow(question.answer,picture.window);
+    return withinWindow(solution,picture.window);
   if(question.artMode==="mirror"){
-    const values=withinWindow(question.answer,picture.window);
+    const values=withinWindow(solution,picture.window);
     const centre=picture.window.min+pictureWidth(picture)/2;
     const half=values.filter(x=>question.mirrorSide==="right"?x>=centre:x<centre);
     const reflect=x=>picture.window.min+picture.window.max-1-x;

@@ -62,6 +62,11 @@ const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let screen="intro", q=null, draft=null, selected="left", chosen=null,
   locked=false, hintsShown=0, attempts=0, assisted=false, drag=null;
 let rowAdvanceTimer=null;
+const livePreviewLayers=new Map();
+let previewFlashTimer=null;
+function cancelPreviewFlash(){
+ if(previewFlashTimer!==null){clearTimeout(previewFlashTimer);previewFlashTimer=null;}
+}
 function cancelRowAdvance(){
  if(rowAdvanceTimer!==null){
    clearTimeout(rowAdvanceTimer);
@@ -91,7 +96,7 @@ function scheduleRowAdvance(){
        });
      }
    }
- },reduced?340:820);
+ },reduced?340:q?.artMode==="mirror"?1170:820);
 }
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
@@ -134,9 +139,78 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
      stroke:"#6ca69b","stroke-width":.13,
      "stroke-dasharray":".32 .25",opacity:.95},svg);
  }
+ if(svg===$("pixelCanvas")||svg===$("mobilePixelCanvas")){
+   livePreviewLayers.set(svg,mk("g",{"class":"ink-live-preview",
+     "aria-hidden":"true"},svg));
+ }
+
 }
 sprite($("introPixelArt"),{intro:true});
-function initProgress({animate=false}={}){
+// Live candidate pixels are projected from the student's attempted solution,
+// NOT clipped to the secret silhouette. Incorrect guesses remain visible only
+// as temporary ghosts and never become committed or saved pixels.
+function setPreviewPhase(phase){
+ const stage=$("canvasStage");
+ stage.classList.remove("ink-stage--incorrect","ink-stage--correct");
+ if(phase==="incorrect"||phase==="correct")
+   stage.classList.add("ink-stage--"+phase);
+ $("mobilePreviewStrip").classList.remove("ink-stage--incorrect","ink-stage--correct");
+ if(phase==="incorrect"||phase==="correct")
+   $("mobilePreviewStrip").classList.add("ink-stage--"+phase);
+ for(const layer of livePreviewLayers.values())
+   layer.setAttribute("class","ink-live-preview ink-live-preview--"+phase);
+}
+function drawLivePreview(candidate,phase="ghost"){
+ if(!livePreviewLayers.size)return;
+ for(const layer of livePreviewLayers.values())layer.replaceChildren();
+ setPreviewPhase(phase);
+ if(!candidate||!q?.pictureId||q.mode==="tutorial")return;
+ const picture=activePicture();
+ for(const value of picturePaintedValues(picture,q,candidate)){
+   for(const layer of livePreviewLayers.values())
+     mk("rect",{x:value-picture.window.min,y:q.row,width:1,height:1,
+       "class":"ink-preview-pixel","shape-rendering":"crispEdges"},layer);
+ }
+}
+function previewStudentAnswer(candidate){
+ if(locked||q?.mode==="tutorial")return;
+ cancelPreviewFlash();
+ drawLivePreview(candidate,"ghost");
+}
+function currentStudentAnswer(){
+ return q?.mode==="read"?q.options?.[chosen]?.value:draft;
+}
+function flashWrongPreview(){
+ const candidate=currentStudentAnswer();
+ if(!candidate||!q?.pictureId)return;
+ cancelPreviewFlash();
+ drawLivePreview(candidate,"incorrect");
+ const currentQuestion=q,pictureKey=activeKey();
+ previewFlashTimer=setTimeout(()=>{
+   previewFlashTimer=null;
+   if(!locked&&q===currentQuestion&&screen==="playScreen"&&
+      pictureKey===activeKey())
+     drawLivePreview(currentStudentAnswer(),"ghost");
+ },580);
+}
+function flashCorrectThenCommit(){
+ if(!q?.pictureId)return;
+ cancelPreviewFlash();
+ const currentQuestion=q,pictureKey=activeKey(),doneAtCheck=save.done;
+ drawLivePreview(q.answer,"correct");
+ const reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ previewFlashTimer=setTimeout(()=>{
+   previewFlashTimer=null;
+   if(locked&&q===currentQuestion&&screen==="playScreen"&&
+      pictureKey===activeKey()&&save.done===doneAtCheck){
+     sprite($("pixelCanvas"),{completed:save.done,animate:!reduced});
+     sprite($("mobilePixelCanvas"),{completed:save.done,animate:!reduced});
+     $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
+     $("mobilePreviewStrip").classList.remove("ink-stage--correct","ink-stage--incorrect");
+   }
+ },reduced?130:340);
+}
+function initProgress({animate=false,redraw=true}={}){
  const total=questionCount(activePicture());
  $("progressMarkers").replaceChildren();
  for(let n=0;n<total;n++){
@@ -153,10 +227,16 @@ function initProgress({animate=false}={}){
    "Practice — canvas unchanged":"Current row: "+q?.row;
  $("canvasProgress").setAttribute("aria-label",
    save.done+" of "+total+" picture rows finished");
- sprite($("pixelCanvas"),{completed:save.done,animate});
+ if(redraw){
+   sprite($("pixelCanvas"),{completed:save.done,animate});
+   sprite($("mobilePixelCanvas"),{completed:save.done,animate});
+ }
 }
 function question(){
  cancelRowAdvance();
+ cancelPreviewFlash();
+ $("canvasStage").classList.remove("ink-stage--correct","ink-stage--incorrect");
+ $("mobilePreviewStrip").classList.remove("ink-stage--correct","ink-stage--incorrect");
  drag=null;
  const picture=activePicture(),practice=tutorialFor(state.activeLevel);
  const tutorial=!save.tutorialDone&&save.tutorial<practice.length;
@@ -192,13 +272,13 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
- $("canvasTip").textContent="✦ Keep solving inequalities to complete the mystery picture.";
+ $("canvasTip").textContent="✦ Light squares preview your answer. Orange means try again; green means correct.";
  $("playEyebrow").textContent=picture.mystery.toUpperCase()+
    " / "+LEVELS[state.activeLevel].name.toUpperCase();
  $("playTitle").firstChild.textContent="Mystery Picture";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
- else setDraft(draft);
+ else setDraft(draft,{preview:false});
  initProgress();
 }
 function selectLevel(level){
@@ -266,11 +346,13 @@ function updateLevelSelector(){
 }
 function chooseLevel(){
  cancelRowAdvance();
+ cancelPreviewFlash();
  clearRevealTimers();show("introScreen");
  updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
  cancelRowAdvance();
+ cancelPreviewFlash();
  if(save.completed){finish({animate:true});return;}
  if(skip){
    save.tutorialDone=true;
@@ -285,7 +367,7 @@ function renderOptions(){
  q.options.forEach((opt,i)=>{
   const b=document.createElement("button");b.type="button";b.textContent=String.fromCharCode(65+i)+". "+opt.label;
   b.classList.toggle("selected",chosen===i);b.disabled=locked;
-  b.onclick=()=>{chosen=i;renderOptions();};host.append(b);
+  b.onclick=()=>{chosen=i;renderOptions();previewStudentAnswer(opt.value);};host.append(b);
  });
 }
 // The number line has only conventional mathematical markings.
@@ -392,6 +474,7 @@ function toggleEndpoint(side,{restoreFocus=false}={}){
  selected=side;
  syncInputs();
  renderLine($("drawLine"),draft);
+ previewStudentAnswer(draft);
  if(restoreFocus)$("drawLine")
    .querySelector?.('[data-endpoint="'+side+'"]')?.focus?.({preventScroll:true});
 }
@@ -436,8 +519,12 @@ function setEndpoint(which,n){
   if(which==="left"){draft.lower=Math.min(n,draft.upper-1);}else{draft.upper=Math.max(n,draft.lower+1);}
  }else draft.at=n;
  selected=which;syncInputs();renderLine($("drawLine"),draft);
+ previewStudentAnswer(draft);
 }
-function setDraft(d){draft={...d};syncInputs();renderLine($("drawLine"),draft);}
+function setDraft(d,{preview=true}={}){
+ draft={...d};syncInputs();renderLine($("drawLine"),draft);
+ if(preview)previewStudentAnswer(draft);
+}
 function syncInputs(){
  for(const side of ["left","right"]){
   const isLeft=side==="left", isBetween=draft.direction==="between";
@@ -485,6 +572,7 @@ for(const side of ["left","right"]){
   if(draft.direction==="between")draft[side==="left"?"lowerIncluded":"upperIncluded"]=included;
   else draft.included=included;
   selected=side;syncInputs();renderLine($("drawLine"),draft);
+  previewStudentAnswer(draft);
  };
 }
 function misconception(){
@@ -511,6 +599,7 @@ function check(){
  if(!correct){
    if(q.mode==="read")feedback("Not quite. Check the endpoints and which circles are filled.");
    else feedback(misconception());
+   flashWrongPreview();
    return;
  }
  locked=true;$("hintButton").disabled=true;
@@ -532,7 +621,12 @@ function check(){
  }
  if(assisted||hintsShown)save.hints+=hintsShown;
  save.attempts+=attempts;
- store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
+ store();
+ // Save correct progress immediately, but allow the student's preview to
+ // flash green before we replace it with the accepted slate-blue ink.
+ initProgress({animate:false,redraw:q.mode==="tutorial"});
+ if(q.mode!=="tutorial")flashCorrectThenCommit();
+ updateLevelSelector();
  $("checkButton").disabled=true;
  $("checkButton").textContent=q.mode==="tutorial"?"✓ Correct — continuing…":
    save.done===questionCount(activePicture())?"✓ Correct — revealing…":"✓ Correct — next row…";
@@ -821,6 +915,7 @@ function closeReveal(){
 }
 function finish({animate=false}={}){
   cancelRowAdvance();
+  cancelPreviewFlash();
   clearRevealTimers();
   const picture=activePicture();
   save.completed=true;store();
@@ -837,6 +932,7 @@ function finish({animate=false}={}){
 }
 function restart(){
  cancelRowAdvance();
+ cancelPreviewFlash();
  clearRevealTimers();
  if(!confirm("Start this picture again? Your progress on other pictures will be kept."))return;
  const replay=(save.replay||0)+1;
@@ -889,6 +985,7 @@ $("changeLevelButton").onclick=chooseLevel;
 $("chooseLevelButton").onclick=chooseLevel;
 $("playAgain").onclick=()=>{
  cancelRowAdvance();
+ cancelPreviewFlash();
  clearRevealTimers();
  const replay=(save.replay||0)+1;
  state.progress[activeKey()]=blank();

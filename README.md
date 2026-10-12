@@ -63,6 +63,19 @@ On the interactive number line:
 - **Press Enter/Space** while an endpoint circle is keyboard-focused to toggle its state. The numbered ticks, +/- steppers and Open/Closed buttons are retained as alternate controls.
 - On narrow mobile screens the game scrolls the new question into view automatically after a correct answer. Any pending transition is cancelled when the student switches activities or restarts.
 
+### Live ghost previews and answer feedback
+
+The picture responds **before** the student presses Check & paint:
+
+- In **Read** questions, selecting one of the inequality options displays a faint blue-grey ghost of the pixels it would produce.
+- In **Draw** and **Solve & Paint**, the ghost changes immediately when the student moves an endpoint, switches the direction, taps a circle open/closed, or uses the numeric controls.
+- Ghosts use the **exact same inequality-to-pixel projection** as the accepted answer, including Mirror Mode canvas clipping and reflected rows in Mixed Challenge. A *wrong* guess is not clipped to the hidden silhouette, because students need to see the actual consequence of their attempt.
+- On **Check**, an incorrect attempt flashes **orange**, then returns to the light ghost so it can be adjusted. A correct attempt flashes **green**, then becomes the usual **slate-blue committed row** before automatically advancing. The final artwork colours are still held back for the completion celebration.
+- On mobile a **compact sticky preview** stays next to the answer controls, synchronized with the large picture, so students can see their ghost without scrolling back up.
+- Previews are temporary visual feedback: they do not change progress, scores or saved pixels. Empty guesses and the initial untouched controls do not reveal the secret artwork. Reduced-motion preferences are respected.
+
+The test suite checks this behaviour across the **19 picture/difficulty combinations**, plus strict mathematical marking, mistaken off-silhouette pixels, mobile previews, the orange/green transitions and automatic progress.
+
 ### Full-screen celebration before results
 
 After answering the last inequality, the game opens a **full-screen picture reveal** rather than taking the student straight to their score. This is intentional on both mobile and desktop; the completed picture is the reward and must be clearly visible without downloading it.

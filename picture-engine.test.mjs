@@ -186,3 +186,57 @@ test("New full pictures offer distinct widths, varied endpoints, and solve/mixed
     assert.ok(mixed.some(q=>q.mode==="read"));
   }
 });
+
+
+test("Live previews use exactly the same projection as committed picture ink in all nine pictures",()=>{
+  for(const picture of PICTURE_LIBRARY)for(const level of picture.levels){
+    for(let index=0;index<questionCount(picture);index++){
+      const q=makePictureQuestion(picture,index,0,level);
+      assert.deepEqual(picturePaintedValues(picture,q,q.answer),
+        picturePaintedValues(picture,q),
+        picture.id+" "+level+" "+index+" preview differs from committed ink");
+      const alternative=q.mode==="read"
+        ?q.options.find(o=>!identicalSolution(o.value,q.answer)).value
+        :q.answer.direction==="between"
+          ?{...q.answer,lower:q.answer.lower+1}
+          :{...q.answer,at:q.answer.at+(q.answer.direction==="right"?1:-1)};
+      const actual=picturePaintedValues(picture,q,alternative);
+      const expected=Array.from(
+        {length:pictureWidth(picture)},(_,i)=>i+picture.window.min
+      ).filter(value=>{
+        if(q.artMode!=="mirror")return isInInterval(value,alternative);
+        const centre=picture.window.min+pictureWidth(picture)/2;
+        const chosenSide=q.mirrorSide==="right"?value>=centre:value<centre;
+        if(!chosenSide)return false;
+        return isInInterval(value,alternative);
+      });
+      if(q.artMode==="mirror"){
+        const reflection=v=>picture.window.min+picture.window.max-1-v;
+        const merged=[...new Set([...expected,...expected.map(reflection)])]
+          .sort((a,b)=>a-b);
+        assert.deepEqual(actual,merged);
+      }else assert.deepEqual(actual,expected);
+      assert.ok(actual.every(x=>x>=picture.window.min&&x<picture.window.max));
+    }
+  }
+});
+test("The ghost faithfully paints mistaken cells outside the secret silhouette",()=>{
+  const cat=pictureById("cat-cameo");
+  const q=makePictureQuestion(cat,6,0,"mirror");
+  assert.equal(q.equation,"x < 3");
+  const moreThanNeeded={direction:"left",at:5,included:false};
+  const ghost=picturePaintedValues(cat,q,moreThanNeeded);
+  assert.deepEqual(ghost,[-5,-4,-3,-2,-1,0,1,2,3,4]);
+  assert.deepEqual(picturePaintedValues(cat,q),[-5,-4,-3,-2,-1,0,1,2]);
+  assert.ok(ghost.some(v=>!picturePaintedValues(cat,q).includes(v)),
+    "A wrong preview must NOT be silently clipped to the secret answer");
+  assert.equal(identicalSolution(moreThanNeeded,q.answer),false);
+});
+test("Equivalent integer pixels do not make a wrong real inequality correct",()=>{
+  const cat=pictureById("cat-cameo"),q=makePictureQuestion(cat,6,0,"mirror");
+  const wrong={direction:"left",at:2,included:true};
+  assert.deepEqual(picturePaintedValues(cat,q,wrong),
+    picturePaintedValues(cat,q));
+  assert.equal(identicalSolution(wrong,q.answer),false,
+    "Open and closed real endpoints are marked mathematically, not pixelwise");
+});
