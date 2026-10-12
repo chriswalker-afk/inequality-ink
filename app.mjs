@@ -1,18 +1,18 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,validatePuzzle} from "./model.mjs";
+import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,validatePuzzle} from "./model.mjs";
 validatePuzzle();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
-const KEY="inequality-ink-v3", PREVIOUS_KEY="inequality-ink-v2", LEGACY_KEY="inequality-ink-v1";
+const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false});
 const defaults=()=>({activeLevel:"mirror",progress:Object.fromEntries(LEVEL_IDS.map(id=>[id,blank()]))});
 let state=defaults();
 try{
   const current=JSON.parse(localStorage.getItem(KEY));
-  const previous=current||JSON.parse(localStorage.getItem(PREVIOUS_KEY));
+  const previous=current||JSON.parse(localStorage.getItem(PREVIOUS_KEY))||JSON.parse(localStorage.getItem("inequality-ink-v2"));
   if(previous && LEVELS[previous.activeLevel] && previous.progress && typeof previous.progress==="object"){
     state.activeLevel=previous.activeLevel;
     for(const id of LEVEL_IDS){
-      // Old Mirror Mode used a mushroom with immediate row reflection.
-      // When migrating, reset that mode; preserve the three other difficulties.
+      // The Mirror Mode art and number-line window have changed.
+      // Reset only the previous Mirror Mode; retain the other three levels.
       if(!current && id==="mirror")continue;
       const p=previous.progress[id];
       if(p && Number.isInteger(p.done) && p.done>=0 && p.done<=14 &&
@@ -37,14 +37,14 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
   svg.setAttribute("viewBox","0 0 "+width+" "+HEIGHT);
   svg.classList.toggle("half-canvas",cat);
   svg.setAttribute("aria-label",cat
-    ?"The right half of a mystery picture, eight columns by sixteen rows; no reflection before completion."
+    ?"A picture in progress. Each correct inequality adds one row."
     :"A sixteen by sixteen full pixel-art canvas.");
   const drawn=new Map();
   if(!intro){
     for(let i=0;i<completed;i++){
       const solvedQuestion=makeQuestion(i,save.replay,state.activeLevel);
       if(!solvedQuestion)continue;
-      const columns=paintedColumns(solvedQuestion).map(v=>cat?v:v-COLUMN_MIN);
+      const columns=paintedColumns(solvedQuestion).map(v=>cat?v-CAT_WINDOW.min:v-COLUMN_MIN);
       drawn.set(solvedQuestion.row,new Set(columns));
     }
   }
@@ -52,7 +52,7 @@ function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
   for(let y=0;y<HEIGHT;y++)for(let x=0;x<width;x++){
     const active=cat?catHalfPixelAt(x,y):pixelAt(x,y);
     const solved=intro?active&&y>=7:active&&(colour||(drawn.get(y)?.has(x)??false));
-    const fill=solved?(colour?(cat?catColourAt(x+8,y):colourAt(x,y)):"#64738e")
+    const fill=solved?(colour?(cat?catColourAt(x+CAT_HALF_WIDTH,y):colourAt(x,y)):"#64738e")
       :(intro&&active?"#d0d6dd":"#e9e5df");
     const attrs={x,y,width:1,height:1,fill,
       stroke:colour&&solved?"none":"#f7f3ed","stroke-width":0.035};
@@ -92,9 +92,9 @@ function question(){
  document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button").forEach(e=>e.disabled=false);
  document.querySelector('[data-direction="between"]').hidden=state.activeLevel==="mirror";
  $("questionStep").textContent=tutorial?"LET'S PRACTISE":("ROW "+(save.done+1)+" OF 14");
- $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror-half"?"Draw the ray":"Draw the interval";
+ $("questionHeading").textContent=tutorial?"Learn the controls":q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
- $("modeTag").textContent=tutorial?"TUTORIAL":q.artMode==="mirror-half"?"CAT "+q.mode.toUpperCase():q.artMode==="mirror"?"MIRROR "+q.mode.toUpperCase():q.mode.toUpperCase();
+ $("modeTag").textContent=tutorial?"TUTORIAL":q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
  $("equationText").textContent=q.equation||"";
  $("readArea").hidden=q.mode!=="read";$("drawArea").hidden=q.mode==="read";
@@ -104,24 +104,10 @@ function question(){
  $("skipPractice").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
  $("feedback").className="feedback";$("feedback").textContent="";
- const cat=state.activeLevel==="mirror",legacyMirror=q.artMode==="mirror";
- $("mirrorExplainer").hidden=!cat&&!legacyMirror;
- $("mirrorNotice").hidden=!cat&&!legacyMirror;
- if(cat){
-   $("mirrorSideLabel").textContent="ONE RAY. HALF A CANVAS.";
-   $("mirrorMathNote").textContent="Draw the complete one-sided inequality. The canvas edge simply stops the pixels; it is not another endpoint on your number line.";
-   $("mirrorNoticeText").textContent="You are building the right half of a cat. Finish all 14 rows to unfold the complete picture!";
- }else if(legacyMirror){
-   $("mirrorSideLabel").textContent="ONE SIDE FIRST";
-   $("mirrorMathNote").textContent="Represent the whole inequality. For this mixed question, only the highlighted half is sampled.";
-   $("mirrorNoticeText").textContent="The matching half is reflected to complete this row.";
- }
- $("canvasTip").textContent=cat
-   ?"✦ The correct ray draws only where it crosses the eight-column canvas. No reflection until the very end."
-   :legacyMirror?"✦ Your full ray is marked. The chosen half is reflected for this mixed question."
-     :"✦ Your entire correct interval draws the row.";
- $("playEyebrow").textContent=cat?"MYSTERY 01 / CAT CAMEO":"MYSTERY 01 / MUSHROOM";
- $("playTitle").firstChild.textContent=cat?"Cat Cameo":"Mushroom Mystery";
+ const cat=state.activeLevel==="mirror";
+ $("canvasTip").textContent="✦ Keep solving inequalities to complete the mystery picture.";
+ $("playEyebrow").textContent="MYSTERY 01 / "+LEVELS[state.activeLevel].name.toUpperCase();
+ $("playTitle").firstChild.textContent=cat?"Mystery Picture":"Mushroom Mystery";
  $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
  else setDraft(draft);
@@ -141,10 +127,9 @@ function updateLevelSelector(){
  });
  const count=save.done;
  $("levelProgress").textContent=save.completed?"Artwork finished in this level":count?count+"/14 rows completed":"Fresh picture";
- $("levelDescription").textContent=LEVELS[state.activeLevel].detail+
-   (state.activeLevel==="mirror"?" Your number line is never artificially bounded.":"");
- $("introGridSize").textContent=state.activeLevel==="mirror"?"8 × 16":"16 × 16";
- $("introArtCaption").textContent=state.activeLevel==="mirror"?"Only half a cat… for now":"Solve to paint";
+ $("levelDescription").textContent=LEVELS[state.activeLevel].detail;
+ $("introGridSize").textContent=state.activeLevel==="mirror"?CAT_HALF_WIDTH+" × 16":"16 × 16";
+ $("introArtCaption").textContent=state.activeLevel==="mirror"?"A picture in progress":"Solve to paint";
  sprite($("introPixelArt"),{intro:true});
  $("startButton").innerHTML=save.completed?"View completed picture ↗":count?"Continue drawing ↗":"Start drawing ↗";
 }
