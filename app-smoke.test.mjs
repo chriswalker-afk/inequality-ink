@@ -68,6 +68,8 @@ const directions=["left","between","right"].map(id=>{
   const el=new FakeElement("button");el.dataset.direction=id;return el;
 });
 globalThis.document={
+  body:new FakeElement("body"),
+  activeElement:null,
   getElementById:id=>{
     if(!elements.has(id))throw Error("Missing interface element "+id);
     return elements.get(id);
@@ -137,16 +139,44 @@ function select(level,index){
     "Each difficulty should list all of its available mystery pictures");
   options[index].click();
 }
-function complete(level,index,id){
+function complete(level,index,id,{animated=false}={}){
   select(level,index);
   const picture=pictureById(id);
   $("skipTutorialButton").click();
   assert.equal($("playScreen").hidden,false);
+  const normalMatchMedia=globalThis.window.matchMedia;
+  if(animated)globalThis.window.matchMedia=()=>({matches:false});
   for(let q=0;q<questionCount(picture);q++){
     answerCurrent(picture,q,level);
     assert.equal($("progressText").textContent,(q+1)+" of "+questionCount(picture));
     $("nextButton").click();
   }
+  assert.equal($("revealDialog").open,true,
+    "Completing the last question should open the celebration");
+  assert.equal($("finishScreen").hidden,true,
+    "Results must remain hidden while artwork is being revealed");
+  assert.equal($("revealBoard").getBoundingClientRect().width>0,true);
+  assert.equal($("revealFinalArt").querySelectorAll("[data-detail-stage]").length,
+    picture.detailStages.length);
+  if(animated){
+    assert.equal($("revealBuildLayer").hidden,false,
+      "The non-reduced-motion animation should start with ink rows");
+    assert.equal($("revealFinalArt").hidden,true,
+      "Full colour must not appear before the rows");
+    $("skipReveal").click();
+    assert.equal($("revealFinalArt").hidden,false);
+    assert.equal($("revealRowCount").textContent,"");
+    assert.equal($("finishScreen").hidden,true,
+      "Skipping animation must not skip the X-to-results step");
+  }else{
+    assert.equal($("revealFinalArt").hidden,false,
+      "Reduced-motion students should see the finished art immediately");
+  }
+  assert.equal($("skipReveal").hidden,true,
+    "Show-finished-picture control disappears when artwork is fully revealed");
+  $("closeReveal").click();
+  globalThis.window.matchMedia=normalMatchMedia;
+  assert.equal($("revealDialog").open,false);
   assert.equal($("finishScreen").hidden,false);
   assert.ok($("finishTitle").textContent.includes(picture.name),
     "Wrong picture was revealed");
@@ -170,7 +200,7 @@ test("Student can complete seven distinct picture/difficulty journeys independen
   // draw and solve questions, the final art reveal, and independent saves.
   complete("mirror",2,"coral-crab");
   complete("mirror",3,"twilight-owl");
-  complete("full",2,"flower-pot");
+  complete("full",2,"flower-pot",{animated:true});
   complete("solve",3,"enchanted-potion");
   complete("mixed",4,"ice-cream-treat");
   select("mirror",1);
@@ -202,4 +232,69 @@ test("Previously completed progress is not overwritten by visiting another level
   assert.equal(saved.progress["solve:enchanted-potion"].done,14);
   assert.equal(saved.progress["mixed:ice-cream-treat"].done,14);
   assert.equal(saved.selectedPictures.full,"mushroom-mystery");
+});
+
+
+test("The live animation reveals row-by-row, then reflection, colour, and details in order",()=>{
+  select("mirror",2); // Coral Crab was completed in the earlier play-through.
+  const picture=pictureById("coral-crab");
+  const originalMatchMedia=globalThis.window.matchMedia;
+  const originalSetTimeout=globalThis.setTimeout;
+  const originalClearTimeout=globalThis.clearTimeout;
+  let serial=0;
+  const queue=[];
+  const cancelled=new Set();
+  globalThis.window.matchMedia=()=>({matches:false});
+  globalThis.setTimeout=(fn,delay=0)=>{
+    const item={id:++serial,fn,delay};queue.push(item);return item.id;
+  };
+  globalThis.clearTimeout=id=>cancelled.add(id);
+  try{
+    $("startButton").click(); // An already completed picture reopens its reveal.
+    assert.equal($("revealDialog").open,true);
+    assert.equal($("finishScreen").hidden,true);
+    const rows=$("revealBuildArt").children.filter(child=>child.tagName==="g");
+    assert.equal(rows.length,questionCount(picture));
+    assert.ok(rows.every(row=>row.getAttribute("opacity")==="0"),
+      "Every ink row should begin invisible");
+    const phase=(key)=>queue.find(item=>!cancelled.has(item.id)&&item.fn.toString().includes(key));
+    const first=queue.find(item=>item.delay===370);
+    assert.ok(first,"First ink row has its own animation step");
+    first.fn();
+    assert.equal(rows[0].getAttribute("opacity"),"1");
+    assert.equal(rows[1].getAttribute("opacity"),"0",
+      "Ink must build one row at a time");
+    const sorted=queue.filter(item=>item.id!==first.id)
+      .sort((a,b)=>a.delay-b.delay||a.id-b.id);
+    let sawFold=false,sawColour=false,sawDetails=false;
+    for(const item of sorted){
+      if(cancelled.has(item.id))continue;
+      item.fn();
+      if($("revealMirrorLayer").classList.contains("is-unfolding")){
+        sawFold=true;
+        assert.ok(rows.every(row=>row.getAttribute("opacity")==="1"),
+          "Reflection must wait for all monochrome rows");
+      }
+      if($("revealBoard").classList.contains("has-colour")){
+        sawColour=true;
+        assert.ok(sawFold,"Mirror Mode must reflect before colour");
+      }
+      if($("revealFinalArt").querySelectorAll("[data-detail-stage]")
+        .some(group=>group.getAttribute("opacity")==="1")){
+        sawDetails=true;
+        assert.ok(sawColour,"Details must appear after the colour layer");
+      }
+    }
+    assert.ok(sawFold&&sawColour&&sawDetails);
+    assert.equal($("revealHeading").textContent,picture.name+"!");
+    assert.equal($("finishScreen").hidden,true,
+      "The summary must stay hidden even after the completed animation");
+    $("closeReveal").click();
+    assert.equal($("revealDialog").open,false);
+    assert.equal($("finishScreen").hidden,false);
+  }finally{
+    globalThis.window.matchMedia=originalMatchMedia;
+    globalThis.setTimeout=originalSetTimeout;
+    globalThis.clearTimeout=originalClearTimeout;
+  }
 });
