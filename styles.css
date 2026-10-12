@@ -811,3 +811,6 @@ body.paint-session{overflow:hidden}
   .working-draw-surface{height:205px}
   .work-drawing-toolbar button{min-width:0;flex:1}
 }
+
+/* Keep the optional practice route understated beside the main picture CTA. */
+.practice-status{margin:10px 0 0;color:#377465;font-size:.82rem;font-weight:700;line-height:1.45}

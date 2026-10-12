@@ -204,7 +204,7 @@ function selectStage(level,stage){
 function complete(level,index,id,{animated=false}={}){
   select(level,index);
   const picture=pictureById(id);
-  $("skipTutorialButton").click();
+  $("startButton").click();
   assert.equal($("playScreen").hidden,false);
   const normalMatchMedia=globalThis.window.matchMedia;
   if(animated)globalThis.window.matchMedia=()=>({matches:false});
@@ -441,8 +441,9 @@ function pointer(kind,side,pointerId,startX,endX,{y=66,button=0}={}){
     fn({...gesture,clientX:endX});
 }
 test("Single mouse click and quick mobile tap toggle open/closed without moving the endpoint",()=>{
-  select("mirror",0); // Unplayed original Cat Cameo, uses a one-sided tutorial.
-  $("startButton").click();
+  select("mirror",0); // Optional practice provides a drawing question.
+  $("practiceButton").click();
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
   assert.equal($("playScreen").hidden,false);
   assert.equal($("leftOpen").classList.contains("selected"),true);
   const initialValue=Number($("leftValue").value);
@@ -478,7 +479,7 @@ test("Dragging a circle still moves the endpoint but never toggles its inclusion
   $("changeLevelButton").click();
 });
 test("Incorrect checks never auto-advance, and pending timers are cancelled on navigation",()=>{
-  select("full",1); // Unplayed Rocket in Full mode; first tutorial asks for x >= -2.
+  select("full",1); // Unplayed Rocket in Full mode starts with real picture work.
   $("startButton").click();
   const nativeSetTimeout=globalThis.setTimeout;
   const nativeClearTimeout=globalThis.clearTimeout;
@@ -495,11 +496,12 @@ test("Incorrect checks never auto-advance, and pending timers are cancelled on n
     $("checkButton").click(); // Default interval is wrong.
     assert.equal(advance,null,"Incorrect answer must not schedule navigation");
     assert.equal($("checkButton").disabled,false);
-    const answer=$("leftValue"); // Fill a correct one-sided tutorial ray.
-    // Use the normal direction/endpoint/circle controls.
-    directions.find(d=>d.dataset.direction==="right").click();
-    answer.value="-2";answer.change();
-    $("leftClosed").click();
+    const first=makePictureQuestion(pictureById("rocket-launch"),0,0,"full");
+    assert.equal(first.mode,"read");
+    assert.equal($("questionStep").textContent,"ROW 1 OF 14");
+    const correct=first.options.findIndex(option=>
+      identicalSolution(option.value,first.answer));
+    $("readOptions").children[correct].click();
     $("checkButton").click();
     assert.ok(advance,"Correct answer should schedule auto-advance");
     $("changeLevelButton").click();
@@ -602,7 +604,7 @@ function inspectGhost(picture,question,candidate,phase="ghost"){
 }
 test("Reading options draw a live ghost, flash orange on rejection, then green and settle into ink",()=>{
   select("mirror",0); // Cat's original exercise has not been completed.
-  $("skipTutorialButton").click();
+  $("startButton").click();
   const cat=pictureById("cat-cameo"),q=makePictureQuestion(cat,0,0,"mirror");
   assert.equal($("playScreen").hidden,false);
   assert.equal(ghostLayer().children.length,0,
@@ -681,7 +683,7 @@ test("Reading options draw a live ghost, flash orange on rejection, then green a
 });
 test("Endpoint steppers, circle toggles and number changes update both ghost boards",()=>{
   select("solve",0); // Mushroom has not been played in Solve & Paint.
-  $("skipTutorialButton").click();
+  $("startButton").click();
   const mushroom=pictureById("mushroom-mystery"),q=makePictureQuestion(mushroom,0,0,"solve");
   assert.equal(q.mode,"solve");
   assert.equal(ghostLayer().children.length,0);
@@ -711,7 +713,7 @@ test("Endpoint steppers, circle toggles and number changes update both ghost boa
 });
 test("Mixed Challenge ghosts reflect the attempted half-line rather than revealing the answer",()=>{
   select("mixed",0); // Unplayed mushroom in Mixed Challenge.
-  $("skipTutorialButton").click();
+  $("startButton").click();
   const mushroom=pictureById("mushroom-mystery");
   const q=makePictureQuestion(mushroom,0,0,"mixed");
   assert.equal(q.mode,"read");
@@ -985,8 +987,8 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
    const completedBefore=Number($("picturePathProgress").textContent.split(" ")[0]);
    assert.ok(completedBefore>=0&&completedBefore<5);
    assert.ok($("pictureSummary").textContent.includes("6 rows"));
-   assert.equal($("skipTutorialButton").hidden,true,
-     "Starter should not require or advertise separate practice");
+   assert.equal($("practiceButton").hidden,false,
+     "Even the Starter offers optional practice, never a required tutorial");
    $("startButton").click();
    assert.equal($("playScreen").hidden,false);
    assert.equal($("questionStep").textContent,"ROW 1 OF 6",
@@ -1101,7 +1103,7 @@ test("Eight, ten and twelve row inequality pictures all advance and reveal in fu
    selectStage(level,stage);
    const picture=pictureById(id),n=questionCount(picture);
    assert.equal(n,stage*2+4);
-   $("skipTutorialButton").click(); // Optional practice remains available on longer puzzles.
+   $("startButton").click(); // Later stages start directly with picture questions.
    assert.equal($("playScreen").hidden,false);
    assert.equal($("questionStep").textContent,"ROW 1 OF "+n);
    for(let index=0;index<n;index++){
@@ -1178,7 +1180,7 @@ test("The eight, ten and twelve row Paint stages colour and lock each integer sq
 test("Solve & Paint lets students switch typed maths and handwritten working",()=>{
   selectStage("solve",2);
   const picture=pictureById("full-gift-step");
-  $("skipTutorialButton").click();
+  $("startButton").click();
   assert.equal($("playScreen").hidden,false);
   assert.equal($("workingShell").hidden,false);
   assert.equal($("workTypePanel").hidden,false);
@@ -1233,4 +1235,87 @@ test("Solve & Paint lets students switch typed maths and handwritten working",()
   assert.equal(input.value,"","Next row begins with fresh working");
   assert.equal(pad.children.length,0);
   assert.equal($("workTypePanel").hidden,false);
+});
+
+
+test("Direct picture entry, optional practice, and continuation do not interfere",()=>{
+  selectStage("full",2);
+  const picture=pictureById("full-gift-step");
+  const beforePractice=localStorage.getItem("inequality-ink-v5");
+  assert.equal($("practiceButton").hidden,false);
+  assert.equal($("startButton").textContent,"Start picture ↗");
+  $("practiceButton").click();
+  assert.equal($("playScreen").hidden,false);
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
+  assert.equal($("checkButton").textContent,"Check practice →");
+  assert.equal($("exitPracticeButton").hidden,false);
+  assert.equal($("equationText").textContent,"x ≥ −2");
+  function markPractice(solution){
+    const direction=directions.find(d=>d.dataset.direction===solution.direction);
+    direction.click();
+    $("leftValue").value=String(solution.direction==="between"?solution.lower:solution.at);
+    $("leftValue").change();
+    if(solution.direction==="between"){
+      $("rightValue").value=String(solution.upper);$("rightValue").change();
+      $(solution.lowerIncluded?"leftClosed":"leftOpen").click();
+      $(solution.upperIncluded?"rightClosed":"rightOpen").click();
+    }else $(solution.included?"leftClosed":"leftOpen").click();
+    const original=globalThis.setTimeout;
+    let next=null;
+    globalThis.setTimeout=(fn,delay)=>{
+      if([340,820,1170].includes(delay)){next=fn;return -333;}
+      return original(fn,delay);
+    };
+    try{
+      $("checkButton").click();
+      assert.ok($("feedback").className.includes("success"));
+      assert.ok(next,"Practice should move to its next step automatically");
+      next();
+    }finally{globalThis.setTimeout=original;}
+  }
+  markPractice({direction:"right",at:-2,included:true});
+  assert.equal($("questionStep").textContent,"PRACTICE 2 OF 2");
+  assert.equal($("equationText").textContent,"−2 < x ≤ 3");
+  markPractice({direction:"between",lower:-2,upper:3,
+    lowerIncluded:false,upperIncluded:true});
+  assert.equal($("introScreen").hidden,false);
+  assert.equal($("practiceStatus").hidden,false);
+  assert.match($("practiceStatus").textContent,/Practice complete/);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),beforePractice,
+    "Optional practice must leave all saved progress and scores unchanged");
+  $("startButton").click();
+  assert.equal($("questionStep").textContent,"ROW 1 OF 8");
+  assert.equal($("exitPracticeButton").hidden,true);
+  answerCurrent(picture,0,"full");
+  $("changeLevelButton").click();
+  assert.equal($("startButton").textContent,"Continue picture ↗");
+  const afterRow=localStorage.getItem("inequality-ink-v5");
+  $("practiceButton").click();
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
+  $("exitPracticeButton").click();
+  assert.equal($("introScreen").hidden,false);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),afterRow);
+  $("startButton").click();
+  assert.equal($("questionStep").textContent,"ROW 2 OF 8");
+  assert.equal($("progressText").textContent,"1 of 8");
+  $("changeLevelButton").click();
+});
+test("Optional practice stays within small picture number lines and excludes Paint mode",()=>{
+  selectStage("mirror",1);
+  assert.equal($("practiceButton").hidden,false);
+  $("practiceButton").click();
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
+  assert.equal($("equationText").textContent,"x ≤ 2",
+    "A tutorial x ≤ 4 would exceed the smallest Mirror picture axis");
+  $("exitPracticeButton").click();
+  assert.equal($("introScreen").hidden,false);
+  for(const level of ["mirror","full","solve","mixed"]){
+    selectStage(level,1);
+    assert.equal($("practiceButton").hidden,false,level+" should allow optional practice");
+  }
+  selectStage("paint",1);
+  assert.equal($("practiceButton").hidden,true,
+    "Paint offers immediate picture play, not unrelated number-line tutorials");
+  // The Paint Starter was already completed in an earlier end-to-end test.
+  // Its primary action now correctly replays the reveal instead of practice.
 });

@@ -74,9 +74,11 @@
             </details>
           </div>
           <div class="intro-buttons">
-            <button type="button" class="button button-primary button-large" id="startButton">Start drawing <span aria-hidden="true">↗</span></button>
-            <button type="button" class="button button-light" id="skipTutorialButton">Skip the practice</button>
+            <button type="button" class="button button-primary button-large" id="startButton">Start picture ↗</button>
+            <button type="button" class="button button-light" id="practiceButton"
+              title="Try two number-line questions without changing picture progress">Just for practice</button>
           </div>
+          <p id="practiceStatus" class="practice-status" role="status" aria-live="polite" hidden></p>
           <p class="tiny-copy" id="pictureSummary">14 picture rows • About 15–20 minutes • No login needed</p>
         </div>
         <div class="intro-art" aria-hidden="true">
@@ -225,7 +227,7 @@
             <div class="question-footer">
               <button type="button" class="button button-light" id="hintButton">✳ Give me a hint</button>
               <div class="footer-actions">
-                <button type="button" class="button button-light" id="skipPractice" hidden>Skip practice</button>
+                <button type="button" class="button button-light" id="exitPracticeButton" hidden>Back to pictures</button>
                 <button type="button" class="button button-primary" id="checkButton">Check &amp; paint <span aria-hidden="true">→</span></button>
               </div>
             </div>
