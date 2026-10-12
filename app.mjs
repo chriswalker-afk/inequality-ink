@@ -297,18 +297,23 @@ function check(){
    return;
  }
  locked=true;$("hintButton").disabled=true;
- if(q.mode==="read")renderOptions();else{document.querySelectorAll(".endpoint-card button,.direction-chooser button").forEach(e=>e.disabled=true);}
+ if(q.mode==="read")renderOptions();else{
+   document.querySelectorAll(".endpoint-card button,.endpoint-card input,.direction-chooser button")
+     .forEach(e=>e.disabled=true);
+ }
  if(q.mode==="tutorial"){
   feedback("Exactly right! You have drawn the full solution set.",true);
   save.tutorial++;if(save.tutorial>=2)save.tutorialDone=true;
  }else{
-  feedback("Beautifully done! Your exact interval has painted this row.",true);
+  feedback(q.artMode==="mirror"
+    ?"Exactly right! The "+q.mirrorSide+"-hand pixels have been drawn from your ray, then reflected to complete the row."
+    :"Beautifully done! Your exact interval has painted this row.",true);
   if(attempts===1 && !assisted)save.firstTry++;
   save.done++;
  }
  if(assisted||hintsShown)save.hints+=hintsShown;
  save.attempts+=attempts;
- store();initProgress();
+ store();initProgress({animate:q.mode!=="tutorial"});updateLevelSelector();
  $("checkButton").hidden=true;$("nextButton").hidden=false;
  $("nextButton").textContent=save.done===14?"Reveal the artwork ✦":"Next row →";
  $("nextButton").focus();
@@ -316,17 +321,30 @@ function check(){
 function hint(){
  if(locked)return;
  hintsShown=Math.min(hintsShown+1,3);
- const a=q.answer;const final=formatInterval(a);
+ const final=formatInterval(q.answer);
  let msg;
- if(hintsShown===1)msg=q.mode==="solve"?"Work through all three parts of the inequality. If multiplying or dividing by a negative, reverse the signs.":q.mode==="read"?"An empty circle excludes an endpoint. A filled circle includes it.":"First locate each endpoint, then check whether equality is allowed.";
- else if(hintsShown===2)msg=q.mode==="solve"?"Isolate x in the middle. Check both inequalities separately if needed.":q.mode==="read"?"Focus on which circles are open and where the shading starts and ends.":"Pay attention to both the position and the type of each circle.";
- else{assisted=true;msg="Worked answer: "+(q.mode==="solve"?q.equation+" simplifies to ":"")+final+". Set the endpoint numbers and circle types to match this solution.";}
+ if(hintsShown===1){
+   if(q.artMode==="mirror")msg="This is a one-sided inequality. Decide whether its full solution points left or right. The picture then uses the highlighted half of that solution.";
+   else msg=q.mode==="solve"?"Rearrange all three parts. When dividing by a negative number, reverse both inequality signs."
+     :q.mode==="read"?"Open circles exclude endpoints; closed circles include them."
+     :"Identify both endpoints and consider whether each is included.";
+ }else if(hintsShown===2){
+   if(q.artMode==="mirror")msg="First look at which values satisfy the inequality; do not restrict your mathematical ray to half the number line. Choose the correct arrow and circle type.";
+   else msg=q.mode==="solve"?"Isolate x in the middle, then check both boundaries."
+     :q.mode==="read"?"Compare both endpoints and both circle types with your options."
+     :"Check the number and the circle type at each end.";
+ }else {
+   assisted=true;
+   msg="Answer: "+(q.mode==="solve"?q.equation+" simplifies to ":"")+final+
+     (q.artMode==="mirror"?". The correct ray is sampled on the "+q.mirrorSide+" half, then reflected.":".");
+ }
  $("hintPanel").hidden=false;$("hintPanel").textContent=msg;
  $("hintButton").textContent=hintsShown===3?"Solution shown":"✳ More help";
  $("hintButton").disabled=hintsShown===3;
 }
 function finish(){
  save.completed=true;store();show("finishScreen");
+ $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
  sprite($("finishedArt"),{colour:true,completed:14});
  $("firstTryStat").textContent=save.firstTry+"/14";
  $("hintsStat").textContent=save.hints;
@@ -336,7 +354,10 @@ function finish(){
 function restart(){
  if(!confirm("Start a new picture? Your current row progress will be reset."))return;
  const replay=(save.replay||0)+1;
- save={...blank(),replay,tutorial:2,tutorialDone:true};store();start();
+ state.progress[state.activeLevel]=blank();
+ save=state.progress[state.activeLevel];
+ Object.assign(save,{replay,tutorial:2,tutorialDone:true});
+ store();start();
 }
 function saveArt(){
  const s=$("finishedArt").cloneNode(true);s.setAttribute("xmlns",SVG);s.setAttribute("width","512");s.setAttribute("height","512");
@@ -344,6 +365,9 @@ function saveArt(){
  const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=c.height=512;const ctx=c.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.drawImage(img,0,0,512,512);URL.revokeObjectURL(url);
  c.toBlob(blob=>{if(!blob)return;const link=document.createElement("a"),a=URL.createObjectURL(blob);link.href=a;link.download="inequality-ink-mushroom.png";link.click();setTimeout(()=>URL.revokeObjectURL(a),1000);},"image/png");};img.src=url;
 }
+document.querySelectorAll("[data-level]").forEach(button=>{
+ button.addEventListener("click",()=>selectLevel(button.dataset.level));
+});
 $("startButton").onclick=()=>start();
 $("skipTutorialButton").onclick=()=>start({skip:true});
 $("skipPractice").onclick=()=>{save.tutorial=2;save.tutorialDone=true;store();question()};
@@ -351,11 +375,19 @@ $("checkButton").onclick=check;
 $("nextButton").onclick=()=>{if(save.done===14)finish();else question();};
 $("hintButton").onclick=hint;
 $("restartButton").onclick=restart;
-$("playAgain").onclick=()=>{const replay=(save.replay||0)+1;save={...blank(),replay,tutorial:2,tutorialDone:true};store();start();};
+$("changeLevelButton").onclick=chooseLevel;
+$("chooseLevelButton").onclick=chooseLevel;
+$("playAgain").onclick=()=>{
+ const replay=(save.replay||0)+1;
+ state.progress[state.activeLevel]=blank();
+ save=state.progress[state.activeLevel];
+ Object.assign(save,{replay,tutorial:2,tutorialDone:true});
+ store();start();
+};
 $("downloadArt").onclick=saveArt;
 $("helpButton").onclick=()=>$("helpDialog").showModal();
 $("closeHelp").onclick=()=>$("helpDialog").close();
 $("doneHelp").onclick=()=>$("helpDialog").close();
 $("helpDialog").addEventListener("click",e=>{if(e.target===$("helpDialog"))$("helpDialog").close();});
-if(save.completed)finish();
-else if(save.done>0||save.tutorial>0)start();
+updateLevelSelector();
+show("introScreen");
