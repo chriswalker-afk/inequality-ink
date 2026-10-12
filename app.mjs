@@ -1,32 +1,63 @@
-import {WIDTH,HEIGHT,COLUMN_MIN,CAT_HALF_WIDTH,CAT_FULL_WIDTH,CAT_WINDOW,AXIS_MIN,AXIS_MAX,SEQUENCE,LEVELS,LEVEL_IDS,tutorialFor,makeQuestion,paintedColumns,identicalSolution,formatInterval,fmt,pixelAt,colourAt,catHalfPixelAt,catPixelAt,catColourAt,finishedBackgroundAt,finalDetailsFor,detailStagesFor,validatePuzzle} from "./model.mjs";
-validatePuzzle();
+import {LEVELS,LEVEL_IDS,tutorialFor,identicalSolution,formatInterval,fmt} from "./model.mjs";
+import {
+ PICTURE_LIBRARY,pictureById,picturesForLevel,defaultPictureForLevel,
+ pictureWidth,fullPictureWidth,pictureHeight,questionCount,pictureAxis,
+ makePictureQuestion,picturePaintedValues,picturePixelAt,pictureColourAt,
+ pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
+} from "./picture-engine.mjs";
+validatePictureLibrary();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
-const KEY="inequality-ink-v4", PREVIOUS_KEY="inequality-ink-v3", LEGACY_KEY="inequality-ink-v1";
+const KEY="inequality-ink-v5", PREVIOUS_KEY="inequality-ink-v4";
 const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false});
-const defaults=()=>({activeLevel:"mirror",progress:Object.fromEntries(LEVEL_IDS.map(id=>[id,blank()]))});
+const defaultSelection=()=>Object.fromEntries(LEVEL_IDS.map(level=>[level,defaultPictureForLevel(level).id]));
+const defaults=()=>({activeLevel:"mirror",selectedPictures:defaultSelection(),progress:{}});
+const progressKey=(level,pictureId)=>level+":"+pictureId;
 let state=defaults();
+function safeProgress(raw,picture){
+ if(!raw||typeof raw!=="object"||!Number.isInteger(raw.done)||raw.done<0||
+   raw.done>questionCount(picture)||!Number.isInteger(raw.tutorial)||
+   raw.tutorial<0||raw.tutorial>2)return blank();
+ return {...blank(),...raw,completed:raw.completed===true||raw.done===questionCount(picture)};
+}
 try{
-  const current=JSON.parse(localStorage.getItem(KEY));
-  const previous=current||JSON.parse(localStorage.getItem(PREVIOUS_KEY))||JSON.parse(localStorage.getItem("inequality-ink-v2"));
-  if(previous && LEVELS[previous.activeLevel] && previous.progress && typeof previous.progress==="object"){
-    state.activeLevel=previous.activeLevel;
-    for(const id of LEVEL_IDS){
-      // The Mirror Mode art and number-line window have changed.
-      // Reset only the previous Mirror Mode; retain the other three levels.
-      if(!current && id==="mirror")continue;
-      const p=previous.progress[id];
-      if(p && Number.isInteger(p.done) && p.done>=0 && p.done<=14 &&
-         Number.isInteger(p.tutorial) && p.tutorial>=0 && p.tutorial<=2){
-        state.progress[id]={...blank(),...p};
-      }
-    }
-  }else{
-    const legacy=JSON.parse(localStorage.getItem(LEGACY_KEY));
-    if(legacy && Number.isInteger(legacy.done) && legacy.done>=0 && legacy.done<=14)
-      state.progress.mixed={...blank(),...legacy};
-  }
+ const current=JSON.parse(localStorage.getItem(KEY));
+ if(current&&typeof current==="object"&&LEVELS[current.activeLevel]){
+   state.activeLevel=current.activeLevel;
+   for(const level of LEVEL_IDS){
+     const requested=current.selectedPictures?.[level];
+     if(picturesForLevel(level).some(p=>p.id===requested))state.selectedPictures[level]=requested;
+   }
+   if(current.progress&&typeof current.progress==="object"){
+     for(const level of LEVEL_IDS)for(const picture of picturesForLevel(level)){
+       const key=progressKey(level,picture.id);
+       if(current.progress[key])state.progress[key]=safeProgress(current.progress[key],picture);
+     }
+   }
+ }else{
+   const previous=JSON.parse(localStorage.getItem(PREVIOUS_KEY))||
+     JSON.parse(localStorage.getItem("inequality-ink-v3"))||
+     JSON.parse(localStorage.getItem("inequality-ink-v2"));
+   if(previous&&typeof previous==="object"&&LEVELS[previous.activeLevel]&&previous.progress){
+     state.activeLevel=previous.activeLevel;
+     for(const level of LEVEL_IDS){
+       const picture=defaultPictureForLevel(level),old=previous.progress[level];
+       if(old)state.progress[progressKey(level,picture.id)]=safeProgress(old,picture);
+     }
+   }else{
+     const legacy=JSON.parse(localStorage.getItem("inequality-ink-v1"));
+     if(legacy&&typeof legacy==="object")
+       state.progress[progressKey("mixed",defaultPictureForLevel("mixed").id)]=
+         safeProgress(legacy,defaultPictureForLevel("mixed"));
+   }
+ }
 }catch{}
-let save=state.progress[state.activeLevel];
+const activePicture=()=>pictureById(state.selectedPictures[state.activeLevel]);
+const activeKey=()=>progressKey(state.activeLevel,activePicture().id);
+let save=state.progress[activeKey()]||(state.progress[activeKey()]=blank());
+const syncProgress=()=>{
+ const key=activeKey();
+ save=state.progress[key]||(state.progress[key]=blank());
+};
 const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
 let screen="intro", q=null, draft=null, selected="left", chosen=null, locked=false, hintsShown=0, attempts=0, assisted=false, drag=false;
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
