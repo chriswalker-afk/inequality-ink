@@ -23,3 +23,5 @@ jobs:
           node --check pictures.mjs
           node --check paint-engine.mjs
           node --check paint-pictures.mjs
+          node --check starter-pictures.mjs
+          node --check paint-starters.mjs
