@@ -5,10 +5,11 @@ import {
  makePictureQuestion,picturePaintedValues,picturePixelAt,pictureColourAt,
  pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
 } from "./picture-engine.mjs";
+import {makePaintQuestion,paintTarget,checkPaintRow} from "./paint-engine.mjs";
 validatePictureLibrary();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
 const KEY="inequality-ink-v5", PREVIOUS_KEY="inequality-ink-v4";
-const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false});
+const blank=()=>({tutorial:0,done:0,firstTry:0,hints:0,attempts:0,replay:0,tutorialDone:false,completed:false,paintDraft:[]});
 const defaultSelection=()=>Object.fromEntries(LEVEL_IDS.map(level=>[level,defaultPictureForLevel(level).id]));
 const defaults=()=>({activeLevel:"mirror",selectedPictures:defaultSelection(),progress:{}});
 const progressKey=(level,pictureId)=>level+":"+pictureId;
@@ -59,6 +60,13 @@ const syncProgress=()=>{
  save=state.progress[key]||(state.progress[key]=blank());
 };
 const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
+let paintQuestion=null,paintBrush=null,paintLocked=false,paintAdvanceTimer=null,
+ paintErrorTimer=null,paintPointer=null,paintCells=[];
+function cancelPaintTimers(){
+ if(paintAdvanceTimer!==null){clearTimeout(paintAdvanceTimer);paintAdvanceTimer=null;}
+ if(paintErrorTimer!==null){clearTimeout(paintErrorTimer);paintErrorTimer=null;}
+ paintPointer=null;
+}
 let screen="intro", q=null, draft=null, selected="left", chosen=null,
   locked=false, hintsShown=0, attempts=0, assisted=false, drag=null;
 let rowAdvanceTimer=null;
@@ -99,7 +107,7 @@ function scheduleRowAdvance(){
  },reduced?340:q?.artMode==="mirror"?1170:820);
 }
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
-const show=id=>{["introScreen","playScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
+const show=id=>{["introScreen","playScreen","paintScreen","finishScreen"].forEach(name=>$(name).hidden=name!==id);screen=id;};
 function sprite(svg,{completed=0,colour=false,intro=false,animate=false}={}){
  const picture=activePicture(),width=pictureWidth(picture),height=pictureHeight(picture);
  const half=picture.family==="half";
@@ -335,22 +343,39 @@ function updateLevelSelector(){
  $("levelProgress").textContent=save.completed?"Picture complete":
    count?count+" / "+total+" rows completed":"Ready to start";
  $("levelDescription").textContent=LEVELS[state.activeLevel].detail;
+ const painting=state.activeLevel==="paint";
+ $("introLead").textContent=painting?
+   "Choose a colour for each inequality, then paint the integer-labelled squares directly. Every correct row stays coloured until your picture is complete.":
+   "Represent inequalities on number lines. Each correct answer reveals more of a mystery picture. Finish to see it come together in full colour.";
+ $("introStepOne").innerHTML=painting?
+   "<b>Read</b> the colour inequalities for a row.":
+   "<b>Read or solve</b> the inequality.";
+ $("introStepTwo").innerHTML=painting?
+   "<b>Tap or swipe</b> to colour the correct integer squares.":
+   "<b>Plot the endpoints</b> with the right circles.";
+ $("introStepThree").innerHTML=painting?
+   "<b>Check each row</b> and watch the numbers disappear.":
+   "<b>Finish the picture</b> to discover the colourful surprise.";
  $("introGridSize").textContent=pictureWidth(picture)+" × "+picture.height;
  $("introArtCaption").textContent="A picture in progress";
  $("pictureSummary").textContent=total+
-   " picture rows • About 15–20 minutes • No login needed";
+   " picture rows • "+(state.activeLevel==="paint"?"Paint all integer squares":"About 15–20 minutes")+" • No login needed";
  renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
  $("startButton").innerHTML=save.completed?"View completed picture ↗":
-   count?"Continue drawing ↗":"Start drawing ↗";
+   count?"Continue "+(state.activeLevel==="paint"?"painting":"drawing")+" ↗":
+   state.activeLevel==="paint"?"Start painting ↗":"Start drawing ↗";
+ $("skipTutorialButton").hidden=state.activeLevel==="paint";
 }
 function chooseLevel(){
+ cancelPaintTimers();
  cancelRowAdvance();
  cancelPreviewFlash();
  clearRevealTimers();show("introScreen");
  updateLevelSelector();window.scrollTo({top:0,behavior:"instant"});
 }
 function start({skip=false}={}){
+ cancelPaintTimers();
  cancelRowAdvance();
  cancelPreviewFlash();
  if(save.completed){finish({animate:true});return;}
@@ -359,9 +384,259 @@ function start({skip=false}={}){
    save.tutorial=tutorialFor(state.activeLevel).length;
    store();
  }
- show("playScreen");question();window.scrollTo({top:0,behavior:"instant"});
+ if(state.activeLevel==="paint"){
+   show("paintScreen");startPaintRow();
+ }else{
+   show("playScreen");question();
+ }
+ window.scrollTo({top:0,behavior:"instant"});
 }
 function feedback(msg,correct=false){const e=$("feedback");e.className="feedback"+(correct?" success":"");e.textContent=msg;}
+
+// A separate, deliberately direct painting interaction. One row is editable;
+// all previous rows are locked, and future rows contain no image clues.
+// Each numbered square is the integer printed inside it, not an interval.
+function paintColour(picture,key){
+ return key==null?null:picture.paint.colours[key]?.hex||null;
+}
+function updatePaintProgress(){
+ const count=save.done,total=questionCount(activePicture());
+ $("paintProgressLabel").textContent="Row "+Math.min(count+1,total)+" of "+total;
+ $("paintProgressFill").style.width=(count/total*100)+"%";
+ $("paintRowsDone").textContent=count+" / "+total;
+ $("paintStep").textContent="ROW "+Math.min(count+1,total)+" OF "+total;
+}
+function describePaintCell(col,colourKey){
+ const value=activePicture().window.min+col;
+ const swatch=activePicture().paint.colours[colourKey];
+ return "Integer "+value+": "+(swatch?.name||"unpainted")+
+   ". Select a brush, then tap or press Enter to paint.";
+}
+function paintCellStyle(button,key){
+ const picture=activePicture();
+ button.style.backgroundColor=paintColour(picture,key)||"#f4f2ee";
+}
+function drawPaintCanvas(){
+ const picture=activePicture(),width=pictureWidth(picture),
+   height=pictureHeight(picture),host=$("paintCanvas"),
+   activeY=picture.paint.grid.length-save.done;
+ host.replaceChildren();
+ host.style.gridTemplateColumns="repeat("+width+",minmax(0,1fr))";
+ paintCells=[];
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+   const finished=y>=1&&y<=picture.paint.grid.length&&y>activeY;
+   const editable=y===activeY&&!paintLocked;
+   const current=y===activeY;
+   const key=finished?picture.paint.grid[y-1][x]:
+     current?(save.paintDraft?.[x]??null):null;
+   const cell=document.createElement("button");
+   cell.type="button";
+   cell.className="paint-cell "+(current?"paint-cell--active":
+     finished?"paint-cell--finished":"paint-cell--waiting");
+   cell.dataset.col=String(x);cell.dataset.row=String(y);
+   cell.disabled=!editable;
+   cell.tabIndex=editable?0:-1;
+   cell.textContent=current?String(picture.window.min+x):"";
+   paintCellStyle(cell,key);
+   cell.setAttribute("aria-label",current?
+     describePaintCell(x,key):finished?"Completed coloured square":"Not yet available");
+   if(current){
+     paintCells[x]=cell;
+     cell.onclick=()=>paintSquare(x);
+   }
+   host.append(cell);
+ }
+}
+function showPaintFeedback(message,success=false){
+ const el=$("paintFeedback");
+ el.className="feedback paint-feedback"+(success?" success":"");
+ el.textContent=message;
+}
+function updatePaintBrush(){
+ const name=paintBrush===null?"Eraser":activePicture().paint.colours[paintBrush].name;
+ $("paintSelectedLabel").textContent="Selected brush: "+name;
+ $("paintEraser").classList.toggle("selected",paintBrush===null);
+ $("paintEraser").setAttribute("aria-pressed",String(paintBrush===null));
+ for(const b of [...$("paintRules").children,...$("paintQuickPalette").children]){
+   const selected=b.dataset.colour===(paintBrush===null?"erase":paintBrush);
+   b.classList.toggle("selected",selected);
+   b.setAttribute("aria-pressed",String(selected));
+ }
+}
+function selectPaintBrush(key){
+ if(paintLocked)return;
+ paintBrush=key;
+ updatePaintBrush();
+}
+function renderPaintRules(){
+ const host=$("paintRules");
+ host.replaceChildren();
+ for(const rule of paintQuestion.rules){
+   const button=document.createElement("button");
+   button.type="button";button.className="paint-rule";
+   button.dataset.colour=rule.key;
+   const swatch=document.createElement("span");
+   swatch.className="paint-swatch";swatch.style.backgroundColor=rule.colour;
+   swatch.setAttribute("aria-hidden","true");
+   const copy=document.createElement("span");copy.className="paint-rule-copy";
+   const colour=document.createElement("strong");colour.textContent=rule.name;
+   const equation=document.createElement("span");
+   equation.className="paint-equation";equation.textContent=rule.inequality;
+   copy.append(colour,equation);
+   button.append(swatch,copy);
+   button.setAttribute("aria-label",rule.name+", "+rule.inequality);
+   button.onclick=()=>selectPaintBrush(rule.key);
+   host.append(button);
+ }
+ const quick=$("paintQuickPalette");
+ quick.replaceChildren();
+ const used=new Set();
+ for(const rule of paintQuestion.rules){
+   if(used.has(rule.key))continue;
+   used.add(rule.key);
+   const brush=document.createElement("button");
+   brush.type="button";brush.className="paint-quick-brush";
+   brush.dataset.colour=rule.key;
+   brush.title=rule.name;brush.setAttribute("aria-label","Use "+rule.name+" brush");
+   const dot=document.createElement("span");
+   dot.style.backgroundColor=rule.colour;dot.setAttribute("aria-hidden","true");
+   brush.append(dot);
+   brush.onclick=()=>selectPaintBrush(rule.key);
+   quick.append(brush);
+ }
+ const eraser=document.createElement("button");
+ eraser.type="button";eraser.className="paint-quick-brush paint-quick-erase";
+ eraser.dataset.colour="erase";eraser.textContent="⌫";
+ eraser.setAttribute("aria-label","Use eraser brush");
+ eraser.onclick=()=>selectPaintBrush(null);
+ quick.append(eraser);
+ updatePaintBrush();
+}
+function startPaintRow(){
+ cancelPaintTimers();
+ const picture=activePicture(),index=save.done,width=pictureWidth(picture);
+ if(index===questionCount(picture)){finish({animate:true});return;}
+ paintQuestion=makePaintQuestion(picture,index,save.replay);
+ paintLocked=false;
+ const valid=Array.isArray(save.paintDraft)&&save.paintDraft.length===width&&
+   save.paintDraft.every(key=>key==null||picture.paint.colours[key]);
+ if(!valid)save.paintDraft=Array(width).fill(null);
+ paintBrush=paintQuestion.rules[0].key;
+ $("paintCheck").disabled=false;
+ $("paintCheckMobile").disabled=false;
+ $("paintCheck").textContent="Check row →";
+ $("paintCheckMobile").textContent="Check row →";
+ showPaintFeedback("");
+ updatePaintProgress();
+ renderPaintRules();
+ drawPaintCanvas();
+ $("paintTitle").textContent=picture.mystery+" — colour studio";
+}
+function paintSquare(col){
+ if(screen!=="paintScreen"||paintLocked||!paintQuestion||
+    !Number.isInteger(col)||col<0||col>=pictureWidth(activePicture()))return;
+ const old=save.paintDraft[col];
+ if(old===paintBrush)return;
+ save.paintDraft[col]=paintBrush;
+ const cell=paintCells[col];
+ if(cell){
+   paintCellStyle(cell,paintBrush);
+   cell.setAttribute("aria-label",describePaintCell(col,paintBrush));
+ }
+ if(paintErrorTimer!==null){
+   clearTimeout(paintErrorTimer);paintErrorTimer=null;
+   for(const c of paintCells)c?.classList.remove("paint-cell--wrong");
+ }
+ showPaintFeedback("");
+ store();
+}
+function clearPaintRow(){
+ if(paintLocked||screen!=="paintScreen")return;
+ save.paintDraft=Array(pictureWidth(activePicture())).fill(null);
+ drawPaintCanvas();
+ showPaintFeedback("");
+ store();
+}
+function checkPaintAnswer(){
+ if(paintLocked||screen!=="paintScreen")return;
+ const picture=activePicture(),result=checkPaintRow(picture,save.done,save.paintDraft);
+ if(!result.correct){
+   save.attempts++;store();
+   showPaintFeedback(result.unpainted.length?
+     "Some squares are still unpainted. Check the inequalities and try again.":
+     "Not quite. The orange squares need another look. Try again.");
+   for(const col of result.wrong)paintCells[col]?.classList.add("paint-cell--wrong");
+   if(paintErrorTimer!==null)clearTimeout(paintErrorTimer);
+   paintErrorTimer=setTimeout(()=>{
+     paintErrorTimer=null;
+     for(const c of paintCells)c?.classList.remove("paint-cell--wrong");
+   },600);
+   return;
+ }
+ paintLocked=true;
+ if(save.attempts===0)save.firstTry++;
+ save.attempts=0;
+ save.done++;
+ save.paintDraft=[];
+ save.completed=save.done===questionCount(picture);
+ store();
+ updatePaintProgress();
+ $("paintCheck").disabled=true;
+ $("paintCheckMobile").disabled=true;
+ $("paintCheck").textContent=save.completed?"✓ Correct — revealing…":"✓ Correct — next row…";
+ $("paintCheckMobile").textContent=$("paintCheck").textContent;
+ showPaintFeedback("Correct! Watch the numbers disappear and the colours stay.",true);
+ for(const cell of paintCells){
+   cell.disabled=true;
+   cell.classList.add("paint-cell--correct");
+ }
+ const savedKey=activeKey(),nextCount=save.done,
+   reduced=window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+ paintAdvanceTimer=setTimeout(()=>{
+   paintAdvanceTimer=null;
+   if(screen!=="paintScreen"||activeKey()!==savedKey||
+      save.done!==nextCount)return;
+   if(save.completed)finish({animate:true});
+   else{
+     startPaintRow();
+     if(window.matchMedia?.("(max-width: 740px)")?.matches){
+       $("paintStep").scrollIntoView?.({
+         behavior:reduced?"instant":"smooth",block:"start"
+       });
+     }
+   }
+ },reduced?280:850);
+}
+// Pointer capture stays on the stable board; the user can swipe across
+// multiple small squares without accidentally scrolling the page.
+$("paintCanvas").addEventListener("pointerdown",event=>{
+ if(screen!=="paintScreen"||paintLocked||
+   event.pointerType==="mouse"&&event.button!==0)return;
+ const square=event.target.closest?.(".paint-cell");
+ if(!square||square.disabled||square.dataset.row!==String(paintQuestion?.row))return;
+ paintPointer=event.pointerId;
+ paintSquare(Number(square.dataset.col));
+ $("paintCanvas").setPointerCapture?.(event.pointerId);
+ event.preventDefault();
+});
+$("paintCanvas").addEventListener("pointermove",event=>{
+ if(paintPointer!==event.pointerId||paintLocked)return;
+ const square=document.elementFromPoint?.(event.clientX,event.clientY)
+   ?.closest?.(".paint-cell");
+ if(square&&!square.disabled&&square.dataset.row===String(paintQuestion?.row))
+   paintSquare(Number(square.dataset.col));
+});
+for(const eventName of ["pointerup","pointercancel","lostpointercapture"])
+ $("paintCanvas").addEventListener(eventName,event=>{
+   if(paintPointer===event.pointerId)paintPointer=null;
+ });
+$("paintCheck").onclick=checkPaintAnswer;
+$("paintCheckMobile").onclick=checkPaintAnswer;
+$("paintClear").onclick=clearPaintRow;
+$("paintEraser").onclick=()=>selectPaintBrush(null);
+$("paintBack").onclick=chooseLevel;
+$("paintRestart").onclick=restart;
+
 function renderOptions(){
  const host=$("readOptions");host.replaceChildren();
  q.options.forEach((opt,i)=>{
@@ -732,7 +1007,9 @@ function buildMonochromeRows(picture){
     const question=makePictureQuestion(picture,index,save.replay,state.activeLevel);
     const group=mk("g",{"class":"reveal-ink-row",opacity:0},svg);
     for(const value of picturePaintedValues(picture,question)){
-      mk("rect",{x:value-picture.window.min,y:question.row,
+      const column=value-picture.window.min;
+      if(picture.paint&&!picturePixelAt(picture,column,question.row))continue;
+      mk("rect",{x:column,y:question.row,
         width:1,height:1,fill:"#61748e",
         stroke:"#f8f3ec","stroke-width":0.025},group);
     }
@@ -914,6 +1191,7 @@ function closeReveal(){
   $("replayReveal").focus?.({preventScroll:true});
 }
 function finish({animate=false}={}){
+  cancelPaintTimers();
   cancelRowAdvance();
   cancelPreviewFlash();
   clearRevealTimers();
@@ -931,6 +1209,7 @@ function finish({animate=false}={}){
   openReveal({animate});
 }
 function restart(){
+ cancelPaintTimers();
  cancelRowAdvance();
  cancelPreviewFlash();
  clearRevealTimers();
@@ -984,6 +1263,7 @@ $("restartButton").onclick=restart;
 $("changeLevelButton").onclick=chooseLevel;
 $("chooseLevelButton").onclick=chooseLevel;
 $("playAgain").onclick=()=>{
+ cancelPaintTimers();
  cancelRowAdvance();
  cancelPreviewFlash();
  clearRevealTimers();

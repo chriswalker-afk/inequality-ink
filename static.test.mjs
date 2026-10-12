@@ -21,8 +21,8 @@ test("Every referenced element exists, with no duplicate HTML IDs",()=>{
    assert.ok(ids.includes(id));
  }
 });
-test("All four modes offer a picture selector and picture-specific save keys",()=>{
- for(const level of ["mirror","full","solve","mixed"])
+test("All five modes offer a picture selector and picture-specific save keys",()=>{
+ for(const level of ["mirror","full","solve","mixed","paint"])
    assert.ok(html.includes('data-level="'+level+'"'));
  assert.ok(html.includes('role="group" aria-label="Choose a mystery picture"'));
  assert.ok(app.includes('function renderPicturePicker(){'));
@@ -316,4 +316,58 @@ test("Phone users can see their ghosts while adjusting the number line",()=>{
   assert.ok(css.includes('.mobile-preview-strip.ink-stage--correct'));
   const redraw=getSection('function initProgress(', 'function question(){');
   assert.ok(redraw.includes('sprite($("mobilePixelCanvas")'));
+});
+
+test("Paint by Inequalities has its own canvas, palette and independently saved rows",()=>{
+ for(const id of ["paintScreen","paintCanvas","paintRules","paintQuickPalette",
+   "paintFeedback","paintCheck","paintCheckMobile","paintBack","paintRestart",
+   "paintEraser","paintClear","paintProgressLabel","paintProgressFill","paintRowsDone"])
+  assert.ok(html.includes('id="'+id+'"'),"Missing paint UI: "+id);
+ assert.ok(html.includes('data-level="paint"'));
+ assert.ok(app.includes('from "./paint-engine.mjs"'));
+ assert.ok(app.includes('if(state.activeLevel==="paint"){'));
+ assert.ok(app.includes('show("paintScreen");startPaintRow();'));
+ assert.ok(app.includes('"playScreen","paintScreen","finishScreen"'));
+ assert.ok(app.includes('save.paintDraft'));
+ assert.ok(app.includes('checkPaintRow(picture,save.done,save.paintDraft)'));
+ assert.ok(app.includes('paintAdvanceTimer=setTimeout('));
+ assert.ok(app.includes('finish({animate:true})'));
+ assert.ok(app.includes('paintLocked=true'));
+});
+test("Only the numbered row can be edited; completed rows keep their real colours",()=>{
+ const draw=getSection('function drawPaintCanvas(){','function showPaintFeedback(');
+ assert.ok(draw.includes('finished=y>=1&&y<=picture.paint.grid.length&&y>activeY'));
+ assert.ok(draw.includes('editable=y===activeY&&!paintLocked'));
+ assert.ok(draw.includes('cell.disabled=!editable'));
+ assert.ok(draw.includes('cell.textContent=current?String(picture.window.min+x):""'));
+ assert.ok(draw.includes('cell.dataset.col='));
+ assert.ok(draw.includes('cell.dataset.row='));
+ assert.ok(draw.includes('picture.paint.grid[y-1][x]'));
+ for(const term of [".paint-cell--active",".paint-cell--finished",
+   ".paint-cell--waiting",".paint-cell--wrong",".paint-cell--correct"])
+  assert.ok(css.includes(term),term+" styling absent");
+});
+test("Mobile swiping paints the active row with a sticky palette and check button",()=>{
+ const painter=getSection('$("paintCanvas").addEventListener("pointerdown"','$("paintCheck").onclick=checkPaintAnswer;');
+ assert.ok(painter.includes('square.disabled'));
+ assert.ok(painter.includes('square.dataset.row!==String(paintQuestion?.row)'));
+ assert.ok(painter.includes('setPointerCapture?.(event.pointerId)'));
+ assert.ok(painter.includes('document.elementFromPoint?.(event.clientX,event.clientY)'));
+ assert.ok(painter.includes('pointermove'));
+ assert.ok(painter.includes('pointercancel'));
+ assert.ok(app.includes('$("paintCheckMobile").onclick=checkPaintAnswer'));
+ assert.ok(app.includes('$("paintEraser").onclick=()=>selectPaintBrush(null)'));
+ assert.ok(app.includes('$("paintClear").onclick=clearPaintRow'));
+ assert.ok(css.includes('touch-action:none'));
+ assert.ok(css.includes('.paint-quick-palette'));
+ assert.ok(css.includes('position:sticky'));
+ assert.ok(css.includes('@media(max-width:740px)'));
+});
+test("Paint mode uses the existing full-screen coloured artwork reveal",()=>{
+ assert.ok(app.includes('if(picture.paint&&!picturePixelAt(picture,column,question.row))continue'));
+ assert.ok(app.includes('finishedArtwork($("finishedArt"),activePicture())'));
+ assert.ok(app.includes('setDetailsVisible($("finishedArt"),true)'));
+ assert.ok(app.includes('cancelPaintTimers()'));
+ for(const source of ["paint-engine.mjs","paint-pictures.mjs","paint-engine.test.mjs"])
+  assert.ok(existsSync(join(root,source)),source+" not installed");
 });

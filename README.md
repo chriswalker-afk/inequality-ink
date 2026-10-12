@@ -12,8 +12,9 @@ A no-login, browser-based pixel-art inequality game for **Edexcel 4MA1 Foundatio
 | **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | Mystery 01: **Mushroom Mystery**; 02: **Rocket Launch**; 03: **Blooming Flower**; 04: **Enchanted Potion**; 05: **Ice Cream Treat** |
 | **Solve & Paint** | Solve compound inequalities (including reversing signs with negative coefficients), then draw the exact interval. | All five full pictures |
 | **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | All five full pictures |
+| **Paint by Inequalities** | Read 2–4 colour inequalities per row and directly paint the integer-labelled squares. Only the current row can be edited; correct rows lock with their numbers removed. | **Rainbow Rocket**, **Blooming Garden**, **Friendly Robot** |
 
-The library now contains **nine unique pictures** offering **19 picture/difficulty combinations**. The selector uses non-spoiler labels (*Mystery 01*, *Mystery 02*, etc.) until each picture is completed. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+The library now contains **twelve unique pictures** offering **22 picture/difficulty combinations**. The selector uses non-spoiler labels (*Mystery 01*, *Mystery 02*, etc.) until each picture is completed. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
 
 ### Five additional pictures (October 2026)
 
@@ -27,6 +28,20 @@ The five new pictures were authored as independent mathematical silhouettes, wit
 
 **Educational variety:** Crab and Owl each generate a roughly balanced mix of left- and right-pointing rays and open/closed endpoint questions. The three full pictures have varied widths, and all support Full Picture, Solve & Paint (including negative linear coefficients) and Mixed Challenge. Automated tests check that their generated questions paint precisely the intended picture across many replay variations.
 
+### New: Paint by Inequalities
+
+Unlike the four original modes, this mode asks students to build a **fully coloured pixel picture** directly.
+
+- Every puzzle has **14 rows and 10 columns**. Each active square shows an integer from **−5 to 4**, and only that row can be edited.
+- Each row has **two to four genuine real-number inequality rules**, each paired with a named colour. For example, a sky-blue swatch might read \`x < −3\` and an orange swatch \`x ≥ −3\`. Rules never overlap or leave uncoloured integers.
+- Click/tap a colour rule and paint individual cells, or **swipe across multiple cells** on mobile. There's also an eraser and Clear Row action.
+- On mobile the rules sit above the canvas, with an additional **sticky quick-brush palette and Check row button** beside the cells.
+- An incorrect row briefly flashes orange on the incorrect/unpainted cells but stays editable. A correct row flashes green, **loses its integer labels**, and leaves its colours in place before the next row activates automatically.
+- In-progress rows are saved locally. Changing pictures preserves progress, without changing completion statistics from the existing modes.
+- The completed picture uses the same **full-screen celebration, background, animated finishing details and PNG download** as other modes.
+
+The colour puzzles and swatches are declarative data in **\`paint-pictures.mjs\`**. The independent **\`paint-engine.mjs\`** generates one-sided and bounded inequalities from each row's colour runs and validates that every rule colours exactly the intended integer-labelled cells. Replay can vary which strict/inclusive endpoints are shown while preserving the same target picture.
+
 ## Reusable picture engine
 
 The game no longer needs a separate question-writing routine or illustration renderer for each picture.
@@ -34,6 +49,8 @@ The game no longer needs a separate question-writing routine or illustration ren
 - **`model.mjs`** — *pure mathematics*: correct inequality membership, exact marking, formatting, linear algebra and tutorial questions. No artwork data.
 - **`pictures.mjs`** — the **declarative picture library**: names, permitted difficulties, number-line windows, row silhouettes, palettes, background and finishing details.
 - **`picture-engine.mjs`** — reusable picture-independent mathematical engine: question creation, replay variants, integer-column sampling, mirror symmetry, colouring, connectivity and content validation.
+- **`paint-pictures.mjs`** — three authored multi-colour pixel grids and palettes.
+- **`paint-engine.mjs`** — generates exact non-overlapping colour inequalities for every row and verifies painting.
 - **`app.mjs`** — one shared browser interface for selecting, playing, saving and revealing any picture.
 - **`styles.css`**, **`index.html`** — responsive UI and reveal animations.
 - **`picture-engine.test.mjs`**, **`model.test.mjs`**, **`static.test.mjs`**, **`app-smoke.test.mjs`** — mathematical, interface and complete simulated-student play-through tests, run by GitHub Actions.
@@ -136,6 +153,8 @@ node --check app.mjs
 node --check picture-engine.mjs
 node --check pictures.mjs
 node --check model.mjs
+node --check paint-engine.mjs
+node --check paint-pictures.mjs
 ```
 
 GitHub Actions executes these automatically on pushes and pull requests. Deploy as a static site with **Settings → Pages → Deploy from a branch → main → /(root)**.

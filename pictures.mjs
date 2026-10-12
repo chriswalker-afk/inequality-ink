@@ -1,3 +1,4 @@
+import {PAINT_PICTURES} from "./paint-pictures.mjs";
 // Picture data lives here, separate from question generation and screen logic.
 // Rows are top-to-bottom, each [firstPixel,lastPixel] inclusive. A half-picture's
 // coordinates count away from the future vertical mirror axis.
@@ -265,5 +266,6 @@ export const PICTURE_DEFINITIONS = Object.freeze([
       [7,13,"#aa7655","waffle"],[7,14,"#e2a35f","waffle"]
     ]
   }
-
+,
+  ...PAINT_PICTURES
 ]);

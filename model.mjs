@@ -9,7 +9,9 @@ export const LEVELS=Object.freeze({
   solve:{name:"Solve & Paint",subtitle:"Algebra challenge · solve then draw",
     detail:"Rearrange inequalities before drawing their solutions."},
   mixed:{name:"Mixed Challenge",subtitle:"A little of everything",
-    detail:"Switch between mirrored, bounded and algebra questions."}
+    detail:"Switch between mirrored, bounded and algebra questions."},
+  paint:{name:"Paint by Inequalities",subtitle:"Paint the pixels · one colour rule at a time",
+    detail:"Choose a colour and paint the integer squares satisfying each inequality. One row at a time."}
 });
 export const LEVEL_IDS=Object.freeze(Object.keys(LEVELS));
 export const isInInterval=(x,interval)=>{

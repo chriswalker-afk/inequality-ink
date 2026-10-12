@@ -9,11 +9,12 @@ import {
 } from "./picture-engine.mjs";
 import {identicalSolution,isInInterval} from "./model.mjs";
 
-test("All nine authored pictures validate automatically against their mathematical modes",()=>{
+test("All twelve authored pictures validate automatically against their mathematical modes",()=>{
  const reports=validatePictureLibrary();
  assert.deepEqual(reports.map(r=>r.id),
    ["cat-cameo","heart-glow","mushroom-mystery","rocket-launch",
-    "coral-crab","twilight-owl","flower-pot","enchanted-potion","ice-cream-treat"]);
+    "coral-crab","twilight-owl","flower-pot","enchanted-potion","ice-cream-treat",
+    "paint-rocket","paint-flower","paint-robot"]);
  for(const report of reports){
    assert.equal(report.rows,14);
    assert.ok(report.width>=8);
@@ -26,6 +27,9 @@ test("All nine authored pictures validate automatically against their mathematic
      ["mushroom-mystery","rocket-launch","flower-pot",
       "enchanted-potion","ice-cream-treat"]);
  }
+ assert.deepEqual(picturesForLevel("paint").map(p=>p.id),
+   ["paint-rocket","paint-flower","paint-robot"]);
+ assert.equal(defaultPictureForLevel("paint").id,"paint-rocket");
  assert.equal(defaultPictureForLevel("mirror").id,"cat-cameo");
  assert.equal(defaultPictureForLevel("solve").id,"mushroom-mystery");
  assert.throws(()=>pictureById("nonexistent"),/Unknown picture/);
@@ -129,7 +133,7 @@ test("Five new pictures are registered with exactly the intended modes and dimen
     ["enchanted-potion","full",16,16,["full","solve","mixed"]],
     ["ice-cream-treat","full",16,16,["full","solve","mixed"]]
   ];
-  assert.equal(PICTURE_LIBRARY.length,9);
+  assert.equal(PICTURE_LIBRARY.length,12);
   assert.equal(picturesForLevel("mirror").length,4);
   for(const mode of ["full","solve","mixed"])
     assert.equal(picturesForLevel(mode).length,5);
@@ -146,7 +150,7 @@ test("Five new pictures are registered with exactly the intended modes and dimen
       id+" needs visually meaningful finishing details");
   }
   const combinations=PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0);
-  assert.equal(combinations,19);
+  assert.equal(combinations,22);
 });
 test("New Mirror Mode pictures balance both ray directions and open/closed circles",()=>{
   for(const id of ["coral-crab","twilight-owl"]){

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {identicalSolution} from "./model.mjs";
 import {pictureById,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
+import {paintTarget,makePaintQuestion} from "./paint-engine.mjs";
 
 // Dependency-free miniature DOM for exercising the actual app module in Node.
 // This is not a visual browser test, but it catches broken wiring, navigation,
@@ -51,6 +52,7 @@ class FakeElement {
     return {x:0,y:0,matrixTransform(){return {x:this.x,y:this.y};}};
   }
   getScreenCTM(){return {inverse(){return {};}};}
+  closest(selector){return selector===".paint-cell"&&this.className.includes("paint-cell")?this:null;}
   querySelector(selector){
     if(selector===".cat-flip-panels")return new FakeElement("div");
     return this.querySelectorAll(selector)[0]||null;
@@ -78,7 +80,7 @@ Object.defineProperty(finalSvg,"hidden",{
   get(){return this.hasAttribute("hidden");},
   set(_value){ /* deliberate no-op like WebKit on an SVG element */ }
 });
-const levels=["mirror","full","solve","mixed"].map(id=>{
+const levels=["mirror","full","solve","mixed","paint"].map(id=>{
   const el=new FakeElement("button");el.dataset.level=id;return el;
 });
 const directions=["left","between","right"].map(id=>{
@@ -170,7 +172,7 @@ function select(level,index){
   const button=levels.find(el=>el.dataset.level===level);
   button.click();
   const options=$("picturePicker").children;
-  assert.equal(options.length,level==="mirror"?4:5,
+  assert.equal(options.length,level==="mirror"?4:level==="paint"?3:5,
     "Each difficulty should list all of its available mystery pictures");
   options[index].click();
 }
@@ -659,4 +661,162 @@ test("Mixed Challenge ghosts reflect the attempted half-line rather than reveali
     [...new Set(reflected)].sort((a,b)=>a-b));
   assert.equal($("progressText").textContent,"0 of 14");
   $("changeLevelButton").click();
+});
+
+
+function paintCell(row,col){
+ const square=$("paintCanvas").children.find(c=>
+   c.dataset.row===String(row)&&c.dataset.col===String(col));
+ assert.ok(square,"Missing pixel "+col+" on row "+row);
+ return square;
+}
+function choosePaintKey(key){
+ const brush=$("paintQuickPalette").children.find(b=>b.dataset.colour===key);
+ assert.ok(brush,"No palette entry for "+key);
+ brush.click();
+}
+test("Paint students can swipe the active row, erase, clear and resume a partly painted row",()=>{
+ select("paint",0);
+ assert.equal($("picturePicker").children.length,3);
+ $("startButton").click();
+ assert.equal($("paintScreen").hidden,false);
+ assert.equal($("playScreen").hidden,true);
+ assert.equal($("paintProgressLabel").textContent,"Row 1 of 14");
+ const p=pictureById("paint-rocket"),row=14;
+ assert.equal($("paintCanvas").children.length,160);
+ for(let x=0;x<10;x++){
+   assert.equal(paintCell(row,x).disabled,false);
+   assert.equal(paintCell(row,x).textContent,String(p.window.min+x));
+   assert.equal(paintCell(row-1,x).disabled,true,"Future rows stay locked");
+   assert.equal(paintCell(row-1,x).textContent,"","Future rows reveal no numbers");
+ }
+ const key=paintTarget(p,0)[0];
+ choosePaintKey(key);
+ const start=paintCell(row,0),end=paintCell(row,1),board=$("paintCanvas");
+ const target={pointerId:14,pointerType:"touch",button:0,target:start,
+   clientX:15,clientY:15,preventDefault(){this.prevented=true;}};
+ const event=board.listeners.get("pointerdown")[0];
+ event(target);
+ assert.equal(target.prevented,true,"Touch painting should not scroll the page");
+ assert.equal(start.getAttribute("aria-label").includes("unpainted"),false);
+ const nativeElementFromPoint=globalThis.document.elementFromPoint;
+ globalThis.document.elementFromPoint=()=>end;
+ for(const fn of board.listeners.get("pointermove")||[])
+   fn({...target,clientX:48});
+ for(const fn of board.listeners.get("pointerup")||[])fn(target);
+ assert.equal(end.getAttribute("aria-label").includes("unpainted"),false,
+   "Swipe should paint multiple neighbouring squares");
+ assert.equal(board.capturedPointerId,14);
+ const saved=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+ assert.equal(saved.progress["paint:paint-rocket"].paintDraft[0],key);
+ assert.equal(saved.progress["paint:paint-rocket"].paintDraft[1],key);
+ $("paintEraser").click();
+ end.click();
+ assert.ok(end.getAttribute("aria-label").includes("unpainted"),
+   "Eraser should remove only the chosen cell");
+ $("paintClear").click();
+ assert.ok(paintCell(row,0).getAttribute("aria-label").includes("unpainted"));
+ $("paintBack").click();
+ assert.equal($("introScreen").hidden,false);
+ select("paint",0);
+ $("startButton").click();
+ assert.equal($("paintScreen").hidden,false);
+ assert.equal($("paintProgressLabel").textContent,"Row 1 of 14");
+ globalThis.document.elementFromPoint=nativeElementFromPoint;
+ $("paintBack").click();
+});
+function completePaintPicture(index,id){
+ select("paint",index);
+ $("startButton").click();
+ assert.equal($("paintScreen").hidden,false);
+ const pic=pictureById(id),width=10,total=14;
+ const oldSetTimeout=globalThis.setTimeout,oldClearTimeout=globalThis.clearTimeout;
+ const timers=[],cancelled=new Set();
+ let serial=10000;
+ globalThis.setTimeout=(fn,delay)=>{
+   if([280,850,600].includes(delay)){
+     const item={id:serial++,fn,delay};timers.push(item);return item.id;
+   }
+   return oldSetTimeout(fn,delay);
+ };
+ globalThis.clearTimeout=id=>{
+   if(id>=10000){cancelled.add(id);return;}
+   return oldClearTimeout(id);
+ };
+ try{
+  for(let row=0;row<total;row++){
+   const target=paintTarget(pic,row),y=total-row;
+   assert.equal($("paintStep").textContent,"ROW "+(row+1)+" OF "+total);
+   assert.equal($("paintRules").children.length,
+     makePaintQuestion(pic,row,0).rules.length);
+   assert.ok(paintCell(y,0).textContent.length>0);
+   if(row===0){
+     $("paintCheckMobile").click();
+     assert.ok($("paintFeedback").textContent.includes("unpainted"));
+     assert.equal($("paintRowsDone").textContent,"0 / 14");
+     assert.ok(paintCell(y,0).classList.contains("paint-cell--wrong"));
+     assert.equal(paintCell(y,0).disabled,false);
+   }
+   for(let x=0;x<width;x++){
+     choosePaintKey(target[x]);
+     paintCell(y,x).click();
+   }
+   for(let x=0;x<width;x++){
+     assert.equal(paintCell(y,x).textContent,String(pic.window.min+x));
+     assert.equal(paintCell(y,x).style.backgroundColor,pic.paint.colours[target[x]].hex);
+   }
+   $("paintCheckMobile").click();
+   assert.equal($("paintRowsDone").textContent,(row+1)+" / 14");
+   assert.ok($("paintFeedback").className.includes("success"));
+   assert.equal($("paintCheckMobile").disabled,true);
+   assert.ok(paintCell(y,4).classList.contains("paint-cell--correct"));
+   const upcoming=timers.findLast(t=>t.delay===280&&!cancelled.has(t.id));
+   assert.ok(upcoming,"Each correctly coloured row auto-advances");
+   upcoming.fn();
+   if(row<total-1){
+     assert.equal($("paintScreen").hidden,false);
+     assert.equal(paintCell(y,4).textContent,"",
+       "After checking, correct rows lose their integer labels");
+     assert.equal(paintCell(y,4).disabled,true);
+     assert.equal(paintCell(y,4).style.backgroundColor,pic.paint.colours[target[4]].hex);
+     assert.equal(paintCell(y-1,4).disabled,false);
+     assert.equal(paintCell(y-1,4).textContent,String(pic.window.min+4));
+   }
+  }
+  assert.equal($("revealDialog").open,true);
+  assert.equal($("finishScreen").hidden,true);
+  assert.equal($("revealFinalArt").hasAttribute("hidden"),false,
+    "The completed painted picture should display in full colour");
+  const finish=$("finishedArt");
+  for(const [row,col] of [[1,4],[3,5],[8,3],[12,4]]){
+    const r=finish.children.find(c=>c.tagName==="rect"&&
+      c.getAttribute("x")===String(col)&&c.getAttribute("y")===String(row));
+    assert.ok(r,"Final picture cell is missing");
+    const key=pic.paint.grid[row-1][col];
+    const expected=pic.paint.colours[key].hex;
+    assert.equal(r.getAttribute("fill"),expected,
+      "Completed art must preserve the EXACT painted colour grid");
+  }
+  $("closeReveal").click();
+  assert.equal($("finishScreen").hidden,false);
+  assert.equal($("firstTryStat").textContent,"13/14",
+    "Only the first row's deliberate wrong check should affect first-time correct");
+  const state=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+  assert.equal(state.progress["paint:"+id].completed,true);
+  assert.equal(state.progress["paint:"+id].done,14);
+  $("chooseLevelButton").click();
+ }finally{
+   globalThis.setTimeout=oldSetTimeout;
+   globalThis.clearTimeout=oldClearTimeout;
+ }
+}
+test("All three paint pictures complete end-to-end and animate to the existing summary",()=>{
+ for(const [index,id] of ["paint-rocket","paint-flower","paint-robot"].entries())
+  completePaintPicture(index,id);
+ const saved=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+ for(const id of ["paint-rocket","paint-flower","paint-robot"])
+  assert.equal(saved.progress["paint:"+id].completed,true);
+ // Existing activities remain independently completed.
+ assert.equal(saved.progress["mirror:heart-glow"].done,14);
+ assert.equal(saved.progress["solve:rocket-launch"].done,14);
 });

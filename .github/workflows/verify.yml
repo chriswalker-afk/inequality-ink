@@ -21,3 +21,5 @@ jobs:
           node --check model.mjs
           node --check picture-engine.mjs
           node --check pictures.mjs
+          node --check paint-engine.mjs
+          node --check paint-pictures.mjs
