@@ -30,6 +30,12 @@ Every mode now has a **Starter → Step Up → Building → Challenge → Big Fi
 
 The large existing pictures are **not removed**. Bonus titles stay accessible in **More pictures** with their saved progress and replay statistics. Existing v1–v5 scores keep their original picture IDs. The site automatically suggests the next unfinished stage but **does not lock** later pictures.
 
+### Mathematical progression (first pass)
+
+The five picture stages now also set mode-specific mathematical difficulty. Starter questions use simple closed endpoints first, then introduce open endpoints; Solve & Paint begins with addition/subtraction and multiplication, ending its six-row picture with one simple negative-coefficient sign reversal. Step Up, Building and Challenge progressively vary endpoints, coefficients and sign reversals. Mixed Challenge follows the same profiles while retaining its read/draw/solve variety. Paint by Inequalities introduces open colour-rule boundaries gradually while preserving the painted target of every row.
+
+**Compatibility:** Big Finish and bonus pictures keep their previous mathematical generators, including any authored first-play answers. The new profiles do not change picture IDs, picture geometry, completion records, controls or reveals. Tests exercise all row/replay combinations and exact inequality marking.
+
 ### Five additional pictures (October 2026)
 
 The five new pictures were authored as independent mathematical silhouettes, with separate symmetric colours, backgrounds and animated finishing details:
