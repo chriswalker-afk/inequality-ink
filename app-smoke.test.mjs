@@ -1236,3 +1236,87 @@ test("Solve & Paint lets students switch typed maths and handwritten working",()
   assert.equal(pad.children.length,0);
   assert.equal($("workTypePanel").hidden,false);
 });
+
+
+test("Direct picture entry, optional practice, and continuation do not interfere",()=>{
+  selectStage("full",2);
+  const picture=pictureById("full-gift-step");
+  const beforePractice=localStorage.getItem("inequality-ink-v5");
+  assert.equal($("practiceButton").hidden,false);
+  assert.equal($("startButton").textContent,"Start picture ↗");
+  $("practiceButton").click();
+  assert.equal($("playScreen").hidden,false);
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
+  assert.equal($("checkButton").textContent,"Check practice →");
+  assert.equal($("exitPracticeButton").hidden,false);
+  assert.equal($("equationText").textContent,"x ≥ −2");
+  function markPractice(solution){
+    const direction=directions.find(d=>d.dataset.direction===solution.direction);
+    direction.click();
+    $("leftValue").value=String(solution.direction==="between"?solution.lower:solution.at);
+    $("leftValue").change();
+    if(solution.direction==="between"){
+      $("rightValue").value=String(solution.upper);$("rightValue").change();
+      $(solution.lowerIncluded?"leftClosed":"leftOpen").click();
+      $(solution.upperIncluded?"rightClosed":"rightOpen").click();
+    }else $(solution.included?"leftClosed":"leftOpen").click();
+    const original=globalThis.setTimeout;
+    let next=null;
+    globalThis.setTimeout=(fn,delay)=>{
+      if([340,820,1170].includes(delay)){next=fn;return -333;}
+      return original(fn,delay);
+    };
+    try{
+      $("checkButton").click();
+      assert.ok($("feedback").className.includes("success"));
+      assert.ok(next,"Practice should move to its next step automatically");
+      next();
+    }finally{globalThis.setTimeout=original;}
+  }
+  markPractice({direction:"right",at:-2,included:true});
+  assert.equal($("questionStep").textContent,"PRACTICE 2 OF 2");
+  assert.equal($("equationText").textContent,"−2 < x ≤ 3");
+  markPractice({direction:"between",lower:-2,upper:3,
+    lowerIncluded:false,upperIncluded:true});
+  assert.equal($("introScreen").hidden,false);
+  assert.equal($("practiceStatus").hidden,false);
+  assert.match($("practiceStatus").textContent,/Practice complete/);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),beforePractice,
+    "Optional practice must leave all saved progress and scores unchanged");
+  $("startButton").click();
+  assert.equal($("questionStep").textContent,"ROW 1 OF 8");
+  assert.equal($("exitPracticeButton").hidden,true);
+  answerCurrent(picture,0,"full");
+  $("changeLevelButton").click();
+  assert.equal($("startButton").textContent,"Continue picture ↗");
+  const afterRow=localStorage.getItem("inequality-ink-v5");
+  $("practiceButton").click();
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
+  $("exitPracticeButton").click();
+  assert.equal($("introScreen").hidden,false);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),afterRow);
+  $("startButton").click();
+  assert.equal($("questionStep").textContent,"ROW 2 OF 8");
+  assert.equal($("progressText").textContent,"1 of 8");
+  $("changeLevelButton").click();
+});
+test("Optional practice stays within small picture number lines and excludes Paint mode",()=>{
+  selectStage("mirror",1);
+  assert.equal($("practiceButton").hidden,false);
+  $("practiceButton").click();
+  assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
+  assert.equal($("equationText").textContent,"x ≤ 2",
+    "A tutorial x ≤ 4 would exceed the smallest Mirror picture axis");
+  $("exitPracticeButton").click();
+  assert.equal($("introScreen").hidden,false);
+  for(const level of ["mirror","full","solve","mixed"]){
+    selectStage(level,1);
+    assert.equal($("practiceButton").hidden,false,level+" should allow optional practice");
+  }
+  selectStage("paint",1);
+  assert.equal($("practiceButton").hidden,true,
+    "Paint offers immediate picture play, not unrelated number-line tutorials");
+  $("startButton").click();
+  assert.equal($("paintScreen").hidden,false);
+  $("paintBack").click();
+});
