@@ -940,6 +940,23 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
    assert.equal($("revealDialog").open,true);
    assert.equal($("finishScreen").hidden,true);
    assert.equal($("revealFinalArt").hasAttribute("hidden"),false);
+   if(level==="mirror"){
+     const starArt=$("revealFinalArt");
+     const colourAt=(x,y)=>{
+       const square=starArt.children.find(el=>el.tagName==="rect"&&
+         el.getAttribute("x")===String(x)&&
+         el.getAttribute("y")===String(y));
+       assert.ok(square,"The revealed star must contain every artwork cell");
+       return square.getAttribute("fill");
+     };
+     // The upright upper tip must be central, not split between the edges
+     // as in the original U-shaped iPhone screenshot.
+     assert.notEqual(colourAt(5,1),colourAt(0,1));
+     assert.equal(colourAt(5,1),colourAt(6,1));
+     assert.equal(colourAt(0,3),colourAt(11,3));
+     assert.notEqual(colourAt(0,6),colourAt(5,6));
+     assert.equal(starArt.getAttribute("viewBox"),"0 0 12 8");
+   }
    $("closeReveal").click();
    assert.equal($("firstTryStat").textContent,"6/6");
    assert.equal($("finishTitle").textContent,picture.name+"!");
