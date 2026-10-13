@@ -6,6 +6,38 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Phase 6 — optional same-level practice and reverse reading
+
+The five-stage routes remain exactly as before. Each Graph Art mode now offers
+one extra **Step Up** picture under a collapsed **More practice at the same
+level** section. Each new picture has three real mathematical regions, staged
+finishing details, its own save record and the same full reveal. No prerequisite,
+unlocking, new mode or compulsory explanation interrupts picture play.
+
+| Mode | Optional Step Up picture | New mathematical practice |
+| --- | --- | --- |
+| Find & Fill | **Mountain Tent** | Identify a three-piece intersection of straight-line inequalities |
+| Build & Shade | **Diamond Kite** | Reverse-read highlighted shaded half-planes as inequalities |
+| Curve & Fill | **Balloon Parade** | Work with circles, translated parabolas and intersections |
+| Plot & Shade | **Snow Globe** | Plot circles using centres/radii and a horizontal boundary |
+
+**Diamond Kite's reverse-reading questions** are an optional Build & Shade
+variation, not a fifth mode: a dark boundary and pale shaded side appear on
+the graph, and students select the matching inequality from four signs
+(<, ≤, >, ≥). Correct answers immediately add the boundary; incorrect
+answers allow immediate retry. The separate three-level Hint, optional
+Why-this-choice explanation and mode-aware How to play are available only
+on request. The ordinary Build & Shade controls and journeys are unchanged.
+
+The primary **0 of 5** gallery count still measures just the main five stages.
+Each practice picture has independent progress in the existing mode-specific
+browser save, and replay affects only that picture. Five-stage progress, older
+saves, core questions and touch controls are not modified.
+
+Tests additionally cover all optional mathematical regions, independent save
+restoration, the reverse-reading workflow and full original-mode regression
+behaviour.
+
 ## Desktop homepage: start-first workspace
 
 On desktop, the home screen is organised around three immediate choices:
