@@ -738,6 +738,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     if(!p||!GRAPH_ART_MODES.some(item=>item.id===chosenMode))return;
     cancelBuildRevealTimer();
     saved.mode=chosenMode;saved.picture=p.id;
+    hubMode=chosenMode;hubSelections[chosenMode]=p.id;
     resetChoices();persist();
     const r=saved.records[key(chosenMode,p.id)];
     if(r?.done===p.pieces.length){
