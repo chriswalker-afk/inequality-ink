@@ -215,6 +215,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function draw(){
     baseGraph(graph,doc);
     const p=picture(),r=record(),part=current();
+    // Preview the overlap of accepted half-planes BEHIND the already painted
+    // pieces, so it never tints or visually changes completed artwork.
+    if(part&&mode()==="build"&&r.line>0){
+      const candidate=intersectRegion(part.rules.slice(0,r.line));
+      polygon(graph,doc,candidate,{fill:"#72c5ac","fill-opacity":.11,
+        stroke:"#39a186","stroke-width":1.5,"stroke-opacity":.64,
+        "stroke-dasharray":"6 6","data-region-layer":"running-intersection",
+        "pointer-events":"none"});
+    }
     for(let i=0;i<r.done;i++){
       const f=p.pieces[i];
       polygon(graph,doc,intersectRegion(f.rules),{fill:f.color,
@@ -223,15 +232,6 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(!part)return;
     const points=intersectRegion(part.rules);
-    // Each correctly interpreted inequality reduces the candidate solution.
-    // This translucent INTERSECTION is computed from those rules, never from art.
-    if(mode()==="build"&&r.line>0){
-      const candidate=intersectRegion(part.rules.slice(0,r.line));
-      polygon(graph,doc,candidate,{fill:"#72c5ac","fill-opacity":.11,
-        stroke:"#39a186","stroke-width":1.5,"stroke-opacity":.64,
-        "stroke-dasharray":"6 6","data-region-layer":"running-intersection",
-        "pointer-events":"none"});
-    }
     for(const rr of part.rules){
       boundary(doc,graph,rr,{stroke:mode()==="fill"?"#5b7890":"#a5b7bf",
         "stroke-width":mode()==="fill"?2.6:1.65,
