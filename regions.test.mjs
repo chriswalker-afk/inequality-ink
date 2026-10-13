@@ -105,6 +105,40 @@ test("Every generated polygon is convex, visible, exactly clipped by its REAL in
   }
 });
 
+test("Displayed inequality text agrees with the geometry at sample coordinates",()=>{
+  const fractions={"½":"1/2","⅓":"1/3","⅔":"2/3","¼":"1/4",
+    "¾":"3/4","⅕":"1/5","⅖":"2/5","⅗":"3/5","⅘":"4/5"};
+  const evalLinear=(expression,x,y)=>{
+    let expr=expression.replaceAll("−","-").replace(/\s+/g,"");
+    for(const [v,n] of Object.entries(fractions))expr=expr.replaceAll(v,n);
+    const terms=expr.match(/[+-]?[^+-]+/g)||[];
+    return terms.reduce((sum,token)=>{
+      const m=token.match(/^([+-]?)(\d+(?:\.\d+)?(?:\/\d+)?)?([xy])?$/);
+      assert.ok(m,"Unparseable mathematical display term '"+token+"'");
+      const sign=m[1]==="-"?-1:1;
+      const k=m[2]?(m[2].includes("/")?
+        m[2].split("/").map(Number).reduce((a,b)=>a/b):
+        Number(m[2])):1;
+      return sum+sign*k*(m[3]==="x"?x:m[3]==="y"?y:1);
+    },0);
+  };
+  for(const pic of GRAPH_ART_PICTURES)for(const part of pic.pieces)
+    for(const r of part.rules){
+      const m=r.text.match(/^(.*?)\s*(≤|≥|<|>)\s*(.*?)$/);
+      assert.ok(m,"Rule should have one mathematical relation: "+r.text);
+      for(const x of [-4,-2.5,-1,0,1.5,3,4])
+        for(const y of [-4,-2.5,-1,0,1.5,3,4]){
+          const distance=evaluateRegionRule(r,x,y);
+          if(Math.abs(distance)<1e-5)continue;
+          const l=evalLinear(m[1],x,y),right=evalLinear(m[3],x,y);
+          const displayed=m[2]==="≤"?l<=right:
+            m[2]==="≥"?l>=right:m[2]==="<"?l<right:l>right;
+          assert.equal(displayed,distance<0,
+            "Misleading displayed inequality '"+r.text+"' at ("+x+","+y+")");
+        }
+    }
+});
+
 test("The original Little House and Aurora Crystal mathematics is unchanged",()=>{
   const house=graphPicture("little-house"),crystal=graphPicture("aurora-crystal");
   assert.equal(house.pieces.length,3);
