@@ -528,3 +528,30 @@ test("Solve & Paint provides accessible maths typing and handwriting panels",()=
   assert.ok(app.includes("workingPad.reset();"));
   assert.ok(app.includes('$("workingShell").hidden=q.mode!=="solve";'));
 });
+
+
+test("Quadratic Quest is an optional sixth section, not a new mandatory mode",()=>{
+ const quest=load("quadratic-quest-ui.mjs");
+ const engine=load("quadratic-quest.mjs");
+ const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+ assert.equal(new Set(ids).size,ids.length);
+ assert.equal([...html.matchAll(/data-level="(mirror|full|solve|mixed|paint)"/g)].length,5);
+ assert.ok(html.includes('id="questEnter"'));
+ assert.ok(html.includes('id="questEntryProgress"'));
+ assert.ok(html.includes('id="quadraticScreen" class="quest-screen" hidden'));
+ assert.ok(html.includes('id="questOutside"'));
+ assert.ok(html.includes('id="questBetween"'));
+ assert.ok(html.includes('id="questGraph"'));
+ assert.ok(html.includes('id="questReveal"'));
+ assert.ok(html.includes('id="questWorkingArea"'));
+ assert.ok(app.includes('initQuadraticQuest({'));
+ assert.ok(app.includes('show("quadraticScreen")'));
+ assert.ok(app.includes('"quadraticScreen","finishScreen"'));
+ assert.ok(!app.includes('LEVEL_IDS.push("quadratic")'));
+ assert.ok(quest.includes('storage.setItem(QUEST_SAVE_KEY'));
+ assert.ok(engine.includes('inequality-ink-quadratic-quest-v1'));
+ assert.ok(css.includes(".quest-invite{"));
+ assert.ok(css.includes(".quest-layout{"));
+ assert.ok(css.includes(".quest-reveal{"));
+ assert.ok(css.includes(".quest-region-chooser"));
+});

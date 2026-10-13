@@ -6,6 +6,18 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Optional extension: Quadratic Quest
+
+**Quadratic Quest** appears in its own understated section beneath the five original challenge modes. It is entirely optional, and its progress uses a separate save key, so students not studying quadratics can ignore it without missing any normal picture progression.
+
+The initial six-question picture builds from already-factorised inequalities (inside and outside the roots) through inclusive endpoints, expanded quadratics, and a negative leading coefficient. This is a prototype, not a sixth stage of the existing five modes.
+
+The number line adds **Between roots / Outside roots**, two adjustable integer root positions, open/closed endpoint circles, touch/mouse dragging and keyboard controls. Answers are checked over the real numbers, including which roots are included. Correct answers **unlock** decorative picture rows; these pixels are a reward, not an inaccurate integer-sampling representation of the (potentially disconnected) quadratic solution set.
+
+Students can request three progressive hints or reveal a sketch of the real parabola with its roots, and can use the same optional typed-MathML or handwritten working as Solve & Paint. Completion triggers a full-screen colour reveal and a review of all six solutions. Restart/replay and progress are isolated from the other modes.
+
+The pure maths, six authored questions, solution marking and picture data live in quadratic-quest.mjs. Independent gameplay, hints, graph drawing and save handling live in quadratic-quest-ui.mjs. A simulated full play-through plus exact-solution tests protect these features without modifying existing generators.
+
 ## Choose a challenge and a picture
 
 | Difficulty | Mathematics | Pictures included |

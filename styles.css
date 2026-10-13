@@ -814,3 +814,134 @@ body.paint-session{overflow:hidden}
 
 /* Keep the optional practice route understated beside the main picture CTA. */
 .practice-status{margin:10px 0 0;color:#377465;font-size:.82rem;font-weight:700;line-height:1.45}
+
+
+/* Quadratic Quest is an optional, visually separate adventure. Its progress,
+   answer controls and finished artwork do not enter the original five modes. */
+.quest-invite{
+  margin:24px 0 0;
+  display:flex;gap:16px;justify-content:space-between;align-items:center;
+  padding:17px 18px;border:1px solid #a6cbc5;border-radius:17px;
+  background:linear-gradient(130deg,#f0faf6,#fbf8f1);
+  box-shadow:0 5px 19px #3e69560c;
+}
+.quest-invite .eyebrow{font-size:.65rem;color:#477f77}
+.quest-invite h2{margin:5px 0;font-size:1.23rem;letter-spacing:-.03em;color:#293a56}
+.quest-invite p{margin:4px 0 0;font-size:.79rem;line-height:1.55;color:#687987;max-width:390px}
+.quest-invite-actions{display:grid;justify-items:end;gap:7px;flex-shrink:0}
+.quest-invite-actions .button{font-size:.76rem;padding:10px 12px;border-color:#a5c7bd;color:#2b7369}
+.quest-invite-actions span{color:#73878a;font-size:.64rem;text-align:right;max-width:170px}
+.quest-screen{padding:14px 0 50px}
+.quest-header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:5px 0 18px}
+.quest-header h1{font-size:clamp(1.9rem,3.5vw,3rem);margin:7px 0;letter-spacing:-.065em}
+.quest-header h1 span{color:#dd9b70}
+.quest-header p{margin:0;max-width:740px;color:#6f7c88;font-size:.88rem;line-height:1.65}
+.quest-header-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
+.quest-header-buttons button{padding:11px 13px;font-size:.78rem}
+.quest-progress{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;
+  margin-bottom:19px;color:#6c798a;font-size:.74rem}
+.quest-progress strong{color:#334b65}
+.quest-progress .progress-track{height:7px}
+.quest-layout{display:grid;grid-template-columns:minmax(280px,.78fr) minmax(450px,1.2fr);gap:20px;align-items:start}
+.quest-art-panel,.quest-question-panel{min-width:0}
+.quest-art-frame{display:grid;place-items:center;background:#f1eee8;border:1px solid #e6e0d6;
+  border-radius:15px;padding:24px;min-height:270px}
+.quest-art-frame svg{width:100%;max-width:440px;height:auto;
+  background:#e9e6e0;image-rendering:pixelated;filter:drop-shadow(0 7px 13px #1c3a4a14)}
+.quest-art-note{font-size:.75rem;line-height:1.55;color:#84909c;margin:13px 0 0}
+.quest-equation{background:#f5f1ea;border:1px solid #ece4db;
+  padding:16px 12px;border-radius:13px;text-align:center;margin:0 0 13px}
+.quest-equation .equation{font-size:clamp(1.35rem,2.2vw,1.8rem);line-height:1.5}
+.quest-instruction{color:#69778a;font-size:.82rem;line-height:1.6;margin:0 0 10px}
+.quest-region-chooser{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}
+.quest-region-chooser button{border-radius:10px;border:1px solid #d8e0e1;background:#fff;
+  font-size:.8rem;font-weight:780;color:#51627b;padding:12px 7px;min-width:0}
+.quest-region-chooser button.selected{border-color:#73aba3;background:#e9f5f0;color:#317768}
+.quest-line-frame{border:1px solid #e4e3e1;background:#faf9f6;border-radius:13px;overflow:hidden}
+.quest-line-frame svg{display:block;width:100%;height:auto;touch-action:none;user-select:none}
+.quest-line-frame g[role="button"]{cursor:grab;touch-action:none}
+.quest-line-frame g[role="button"]:focus-visible{outline:2px solid #2b8797;outline-offset:3px}
+.quest-endpoints{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:10px 0}
+.quest-endpoint{border:1px solid #e5e1da;padding:11px;border-radius:12px;min-width:0}
+.quest-endpoint label{display:block;font-size:.77rem;font-weight:800;color:#40526d;margin-bottom:8px}
+.quest-stepper{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;gap:5px}
+.quest-stepper button,.quest-stepper input{min-width:0;height:36px;
+  border:1px solid #dfe3e5;border-radius:9px;color:#344b67;background:#f7f8f9;
+  font-size:.92rem;font-weight:800;text-align:center}
+.quest-stepper input{width:100%}
+.quest-inclusion{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.quest-inclusion button{min-width:0;background:white;border:1px solid #dfe1e3;
+  border-radius:8px;padding:8px 2px;color:#526783;font-size:.73rem;font-weight:800}
+.quest-inclusion button.selected{background:#e5f1f6;border-color:#90bfd0;color:#2c6477}
+.quest-endpoint-note{font-size:.72rem;color:#878e98;margin:6px 0 13px}
+.quest-working-details{margin:13px 0;background:#fcfbf8;border:1px solid #e5e2dc;border-radius:12px}
+.quest-working-details summary{cursor:pointer;padding:12px 13px;color:#536980;font-size:.8rem;font-weight:850}
+.quest-working-details .quest-working-shell{margin:0 10px 10px}
+.quest-tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.quest-tools .button{font-size:.78rem;padding:10px 12px}
+.quest-graph-panel{background:#f8faf8;border:1px solid #d9e7e3;padding:13px;
+  border-radius:12px;margin:11px 0}
+.quest-graph-panel svg{display:block;width:100%;height:auto;max-height:265px}
+.quest-graph-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;color:#4a6675;font-size:.78rem}
+.quest-graph-heading span{font-size:.7rem;color:#84909b}
+.quest-graph-panel p{font-size:.76rem;color:#6d7b85;line-height:1.5;margin:8px 0 0}
+.quest-question-panel .feedback{margin:11px 0}
+.quest-check{width:100%;margin-top:12px}
+.quest-check:disabled{opacity:.66;cursor:default}
+.quest-finish{max-width:690px;margin:15px auto;text-align:center;padding:30px}
+.quest-finish h2{font-size:clamp(1.8rem,3.2vw,3rem);margin:10px 0}
+.quest-finish>p{color:#6c7986;font-size:.85rem;line-height:1.6}
+.quest-finish>svg{width:100%;max-width:425px;image-rendering:pixelated;
+  display:block;margin:15px auto;border-radius:12px;border:14px solid #f0ece6}
+.quest-solution-review{background:#f8f6f1;text-align:left;margin:16px 0;
+  padding:13px 17px;border-radius:12px;border:1px solid #e5e2dc}
+.quest-solution-review summary{cursor:pointer;font-size:.8rem;font-weight:800;color:#496477}
+.quest-solution-review ol{padding-left:24px;font-size:.83rem;color:#53637c;line-height:1.9}
+.quest-reveal{width:min(90vw,720px);max-height:90vh;overflow:auto;border:0;border-radius:24px;
+  background:#fffaf4;padding:0;box-shadow:0 30px 100px #17294266;color:#30425d}
+.quest-reveal::backdrop{background:#192943cc;backdrop-filter:blur(7px)}
+.quest-reveal-inner{text-align:center;padding:26px}
+.quest-reveal h2{font-size:clamp(1.9rem,5vw,3.2rem);margin:12px 0;letter-spacing:-.065em}
+.quest-reveal svg{display:block;max-width:540px;width:100%;margin:17px auto;
+  image-rendering:pixelated;background:#f1ece4;border-radius:15px;
+  border:12px solid #eee9e2;animation:quest-glow .8s ease-out both}
+.quest-reveal p{font-size:.9rem;color:#657688}
+.quest-reveal .button{margin:8px 0}
+@keyframes quest-glow{from{opacity:.2;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@media(max-width:1050px){
+  .quest-layout{grid-template-columns:minmax(245px,.82fr) minmax(350px,1.18fr);gap:12px}
+  .quest-layout .panel{padding:15px}
+}
+@media(max-width:740px){
+  .quest-invite{align-items:flex-start;flex-direction:column;margin-top:16px;padding:15px}
+  .quest-invite-actions{justify-items:start;width:100%}
+  .quest-invite-actions span{text-align:left;max-width:none}
+  .quest-header{align-items:flex-start;flex-direction:column}
+  .quest-header-buttons{width:100%;justify-content:flex-start}
+  .quest-progress{grid-template-columns:1fr auto;gap:8px}
+  .quest-progress .progress-track{grid-column:1/-1;grid-row:2}
+  .quest-progress>span{font-size:.66rem}
+  .quest-layout{grid-template-columns:1fr}
+  .quest-art-frame{min-height:130px;padding:12px}
+  .quest-art-frame svg{max-width:280px}
+  .quest-question-panel .panel-heading{margin-bottom:13px}
+  .quest-endpoints{gap:7px}
+  .quest-endpoint{padding:8px}
+  .quest-stepper{grid-template-columns:28px minmax(0,1fr) 28px;gap:4px}
+  .quest-inclusion button{font-size:.7rem}
+  .quest-reveal-inner{padding:17px}
+}
+@media(max-width:370px){
+  .quest-region-chooser button{font-size:.72rem}
+  .quest-inclusion{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  .quest-reveal svg{animation:none}
+}
+
+/* Optional worked example is never a gate before a student's first picture row. */
+.quest-worked-example{margin:9px 0 11px;border:1px solid #e2e5e0;background:#f9faf6;border-radius:10px;padding:0 11px}
+.quest-worked-example summary{cursor:pointer;padding:10px 0;color:#4e7c74;font-size:.78rem;font-weight:800}
+.quest-worked-example p,.quest-worked-example li{font-size:.75rem;line-height:1.6;color:#546775}
+.quest-worked-example ol{padding-left:20px;margin:8px 0}

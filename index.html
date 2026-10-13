@@ -80,6 +80,17 @@
           </div>
           <p id="practiceStatus" class="practice-status" role="status" aria-live="polite" hidden></p>
           <p class="tiny-copy" id="pictureSummary">14 picture rows • About 15–20 minutes • No login needed</p>
+          <section class="quest-invite" aria-labelledby="questInviteTitle">
+            <div class="quest-invite-copy">
+              <span class="eyebrow">OPTIONAL EXTENSION ✦</span>
+              <h2 id="questInviteTitle">Quadratic Quest</h2>
+              <p>Ready for a new challenge? Factorise quadratic inequalities, explore parabolas and uncover a bonus picture. Your normal picture journey is separate.</p>
+            </div>
+            <div class="quest-invite-actions">
+              <button type="button" id="questEnter" class="button button-light">Explore Quadratic Quest →</button>
+              <span id="questEntryProgress">6 questions · A separate adventure</span>
+            </div>
+          </section>
         </div>
         <div class="intro-art" aria-hidden="true">
           <div class="sticker sticker-top">mystery<br>picture!</div>
@@ -290,6 +301,160 @@
         </div>
       </section>
 
+
+      <section id="quadraticScreen" class="quest-screen" hidden aria-labelledby="questTitle">
+        <header class="quest-header">
+          <div>
+            <span class="eyebrow">OPTIONAL EXTENSION · QUADRATIC QUEST</span>
+            <h1 id="questTitle">Quadratic Quest <span aria-hidden="true">✦</span></h1>
+            <p>Solve the quadratic. Mark its entire solution on the number line. Each correct answer unlocks a row.</p>
+          </div>
+          <div class="quest-header-buttons">
+            <button type="button" class="button button-light" id="questBack">↶ Back to pictures</button>
+            <button type="button" class="button button-light" id="questRestart">↺ Start quest again</button>
+          </div>
+        </header>
+        <div class="quest-progress" aria-label="Quadratic Quest progress">
+          <strong id="questProgressText">0 of 6 rows revealed</strong>
+          <div class="progress-track"><div id="questProgressFill" class="progress-fill"></div></div>
+          <span>Separate from your regular picture journey</span>
+        </div>
+        <div id="questPlaying" class="quest-layout">
+          <section class="panel quest-art-panel" aria-labelledby="questCanvasTitle">
+            <div class="panel-heading"><div><span class="panel-kicker">BONUS PICTURE</span><h2 id="questCanvasTitle">A picture takes shape</h2></div><span id="questArtCount" class="panel-pill">0 / 6</span></div>
+            <div class="quest-art-frame">
+              <svg id="questArt" viewBox="0 0 10 6" role="img" aria-label="Quadratic Quest mystery pixel picture in progress"></svg>
+            </div>
+            <p class="quest-art-note">Only correct answers reveal picture rows. The pixels are a reward—not a graph of the quadratic.</p>
+          </section>
+          <section class="panel quest-question-panel" aria-labelledby="questQuestionTitle">
+            <div class="panel-heading">
+              <div><span class="panel-kicker" id="questQuestionStep">QUESTION 1 OF 6</span><h2 id="questQuestionTitle">Find the solution set</h2></div>
+              <span class="mode-tag">QUADRATIC</span>
+            </div>
+            <div class="quest-equation">
+              <span class="equation-label">SOLVE THIS INEQUALITY</span>
+              <div id="questEquationText" class="equation" aria-live="polite"></div>
+            </div>
+            <p class="quest-instruction">Choose where to shade, then position both endpoints. Open circles exclude roots; closed circles include them.</p>
+            <details class="quest-worked-example">
+              <summary>New to quadratic inequalities? See a worked example</summary>
+              <p><strong>Solve:</strong> (x + 1)(x − 2) &lt; 0</p>
+              <ol>
+                <li>The roots are x = −1 and x = 2.</li>
+                <li>The parabola opens upwards. It is below the x-axis between its roots.</li>
+                <li>The sign is strict (&lt;), so neither root is included.</li>
+              </ol>
+              <p><strong>Solution:</strong> −1 &lt; x &lt; 2, with open circles at both roots.</p>
+            </details>
+            <div class="quest-region-chooser" role="group" aria-label="Choose solution region">
+              <button type="button" id="questBetween" aria-pressed="true" class="selected">↔ Between roots</button>
+              <button type="button" id="questOutside" aria-pressed="false">← Outside roots →</button>
+            </div>
+            <div class="quest-line-frame">
+              <svg id="questLine" viewBox="0 0 640 133" role="img" aria-label="Interactive quadratic solution number line. Drag an endpoint circle to move it or tap to change open or closed."></svg>
+            </div>
+            <div class="quest-endpoints">
+              <div class="quest-endpoint">
+                <label for="questLower">Left root</label>
+                <div class="quest-stepper">
+                  <button type="button" id="questLowerMinus" aria-label="Decrease left root">−</button>
+                  <input id="questLower" type="number" min="-5" max="5" step="1" inputmode="numeric" value="0" aria-label="Left root"/>
+                  <button type="button" id="questLowerPlus" aria-label="Increase left root">+</button>
+                </div>
+                <div class="quest-inclusion" role="group" aria-label="Left root inclusion">
+                  <button type="button" id="questLowerOpen" aria-pressed="true" class="selected">○ Open</button>
+                  <button type="button" id="questLowerClosed" aria-pressed="false">● Closed</button>
+                </div>
+              </div>
+              <div class="quest-endpoint">
+                <label for="questUpper">Right root</label>
+                <div class="quest-stepper">
+                  <button type="button" id="questUpperMinus" aria-label="Decrease right root">−</button>
+                  <input id="questUpper" type="number" min="-5" max="5" step="1" inputmode="numeric" value="1" aria-label="Right root"/>
+                  <button type="button" id="questUpperPlus" aria-label="Increase right root">+</button>
+                </div>
+                <div class="quest-inclusion" role="group" aria-label="Right root inclusion">
+                  <button type="button" id="questUpperOpen" aria-pressed="true" class="selected">○ Open</button>
+                  <button type="button" id="questUpperClosed" aria-pressed="false">● Closed</button>
+                </div>
+              </div>
+            </div>
+            <p class="quest-endpoint-note">Arrows continue beyond the displayed number line. You can also drag the circles or use the number boxes.</p>
+            <details id="questWorkingDetails" class="quest-working-details">
+              <summary>Show optional working space</summary>
+              <div class="working-shell quest-working-shell">
+                <div class="working-heading">
+                  <div><span class="section-label">YOUR WORKING</span><p>Optional and unmarked · type or write by hand</p></div>
+                  <div class="working-switch" role="group" aria-label="Quadratic Quest working method">
+                    <button type="button" id="questWorkType" class="selected" aria-pressed="true">⌨ Type maths</button>
+                    <button type="button" id="questWorkDraw" aria-pressed="false">✎ Draw working</button>
+                  </div>
+                </div>
+                <div id="questTypePanel" class="working-method">
+                  <label for="questWorkingArea">Enter each step on a new line</label>
+                  <textarea id="questWorkingArea" rows="3" maxlength="2000" spellcheck="false" autocapitalize="off" placeholder="(x+2)(x-3) > 0"></textarea>
+                  <div id="questMathKeyboard" class="work-math-keyboard" role="group" aria-label="Quadratic maths keyboard">
+                    <button type="button" data-math-key="x">x</button>
+                    <button type="button" data-math-key="+" aria-label="Plus">+</button>
+                    <button type="button" data-math-key="−" aria-label="Minus">−</button>
+                    <button type="button" data-math-key="×" aria-label="Multiply">×</button>
+                    <button type="button" data-math-key="÷" aria-label="Divide">÷</button>
+                    <button type="button" data-math-key="&lt;" aria-label="Less than">&lt;</button>
+                    <button type="button" data-math-key="&gt;" aria-label="Greater than">&gt;</button>
+                    <button type="button" data-math-key="≤" aria-label="Less or equal">≤</button>
+                    <button type="button" data-math-key="≥" aria-label="Greater or equal">≥</button>
+                    <button type="button" data-math-key="brackets" aria-label="Brackets">( )</button>
+                    <button type="button" data-math-key="fraction" aria-label="Fraction">a⁄b</button>
+                    <button type="button" data-math-key="square" aria-label="Squared">x²</button>
+                    <button type="button" data-math-key="newline" aria-label="Next line">↵</button>
+                    <button type="button" data-math-key="backspace" aria-label="Backspace">⌫</button>
+                  </div>
+                  <div class="working-preview-heading"><span>LIVE MATHS PREVIEW</span></div>
+                  <div id="questMathPreview" class="working-math-preview" role="region" aria-label="Formatted mathematical working"></div>
+                  <p class="working-tip">Use / for a fraction, ^2 for a square, and Enter for another step.</p>
+                </div>
+                <div id="questDrawPanel" class="working-method" hidden>
+                  <div class="work-drawing-toolbar" role="group" aria-label="Quadratic drawing tools">
+                    <button type="button" id="questPen" class="selected" aria-pressed="true">✎ Pen</button>
+                    <button type="button" id="questEraser" aria-pressed="false">⌁ Eraser</button>
+                    <button type="button" id="questUndo" disabled>↶ Undo</button>
+                    <button type="button" id="questClear" disabled>Clear</button>
+                  </div>
+                  <svg id="questDrawing" class="working-draw-surface" viewBox="0 0 1000 400" preserveAspectRatio="none" role="img" aria-label="Use a finger, stylus or mouse to write your quadratic working"></svg>
+                  <p class="working-tip">Use a finger, stylus or mouse. Undo restores your previous stroke.</p>
+                </div>
+              </div>
+            </details>
+            <div class="quest-tools">
+              <button type="button" class="button button-light" id="questHint">✳ Hint (1 of 3)</button>
+              <button type="button" class="button button-light" id="questGraphToggle" aria-expanded="false" aria-controls="questGraphPanel">⌁ Explore the parabola</button>
+            </div>
+            <div id="questHintText" class="hint-panel" hidden role="status" aria-live="polite"></div>
+            <div id="questGraphPanel" class="quest-graph-panel" hidden>
+              <div class="quest-graph-heading"><strong>How the quadratic behaves</strong><span>Use the roots and the x-axis</span></div>
+              <svg id="questGraph" viewBox="0 0 640 230" role="img" aria-label="Graph of the given quadratic and the x-axis"></svg>
+              <p id="questGraphCaption">Above the axis means positive; below means negative.</p>
+            </div>
+            <p id="questFeedback" class="feedback" role="status" aria-live="polite"></p>
+            <button type="button" class="button button-primary quest-check" id="questCheck">Check and reveal row →</button>
+          </section>
+        </div>
+        <section id="questFinished" class="quest-finish panel" hidden aria-labelledby="questFinishTitle">
+          <span class="eyebrow">QUADRATIC QUEST COMPLETED ✦</span>
+          <h2 id="questFinishTitle">Prism of Possibilities!</h2>
+          <p>You solved six quadratic inequalities and revealed your bonus picture.</p>
+          <svg id="questFinishedArt" viewBox="0 0 10 6" role="img" aria-label="Completed coloured prism pixel art"></svg>
+          <p id="questFinalStats"></p>
+          <details class="quest-solution-review"><summary>Review all six solutions</summary><ol id="questSolutions"></ol></details>
+          <div class="finish-actions">
+            <button type="button" class="button button-primary" id="questReplay">Play again ↻</button>
+            <button type="button" class="button button-light" id="questFinishBack">Back to pictures ↶</button>
+            <button type="button" class="button button-light" id="questRevealAgain">View reveal ✦</button>
+          </div>
+        </section>
+      </section>
+
       <section id="finishScreen" class="finish-screen" hidden aria-labelledby="finishTitle">
         <div class="finish-card">
           <div class="finish-stamp">MASTERPIECE COMPLETE ✦</div>
@@ -357,6 +522,15 @@
     </div>
   </dialog>
 
+  <dialog id="questReveal" class="quest-reveal" aria-labelledby="questRevealTitle">
+    <div class="quest-reveal-inner">
+      <span class="eyebrow">QUADRATIC QUEST · BIG REVEAL ✦</span>
+      <h2 id="questRevealTitle">Your prism is complete!</h2>
+      <svg id="questRevealArt" viewBox="0 0 10 6" role="img" aria-label="The completed Prism of Possibilities picture"></svg>
+      <p>Six quadratic inequalities. One bright discovery.</p>
+      <button type="button" class="button button-primary" id="questRevealClose">See your results →</button>
+    </div>
+  </dialog>
   <dialog id="helpDialog" class="help-dialog" aria-labelledby="helpTitle">
     <div class="help-inner">
       <div class="dialog-head"><h2 id="helpTitle">How to play</h2><button type="button" id="closeHelp" aria-label="Close help">×</button></div>

@@ -141,8 +141,10 @@ export function nearestWorkingStroke(strokes,point,radius=27){
   return chosen;
 }
 
-export function initWorkingPad(doc){
-  const $=id=>doc.getElementById(id);
+export function initWorkingPad(doc,idOverrides={}){
+  // The same optional pad can serve both Solve & Paint and Quadratic Quest.
+  // IDs are supplied by the caller; the existing Solve & Paint defaults stay put.
+  const $=id=>doc.getElementById(idOverrides[id]||id);
   const input=$("workingArea"),preview=$("workMathPreview"),drawing=$("workDrawing");
   const typeButton=$("workTypeButton"),drawButton=$("workDrawButton");
   const typePanel=$("workTypePanel"),drawPanel=$("workDrawPanel");
