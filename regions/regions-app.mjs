@@ -246,7 +246,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphModeDescription").textContent=mode()==="fill"?
       "Start with two simple regions; work towards nine with strict and mixed-form inequalities.":
       "Start with solid straight boundaries; finish with eight complex intersecting regions.";
-    $("graphGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+    $("graphGalleryProgress").textContent=completed+" of 5 completed · "+
       (completed===5?"All five stages complete!":"Next up: "+recommended.stage);
     const track=$("graphStageTrack");track.replaceChildren();
     for(const p of gallery){
@@ -604,9 +604,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       " inequalities · "+GRAPH_ART_MODES.find(m=>m.id===mode()).name;
     $("graphNextPicture").hidden=p.step===GRAPH_ART_STAGES.length||
       p.mode!==mode();
-    $("graphNextPicture").textContent="Explore "+(
-      graphModeGallery(mode())[p.step]?.stage||"the next")+
-      " →";
+    $("graphNextPicture").textContent="Next picture →";
   }
   function restart(){
     if(typeof win.confirm==="function"&&!win.confirm(
