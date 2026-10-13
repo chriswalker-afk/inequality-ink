@@ -25,3 +25,18 @@ colours. Selecting a wrong **mathematically defined sign-cell region** flashes
 that whole region red then automatically clears after 950 ms. Correct selections
 fill the curved region translucent green/picture colour until the separate
 Check action; undo/toggle, hints and keyboard feedback mirror Find & Fill.
+
+## Butterfly finishing details and big reveal
+
+The two mathematically accurate quadratic wings remain untouched. Finishing
+details are explicit coordinate-based SVG artwork, separate from the inequality
+solver. When both wings are complete, the existing full-screen Graph Art reveal
+runs a five-part sequence: left wing, right wing, decorative wing markings,
+body/head/antennae, and contrast-safe sparkles, then the finished picture.
+The staged SVG decorations are also included when saving the PNG.
+
+Reduced-motion users receive the complete picture immediately. Replay,
+Skip/Show finished, close and restart cancel pending timers; the finished
+picture (including details) appears in the completed gallery thumbnail,
+while incomplete thumbnails never spoil the decorations. Visual integration
+shares the Graph Art reveal and CSS, with additional scoped SVG animations.

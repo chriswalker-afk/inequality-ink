@@ -49,3 +49,13 @@ test("strict boundaries are visually closed when filling, but excluded in mathem
   assert.ok(rangeAtX(PICTURE.pieces[1].rules,0));
   assert.equal(satisfiesAll(PICTURE.pieces[1].rules,0,0),false);
 });
+
+test("butterfly ornament metadata validates but never affects curve membership",async()=>{
+  const {CURVE_DETAIL_STAGES}=await import("./regions/curved-engine.mjs");
+  assert.equal(CURVE_DETAIL_STAGES.length,3);
+  assert.ok(PICTURE.details.length>20);
+  const {rules}=PICTURE.pieces[0];
+  assert.equal(satisfiesAll(rules,-1,0),true);
+  assert.equal(satisfiesAll(rules,3,0),false);
+  assert.equal(validatePicture(PICTURE),true);
+});

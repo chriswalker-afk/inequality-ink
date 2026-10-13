@@ -82,8 +82,75 @@ export function curvedCellAt(rules,x,y,tolerance=.09,world=WORLD){
   if(!paths.length)return null;
   return {x,y,paths,correct:satisfiesAll(rules,x,y)};
 }
+
+/* Finishing touches are deliberately NOT used by inequality validation.
+   The wings alone are mathematical intersections; these make the reveal a
+   recognisable butterfly, and are withheld until the picture is complete. */
+export const CURVE_DETAIL_STAGES=Object.freeze([
+  Object.freeze({stage:1,label:"Patterns are appearing on the wings…"}),
+  Object.freeze({stage:2,label:"The butterfly's body and antennae are taking shape…"}),
+  Object.freeze({stage:3,label:"Final sparkles bring your butterfly to life…"})
+]);
+export const CURVE_DETAIL_COLORS=Object.freeze({
+  plum:"#55425f",deepPlum:"#39354f",berry:"#8a5875",
+  cream:"#ffe3b2",paleCream:"#fff1d2",gold:"#d79b58",
+  goldOutline:"#986b50",lightTeal:"#d8f0db"
+});
+const detail=(id,stage,type,values)=>Object.freeze({id,stage,type,...values});
+const ellipse=(id,stage,x,y,rx,ry,fill,stroke=null,width=.055)=>
+  detail(id,stage,"ellipse",{x,y,rx,ry,fill,stroke,width});
+const circle=(id,stage,x,y,r,fill,stroke=null,width=.055)=>
+  detail(id,stage,"circle",{x,y,r,fill,stroke,width});
+const curve=(id,stage,x1,y1,cx,cy,x2,y2,stroke,width=.065)=>
+  detail(id,stage,"curve",{x1,y1,cx,cy,x2,y2,stroke,width});
+const star=(id,stage,x,y,r,fill,stroke)=>
+  detail(id,stage,"star",{x,y,r,fill,stroke,width:.04});
+const DC=CURVE_DETAIL_COLORS;
+const butterflyDetails=Object.freeze([
+  // Stage 1: high-contrast paired wing markings. Their centres are strictly
+  // inside the genuine quadratic regions, not floating on the ivory canvas.
+  ellipse("upper-left-spot",1,-.91,1.71,.42,.47,DC.cream,DC.berry),
+  ellipse("upper-right-spot",1,.91,1.71,.42,.47,DC.cream,DC.berry),
+  ellipse("lower-left-spot",1,-.94,-1.58,.38,.44,DC.cream,DC.berry),
+  ellipse("lower-right-spot",1,.94,-1.58,.38,.44,DC.cream,DC.berry),
+  circle("left-wing-tip",1,-1.57,.05,.18,DC.plum,DC.paleCream,.035),
+  circle("right-wing-tip",1,1.57,.05,.18,DC.plum,DC.paleCream,.035),
+  ellipse("upper-left-glint",1,-.98,1.81,.13,.17,DC.paleCream,DC.goldOutline,.025),
+  ellipse("upper-right-glint",1,.98,1.81,.13,.17,DC.paleCream,DC.goldOutline,.025),
+  ellipse("lower-left-glint",1,-1.01,-1.47,.12,.14,DC.paleCream,DC.goldOutline,.025),
+  ellipse("lower-right-glint",1,1.01,-1.47,.12,.14,DC.paleCream,DC.goldOutline,.025),
+
+  // Stage 2: antennae first so the central body and head sit on top.
+  curve("left-antenna",2,-.12,3.03,-.31,4.34,-.78,4.43,DC.deepPlum,.072),
+  curve("right-antenna",2,.12,3.03,.31,4.34,.78,4.43,DC.deepPlum,.072),
+  circle("left-antenna-tip",2,-.78,4.43,.13,DC.gold,DC.deepPlum,.045),
+  circle("right-antenna-tip",2,.78,4.43,.13,DC.gold,DC.deepPlum,.045),
+  ellipse("body",2,0,0,.31,2.78,DC.plum,DC.deepPlum,.055),
+  ellipse("stripe-top",2,0,1.2,.19,.085,DC.gold,DC.plum,.02),
+  ellipse("stripe-middle",2,0,.18,.19,.085,DC.gold,DC.plum,.02),
+  ellipse("stripe-bottom",2,0,-.83,.19,.085,DC.gold,DC.plum,.02),
+  circle("head",2,0,2.77,.45,DC.plum,DC.deepPlum,.055),
+  circle("left-eye",2,-.15,2.82,.075,DC.paleCream,DC.deepPlum,.022),
+  circle("right-eye",2,.15,2.82,.075,DC.paleCream,DC.deepPlum,.022),
+  curve("smile",2,-.13,2.58,0,2.47,.13,2.58,DC.paleCream,.045),
+
+  // Stage 3: darker outlined golden flourishes are visible on the ivory
+  // background, unlike unoutlined white decorative accents.
+  star("star-upper-left",3,-3.5,3.4,.31,DC.gold,DC.goldOutline),
+  star("star-upper-right",3,3.5,3.4,.31,DC.gold,DC.goldOutline),
+  star("star-lower-left",3,-3.65,-2.7,.25,DC.gold,DC.goldOutline),
+  star("star-lower-right",3,3.65,-2.7,.25,DC.gold,DC.goldOutline),
+  star("star-right",3,4.12,.55,.18,DC.gold,DC.goldOutline),
+  star("star-left",3,-4.12,.55,.18,DC.gold,DC.goldOutline),
+  circle("dust-1",3,-2.8,1.6,.075,DC.berry),
+  circle("dust-2",3,2.8,1.6,.075,DC.berry),
+  circle("dust-3",3,-2.98,-.95,.075,DC.goldOutline),
+  circle("dust-4",3,2.98,-.95,.075,DC.goldOutline)
+]);
+
 export const PICTURE=Object.freeze({
   id:"parabola-butterfly",name:"Parabola Butterfly",clue:"Two wings from intersecting curves",
+  details:butterflyDetails,
   pieces:Object.freeze([
     Object.freeze({id:"left-wing",name:"Left wing",color:"#e99a92",
       rules:Object.freeze([
@@ -100,6 +167,23 @@ export const PICTURE=Object.freeze({
   ])
 });
 export function validatePicture(p=PICTURE){
+  const detailIds=new Set();
+  for(const d of p.details||[]){
+    if(detailIds.has(d.id)||!d.id||!Number.isInteger(d.stage)||
+      d.stage<1||d.stage>CURVE_DETAIL_STAGES.length||
+      !["ellipse","circle","curve","star"].includes(d.type)||
+      !d.stroke&&!d.fill)throw Error("Invalid butterfly decoration "+d.id);
+    detailIds.add(d.id);
+    if(!Number.isFinite(d.width)||d.width<=0)throw Error("Invalid stroke width "+d.id);
+    for(const n of ["x","y","rx","ry","r","x1","y1","x2","y2","cx","cy"]){
+      if(n in d&&(!Number.isFinite(d[n])||
+        (n==="x"||n==="cx"||n==="x1"||n==="x2" ? Math.abs(d[n])>5:
+         n==="y"||n==="cy"||n==="y1"||n==="y2" ? Math.abs(d[n])>5:false)))
+        throw Error("Invalid decoration coordinate "+d.id);
+    }
+    if(d.type==="circle"&&!(d.r>0)||d.type==="star"&&!(d.r>0)||
+      d.type==="ellipse"&&!(d.rx>0&&d.ry>0))throw Error("Invalid decoration size "+d.id);
+  }
   if(p.pieces.length!==2)throw Error("Expected two pieces");
   for(const part of p.pieces){
     if(!part.rules.length||!regionPaths(part.rules).length)throw Error("Empty curved region");

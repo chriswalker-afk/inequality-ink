@@ -1,5 +1,5 @@
 import {
-  WORLD,PICTURE,regionPaths,boundaryPoints,curvedCellAt,validatePicture
+  WORLD,PICTURE,CURVE_DETAIL_STAGES,regionPaths,boundaryPoints,curvedCellAt,validatePicture
 } from "./curved-engine.mjs";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
@@ -68,6 +68,44 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   function drawPiece(svg,part,attrs={},className=""){
     drawPaths(svg,regionPaths(part.rules),attrs,className);
   }
+  // Coordinate-based decorations share the real mathematical viewBox. SVG
+  // attributes are self-contained, so PNG downloads retain every detail.
+  function drawDetails(svg,maxStage=Infinity,enterStage=0){
+    const unit=GRID/(WORLD.xmax-WORLD.xmin);
+    for(const d of PICTURE.details||[]){
+      if(d.stage>maxStage)continue;
+      const props={
+        "data-curve-detail":d.id,"data-detail-stage":d.stage,
+        "pointer-events":"none"
+      };
+      let node;
+      if(d.type==="ellipse"){
+        node=el(svg,"ellipse",{...props,cx:px(d.x),cy:py(d.y),
+          rx:d.rx*unit,ry:d.ry*unit,fill:d.fill,
+          ...(d.stroke?{stroke:d.stroke,"stroke-width":d.width*unit}:{})});
+      }else if(d.type==="circle"){
+        node=el(svg,"circle",{...props,cx:px(d.x),cy:py(d.y),
+          r:d.r*unit,fill:d.fill,
+          ...(d.stroke?{stroke:d.stroke,"stroke-width":d.width*unit}:{})});
+      }else if(d.type==="curve"){
+        node=el(svg,"path",{...props,
+          d:"M"+px(d.x1).toFixed(2)+" "+py(d.y1).toFixed(2)+
+            " Q"+px(d.cx).toFixed(2)+" "+py(d.cy).toFixed(2)+
+            " "+px(d.x2).toFixed(2)+" "+py(d.y2).toFixed(2),
+          fill:"none",stroke:d.stroke,"stroke-width":d.width*unit,
+          "stroke-linecap":"round","stroke-linejoin":"round"});
+      }else if(d.type==="star"){
+        const vertices=Array.from({length:10},(_,i)=>{
+          const r=d.r*(i%2?.42:1),a=-Math.PI/2+i*Math.PI/5;
+          return [px(d.x+Math.cos(a)*r),py(d.y+Math.sin(a)*r)]
+            .map(n=>n.toFixed(2)).join(",");
+        }).join(" ");
+        node=el(svg,"polygon",{...props,points:vertices,fill:d.fill,
+          stroke:d.stroke,"stroke-width":d.width*unit,"stroke-linejoin":"round"});
+      }
+      if(node&&d.stage===enterStage)node.classList?.add("curve-detail-enter");
+    }
+  }
   function drawBoundaries(svg,part){
     for(const rule of part.rules){
       const raw=boundaryPoints(rule);
@@ -89,6 +127,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
         "fill-opacity":finished?1:.22,stroke:finished?"#fff9ee":"#bfcac7",
         "stroke-dasharray":finished?"":"9 7","stroke-width":3});
     }
+    if(saved.done===PICTURE.pieces.length)drawDetails(preview);
   }
   function pickerView(){
     miniature();
@@ -216,27 +255,43 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     const id=win.setTimeout?.(fn,ms);
     if(id!=null)revealTimers.push(id);
   }
-  function revealStage(count,finished=false){
+  function revealStage(count,detailCount=0,finished=false){
     baseGraph(revealSvg,{grid:false});
-    for(const part of PICTURE.pieces.slice(0,count)){
-      drawPiece(revealSvg,part,{fill:part.color,stroke:"#fff9ec","stroke-width":3.5});
+    for(const [i,part] of PICTURE.pieces.slice(0,count).entries()){
+      const enter=!finished&&detailCount===0&&i===count-1;
+      drawPiece(revealSvg,part,{fill:part.color,stroke:"#fff9ec",
+        "stroke-width":3.5,"data-reveal-wing":part.id},
+        enter?"curve-wing-enter":"");
     }
+    if(count===PICTURE.pieces.length&&detailCount>0)
+      drawDetails(revealSvg,detailCount,finished?0:detailCount);
     $("graphRevealStatus").textContent=finished?
-      "Your "+PICTURE.name+" is complete! Both coloured wings are real intersections of quadratic inequalities.":
-      "Mathematical shape "+count+" of "+PICTURE.pieces.length+" revealed";
-    $("graphRevealTitle").textContent=finished?PICTURE.name+" ✦":"Your picture is coming to life!";
+      "Your "+PICTURE.name+" is complete! Real curved regions, beautiful finishing details.":
+      count<PICTURE.pieces.length?
+        "Mathematical wing "+count+" of "+PICTURE.pieces.length+" revealed":
+        detailCount>0?
+          CURVE_DETAIL_STAGES[detailCount-1].label:
+          "Both real quadratic regions have been filled. Here come the finishing touches…";
+    $("graphRevealTitle").textContent=finished?PICTURE.name+" ✦":
+      detailCount>0?"Your butterfly is coming to life!":"Your art is coming together!";
     $("curveRevealSkip").hidden=finished;
     $("curveRevealAgain").hidden=!finished;
     $("curveDownload").hidden=!finished;
   }
-  function showFinished(){stopReveal();revealStage(PICTURE.pieces.length,true);}
+  function showFinished(){
+    stopReveal();revealStage(PICTURE.pieces.length,CURVE_DETAIL_STAGES.length,true);
+  }
   function playReveal(){
     stopReveal();revealStage(0);
     if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
       showFinished();return;
     }
-    PICTURE.pieces.forEach((_,i)=>later(()=>revealStage(i+1),600*(i+1)));
-    later(showFinished,600*(PICTURE.pieces.length+1));
+    const n=PICTURE.pieces.length,pieceMs=630,detailMs=490;
+    PICTURE.pieces.forEach((_,i)=>later(()=>revealStage(i+1),pieceMs*(i+1)));
+    const start=pieceMs*(n+1);
+    for(const stage of CURVE_DETAIL_STAGES)
+      later(()=>revealStage(n,stage.stage),start+detailMs*(stage.stage-1));
+    later(showFinished,start+detailMs*CURVE_DETAIL_STAGES.length+300);
   }
   function openReveal(){
     if(reveal.showModal)reveal.showModal();

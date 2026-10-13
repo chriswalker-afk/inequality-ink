@@ -128,3 +128,70 @@ test("keyboard can choose a region and hints appear separately from feedback",()
   assert.equal(s.$("curvePicker").hidden,false);
   assert.equal(s.$("curvePlay").hidden,true);
 });
+
+const decorations=svg=>svg.children.filter(e=>e.getAttribute("data-curve-detail")!==null);
+test("butterfly decorations are a completion reward, not shown during play",()=>{
+  const s=session();
+  assert.equal(decorations(s.$("curvePreviewGraph")).length,0);
+  s.$("curvePictureCard").click();
+  s.app.pickAt(-1,0);s.$("graphCheckFill").click();
+  assert.equal(decorations(s.$("graphArtGraph")).length,0);
+  s.$("curveBack").click();
+  assert.equal(decorations(s.$("curvePreviewGraph")).length,0);
+  const completed=session({[CURVE_SAVE_KEY]:JSON.stringify({done:2})});
+  assert.ok(decorations(completed.$("curvePreviewGraph")).length>=25);
+  assert.ok(decorations(completed.$("curvePreviewGraph")).some(
+    e=>e.getAttribute("data-curve-detail")==="head"));
+});
+test("big reveal adds both wings, patterns, body and sparkles in ordered stages",()=>{
+  const s=session({[CURVE_SAVE_KEY]:JSON.stringify({done:1})});
+  s.$("curvePictureCard").click();
+  s.app.pickAt(1,0);s.$("graphCheckFill").click();
+  const board=s.$("graphRevealSvg");
+  assert.equal(decorations(board).length,0);
+  const ordered=[...s.callbacks.values()].sort((a,b)=>a.ms-b.ms);
+  assert.equal(ordered.length,6);
+  ordered[0].fn();
+  assert.equal(board.children.filter(e=>e.getAttribute("data-reveal-wing")).length,1);
+  ordered[1].fn();
+  assert.equal(board.children.filter(e=>e.getAttribute("data-reveal-wing")).length,2);
+  assert.equal(decorations(board).length,0);
+  ordered[2].fn();
+  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="upper-left-spot"));
+  assert.equal(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="head"),false);
+  assert.ok(decorations(board).some(e=>e.classList.contains("curve-detail-enter")));
+  ordered[3].fn();
+  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="head"));
+  assert.equal(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="star-upper-left"),false);
+  ordered[4].fn();
+  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="star-upper-left"));
+  ordered[5].fn();
+  assert.equal(s.$("curveDownload").hidden,false);
+  assert.match(s.$("graphRevealTitle").textContent,/Parabola Butterfly/);
+});
+test("skipping, replaying and closing reveal cancel pending decorations",()=>{
+  const s=session({[CURVE_SAVE_KEY]:JSON.stringify({done:1})});
+  s.$("curvePictureCard").click();
+  s.app.pickAt(1,0);s.$("graphCheckFill").click();
+  const board=s.$("graphRevealSvg");
+  s.$("curveRevealSkip").click();
+  assert.equal(s.callbacks.size,0);
+  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="star-upper-left"));
+  s.$("curveRevealAgain").click();
+  assert.equal(decorations(board).length,0);
+  assert.equal(s.callbacks.size,6);
+  s.$("curveRevealClose").click();
+  assert.equal(s.callbacks.size,0);
+  assert.equal(s.$("curveSummary").hidden,false);
+});
+test("reveal decorations remain clear on an ivory background",async()=>{
+  const {PICTURE,CURVE_DETAIL_STAGES}=await import("./regions/curved-engine.mjs");
+  assert.equal(CURVE_DETAIL_STAGES.length,3);
+  const ids=new Set(PICTURE.details.map(d=>d.id));
+  assert.equal(ids.size,PICTURE.details.length);
+  const outside=PICTURE.details.filter(d=>d.type==="star");
+  assert.ok(outside.length>=4);
+  assert.ok(outside.every(d=>d.stroke&&d.stroke!=="#ffffff"&&d.fill!=="#ffffff"));
+  assert.ok(PICTURE.details.some(d=>d.id==="left-antenna"));
+  assert.ok(PICTURE.details.some(d=>d.id==="right-antenna"));
+});
