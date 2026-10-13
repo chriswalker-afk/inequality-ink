@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {identicalSolution} from "./model.mjs";
 import {pictureById,pictureWidth,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
 import {paintTarget,makePaintQuestion} from "./paint-engine.mjs";
+import {QUEST_QUESTIONS,QUEST_SAVE_KEY,quadraticAnswer} from "./quadratic-quest.mjs";
 
 // Dependency-free miniature DOM for exercising the actual app module in Node.
 // This is not a visual browser test, but it catches broken wiring, navigation,
@@ -1318,4 +1319,147 @@ test("Optional practice stays within small picture number lines and excludes Pai
     "Paint offers immediate picture play, not unrelated number-line tutorials");
   // The Paint Starter was already completed in an earlier end-to-end test.
   // Its primary action now correctly replays the reveal instead of practice.
+});
+
+
+test("Quadratic Quest is optional, resumes independently, and reveals its picture after six exact answers",()=>{
+  // The original five mode saves and currently selected pictures are protected.
+  $("chooseLevelButton").click();
+  const baseSave=localStorage.getItem("inequality-ink-v5");
+  assert.ok($("questInviteTitle"),"Optional extension card must exist");
+  assert.equal($("questEnter").textContent,"Explore Quadratic Quest →");
+  assert.equal($("quadraticScreen").hidden,true);
+  $("questEnter").click();
+  assert.equal($("quadraticScreen").hidden,false);
+  assert.equal($("introScreen").hidden,true);
+  assert.equal($("questQuestionStep").textContent,"QUESTION 1 OF 6");
+  assert.equal($("questEquationText").textContent,QUEST_QUESTIONS[0].expression);
+  assert.equal($("questProgressText").textContent,"0 of 6 rows revealed");
+  assert.equal($("questArt").children.length,60);
+  assert.equal($("questFinished").hidden,true);
+  // Check and hints work, but an incorrect region must not reveal pixels.
+  $("questOutside").click();
+  $("questCheck").click();
+  assert.match($("questFeedback").textContent,/parabola/);
+  assert.equal($("questProgressText").textContent,"0 of 6 rows revealed");
+  $("questHint").click();
+  assert.equal($("questHintText").hidden,false);
+  assert.match($("questHintText").textContent,/bracket/);
+  $("questGraphToggle").click();
+  assert.equal($("questGraphPanel").hidden,false);
+  assert.equal($("questGraphToggle").getAttribute("aria-expanded"),"true");
+  assert.ok($("questGraph").children.some(node=>node.tagName==="path"),
+    "The helper must render an actual quadratic graph");
+  $("questGraphToggle").click();
+  assert.equal($("questGraphPanel").hidden,true);
+  $("questWorkingDetails").open=true;
+  $("questWorkingArea").value="(x-1)(x-3)<0";
+  for(const fn of $("questWorkingArea").listeners.get("input")||[])fn();
+  assert.ok($("questMathPreview").innerHTML.includes("<math "));
+  $("questWorkDraw").click();
+  assert.equal($("questDrawPanel").hidden,false);
+  $("questWorkType").click();
+  assert.equal($("questWorkingArea").value,"(x-1)(x-3)<0",
+    "Switching working methods should retain typed maths");
+
+  function solveQuestQuestion(index){
+    const expected=quadraticAnswer(QUEST_QUESTIONS[index]);
+    $(expected.region==="outside"?"questOutside":"questBetween").click();
+    // Set the upper root first, allowing the lower root to cross zero.
+    $("questUpper").value=String(expected.upper);
+    $("questUpper").change();
+    $("questLower").value=String(expected.lower);
+    $("questLower").change();
+    $(expected.lowerIncluded?"questLowerClosed":"questLowerOpen").click();
+    $(expected.upperIncluded?"questUpperClosed":"questUpperOpen").click();
+    assert.equal(Number($("questLower").value),expected.lower);
+    assert.equal(Number($("questUpper").value),expected.upper);
+    assert.equal($("questOutside").getAttribute("aria-pressed"),
+      String(expected.region==="outside"));
+
+    const original=globalThis.setTimeout;
+    let next=null;
+    globalThis.setTimeout=(fn,delay)=>{
+      if(delay===320||delay===850){next=fn;return -890;}
+      return original(fn,delay);
+    };
+    try{
+      $("questCheck").click();
+      assert.match($("questFeedback").textContent,/Correct!/);
+      assert.ok(next,"Correct Quest solutions should advance without a second button");
+      assert.equal($("questProgressText").textContent,
+        (index+1)+" of 6 rows revealed");
+      assert.equal($("questArtCount").textContent,(index+1)+" / 6");
+      assert.equal(localStorage.getItem("inequality-ink-v5"),baseSave,
+        "Quest must not change a normal picture score");
+      next();
+    }finally{globalThis.setTimeout=original;}
+  }
+
+  solveQuestQuestion(0);
+  assert.equal($("questQuestionStep").textContent,"QUESTION 2 OF 6");
+  assert.equal($("questWorkingArea").value,"",
+    "New question must have fresh optional working");
+  assert.equal($("questGraphPanel").hidden,true);
+  $("questBack").click();
+  assert.equal($("introScreen").hidden,false);
+  assert.equal($("quadraticScreen").hidden,true);
+  assert.match($("questEnter").textContent,/Continue Quadratic Quest/);
+  const partiallySaved=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY));
+  assert.equal(partiallySaved.done,1);
+  assert.equal(partiallySaved.firstTry,0,"Hints make the first question assisted");
+  assert.equal(partiallySaved.hints,1);
+  $("questEnter").click();
+  assert.equal($("questQuestionStep").textContent,"QUESTION 2 OF 6");
+  for(let i=1;i<6;i++)solveQuestQuestion(i);
+  assert.equal($("questPlaying").hidden,true);
+  assert.equal($("questFinished").hidden,false);
+  assert.equal($("questReveal").open,true,"Successful Quest completes with full-screen reveal");
+  assert.equal($("questRevealArt").children.length,60);
+  assert.equal($("questSolutions").children.length,6);
+  assert.match($("questFinalStats").textContent,/5\/6/);
+  $("questRevealClose").click();
+  assert.equal($("questReveal").open,false);
+  $("questFinishBack").click();
+  assert.equal($("introScreen").hidden,false);
+  assert.equal($("questEntryProgress").textContent.includes("All 6"),true);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),baseSave);
+  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)).done,6);
+  // Completion is revisit-able, and replay affects Quest only.
+  $("questEnter").click();
+  assert.equal($("questFinished").hidden,false);
+  $("questReplay").click();
+  assert.equal($("questQuestionStep").textContent,"QUESTION 1 OF 6");
+  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)).done,0);
+  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)).replay,1);
+  $("questBack").click();
+  assert.equal(localStorage.getItem("inequality-ink-v5"),baseSave);
+});
+
+test("Quadratic Quest root circles allow precise keyboard toggling and pointer gestures",()=>{
+  $("questEnter").click();
+  const svg=$("questLine");
+  const circles=svg.children.filter(e=>e.tagName==="g");
+  assert.equal(circles.length,2);
+  assert.equal(circles[0].getAttribute("role"),"button");
+  assert.equal(circles[0].getAttribute("tabindex"),"0");
+  const toggle={key:"Enter",preventDefault(){}};
+  for(const listener of circles[0].listeners.get("keydown")||[])listener(toggle);
+  assert.equal($("questLowerClosed").getAttribute("aria-pressed"),"true");
+  const before=$("questLower").value;
+  const gesture={pointerType:"touch",button:0,pointerId:700,
+    clientX:100,clientY:56,preventDefault(){}};
+  const current=svg.children.filter(e=>e.tagName==="g")[0];
+  for(const listener of current.listeners.get("pointerdown")||[])listener(gesture);
+  for(const listener of svg.listeners.get("pointerup")||[])listener(gesture);
+  assert.equal($("questLowerOpen").getAttribute("aria-pressed"),"true");
+  assert.equal($("questLower").value,before);
+  const again=svg.children.filter(e=>e.tagName==="g")[0];
+  for(const listener of again.listeners.get("pointerdown")||[])listener({...gesture,pointerId:701});
+  for(const listener of svg.listeners.get("pointermove")||[])
+    listener({...gesture,pointerId:701,clientX:170});
+  for(const listener of svg.listeners.get("pointerup")||[])
+    listener({...gesture,pointerId:701,clientX:170});
+  assert.notEqual($("questLower").value,before,"Dragging a circle changes its root");
+  $("questBack").click();
 });
