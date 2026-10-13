@@ -112,9 +112,9 @@ export const MIXED_PICTURES=Object.freeze([
     details:[
       [6,12,"#513f6a","antennae"],[6,11,"#674d79","antennae"],
       [2,9,"#f5d384","upper-wings"],[3,10,"#ffe1a6","upper-wings"],
-      [4,11,"#f6d6ee","upper-wings"],[3,8,"#ae69aa","upper-wings"],
+      [4,11,"#f6d6ee","upper-wings"],[5,8,"#ae69aa","upper-wings"],
       [2,3,"#fff0af","lower-wings"],[3,4,"#f7ddaa","lower-wings"],
-      [5,5,"#dde7f7","lower-wings"],[4,7,"#b9dbde","lower-wings"],
+      [5,5,"#dde7f7","lower-wings"],[5,7,"#b9dbde","lower-wings"],
       [6,9,"#453b62","body"],[6,7,"#514268","body"],
       [6,5,"#46385f","body"],[6,3,"#5b4168","body"],
       [6,1,"#6b507a","body"]
@@ -139,7 +139,7 @@ export const MIXED_PICTURES=Object.freeze([
     detailStages:["horns","eyes","scales","snout","sparkles"],
     details:[
       [6,14,"#f9dfab","horns"],[5,13,"#f6db9c","horns"],
-      [4,12,"#d5be86","horns"],[3,11,"#f1c784","horns"],
+      [4,12,"#d5be86","horns"],[4,11,"#f1c784","horns"],
       [4,10,"#283b57","eyes"],[5,10,"#f3d980","eyes"],
       [4,9,"#31506c","eyes"],[5,9,"#2a3d57","eyes"],
       [2,8,"#b7dfc6","scales"],[3,7,"#a5d7bd","scales"],
