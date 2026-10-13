@@ -25,45 +25,55 @@ mathematical marking, Quadratic Quest and Graph Art remain independent.
 
 ## Two art studios: Pixel Art / Graph Art
 
-A compact, shared **Pixel Art / Graph Art** switch at the top of the site lets
-students move between two intentionally **separate applications**:
+A shared **Pixel Art / Graph Art** selector switches between independent
+maths experiences. Pixel Art keeps its number-line modes and saved progress.
+Graph Art at [regions/](regions/) has its own **two modes, each with five
+unique pictures** and an independent saved journey:
 
-- **Pixel Art** is the existing number-line inequality game, its five modes
-  and optional Quadratic Quest. It still opens by default and retains all
-  existing student work, saved progress and the mobile one-screen painting
-  workflow.
-- **Graph Art** is an independent coordinate-graph experiment at
-  [regions/](regions/). It has its own modules, stylesheet, interaction
-  controls and `inequality-ink-graph-art-v1` save key. The first experiment is
-  **Aurora Crystal**, a stained-glass picture consisting of **five coloured,
-  mathematically genuine regions**: four triangular intersections of three
-  half-planes and a central diamond formed by four strict inequalities.
+- **Find & Fill:** all inequalities for one mathematical shape are shown
+  together. Students identify and paint their **common solution region**.
+  Incorrect regions flash and clear. A correct choice remains until **Check**
+  commits that genuine polygon to the picture.
+- **Build & Shade:** students decide **above/below** (or **left/right**) and
+  **solid/dashed** for every inequality. Each correct boundary receives an
+  inward arrow and narrows the translucent intersection. At the final
+  inequality the arrows converge, the actual intersection glows green, and
+  the shape settles into its colour. **Next piece** waits for the student's
+  decision so the maths can be studied before moving on.
 
-In Graph Art, the **shaded regions themselves form the picture**. The student
-chooses the correct side of a supplied boundary and chooses a solid or dashed
-line (or taps a side of the coordinate graph directly). A live preview
-intersects their candidate region with previously solved inequalities. Each
-correct decision narrows the region; completing the facet commits its actual
-computed polygon in colour. The first facet includes one worked/given
-inequality, so it takes only two decisions to complete, followed by three,
-three, three and four decisions. That's **15 decisions to complete five
-facets**, all visually drawn by mathematical half-plane clipping. The final
-crystal is not unrelated artwork unlocked for a correct answer.
+Both modes follow the Pixel Art progression labels **Starter → Step Up →
+Building → Challenge → Big Finish**. No stage is locked, and partial
+progress saves by picture and mode. The picture itself is always formed from
+real simultaneous inequalities; decorative finishing touches are added only
+after all mathematical regions have been completed.
 
-A small explanatory panel teaches the differences between half-planes,
-intersections, and strict versus inclusive boundaries. Test-point hints and
-no-penalty retries support independence. Finished decisions — even part-way
-through a facet — save locally. Students can resume or restart this experiment
-without touching Pixel Art or Quadratic Quest records.
+| Stage | Find & Fill picture | Pieces | Build & Shade picture | Pieces | Mathematical step |
+| --- | --- | ---: | --- | ---: | --- |
+| Starter | Signal Flag | 2 | Wrapped Gift | 2 | Horizontal/vertical, solid |
+| Step Up | Little House | 3 | Mountain Morning | 3 | Rising/falling diagonals |
+| Building | Sailboat Sunset | 4 | Friendly Robot | 4 | Mixed gradients, strict/dashed |
+| Challenge | Origami Fox | 6 | Aurora Crystal | 5 | Standard forms/fractional gradients; strict crystal core |
+| Big Finish | Cosmic Rocket | 9 | Moonlit Castle | 8 | Longer multi-region pictures with mixed forms |
 
-This is deliberately **one prototype, not another full five-stage course**.
-The boundary lines are provided to keep attention on shading; line-drawing
-and more complicated feasible regions can be explored after classroom testing.
-The engine lives at `regions/regions-engine.mjs` with a pure convex polygon
-clipper and real-valued inequality evaluator; `regions/regions-app.mjs`
-provides the responsive, keyboard-friendly UI. `regions.test.mjs` verifies
-the exact five polygon areas, the full diamond geometry, solid/dashed logic,
-both studio links and a 15-decision simulated student run.
+Every non-legacy piece is authored as a convex polygon; the app derives its
+linear inequalities from the edges. The gallery validator confirms each
+inequality is a real boundary, the intersection has the exact authored area,
+and piece counts increase strictly in both modes. Students' drawings
+**cannot** be unlocked by answering unrelated questions.
+
+The original **Little House** and **Aurora Crystal** IDs, piece order,
+inequalities and saved progress remain intact. Existing work in the other
+mode is retained in an optional **Earlier pictures with saved progress**
+section rather than deleted. The retired v1 Aurora Crystal completion can
+still be imported. Pixel Art and Quadratic Quest saves are not changed.
+
+Graph Art uses the dependency-free half-plane clipper in
+regions/regions-engine.mjs, the authored ten-picture gallery in
+regions/graph-art-pictures.mjs and the interactive UI in
+regions/regions-app.mjs. regions.test.mjs checks ten pictures, valid
+mathematics and displayed inequality notation, fill/arrow/solid-dashed
+interactions, persistent progress, reduced motion, the full Rocket and
+Castle journeys, and the staged celebration.
 
 ## Optional extension: Quadratic Quest — full five-picture journey
 
