@@ -187,7 +187,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       saved.records[p.id]?.done===p.pieces.length).length;
     const recommended=PLOT_PICTURES.find(p=>
       saved.records[p.id]?.done!==p.pieces.length)||PLOT_PICTURES[4];
-    $("plotGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+    $("plotGalleryProgress").textContent=completed+" of 5 completed · "+
       (completed===5?"All five stages complete!":"Next: "+recommended.stage);
     const stages=$("plotStageTrack");stages.replaceChildren();
     for(const p of PLOT_PICTURES){
@@ -784,10 +784,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   $("plotRestart").addEventListener("click",restart);
   $("plotRestartPlaying").addEventListener("click",restart);
   $("plotChooseAgain").addEventListener("click",()=>setScreen("picker"));
-  $("plotNextPicture").addEventListener("click",()=>{
-    const next=PLOT_PICTURES[picture().step];
-    if(next)choosePicture(next.id);else setScreen("picker");
-  });
+  // Like Pixel Art and the other Graph Art modes, Next returns to the
+  // gallery with the recommended unfinished picture highlighted.
+  $("plotNextPicture").addEventListener("click",()=>setScreen("picker"));
   $("plotRevealClose").addEventListener("click",closeReveal);
   $("plotRevealSkip").addEventListener("click",showFinished);
   $("plotRevealAgain").addEventListener("click",playReveal);
