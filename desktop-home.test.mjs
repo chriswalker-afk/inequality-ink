@@ -92,6 +92,44 @@ test("Both studios use the same labelled SVG segmented navigation",()=>{
   assert.ok(css.includes('.studio-switch .studio-tab[aria-current="page"]'));
   assert.ok(css.includes('background:#2e3b58;'));
   assert.ok(css.includes('.studio-switch .studio-icon svg{'));
-  assert.ok(html.includes('href="./styles.css?v=desktop-home-v1"'));
-  assert.ok(graph.includes('href="../styles.css?v=desktop-home-v1"'));
+  assert.ok(html.includes('href="./styles.css?v=paint-desktop-v2"'));
+  assert.ok(graph.includes('href="../styles.css?v=paint-desktop-v2"'));
+});
+
+
+test("Desktop Paint by Inequalities keeps the artwork and tools properly sized",()=>{
+  const start=css.indexOf("/* Desktop Paint by Inequalities:");
+  const end=css.indexOf("/* Phones: miniature artwork beside its rules",start);
+  assert.ok(start>0&&end>start,"Expected desktop paint styles before phone overrides");
+  const desktop=css.slice(start,end);
+  assert.ok(desktop.includes("@media(min-width:741px)"));
+  assert.ok(desktop.includes('"artwork ."'),
+    "Center the palette and painting tools alongside the tall artwork");
+  assert.ok(desktop.includes('"artwork palette"'));
+  assert.ok(desktop.includes('"artwork focus"'));
+  assert.ok(desktop.includes('"artwork actions"'));
+  assert.ok(desktop.includes(".paint-main-stage{display:contents}"),
+    "Promote preview and palette into the desktop grid without changing HTML");
+  assert.ok(desktop.includes("grid-area:artwork"));
+  assert.ok(desktop.includes("max-height:min(100%,65dvh,53vw)"),
+    "Artwork should use available height without becoming too wide");
+  assert.ok(desktop.includes("max-height:min(235px,31dvh)"),
+    "Large desktops should keep short palettes compact instead of stretching them");
+  assert.ok(desktop.includes("repeat(auto-fit,minmax(175px,1fr))"),
+    "Compact palette tiles must flow across the desktop column");
+  assert.ok(desktop.includes(".paint-focus-row{width:100%;max-width:660px}"),
+    "The enlarged row must not span the entire page");
+  assert.ok(desktop.includes(".paint-controls{"));
+  assert.ok(desktop.includes("max-width:660px;"),
+    "Keep the Check action beside the enlarged row, not full-bleed");
+  assert.ok(desktop.includes("@media(min-width:741px) and (max-height:650px)"),
+    "Short desktop viewports should not squash the artwork");
+  const mobile=css.slice(end,css.indexOf("/* Extremely short landscape",end));
+  assert.ok(mobile.includes("@media(max-width:740px)"));
+  assert.ok(mobile.includes(".paint-main-stage{"));
+  assert.ok(mobile.includes("grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)"),
+    "Retain the working phone preview/palette arrangement");
+  assert.ok(mobile.includes(".paint-help-note{display:none}"));
+  assert.ok(html.includes('href="./styles.css?v=paint-desktop-v2"'),
+    "Use a new asset URL so returning students see the corrected layout");
 });
