@@ -60,7 +60,7 @@ function rootFactor(root){
   return "(x "+(root<0?"+ "+(-root):"− "+root)+")";
 }
 function factorForm(a,roots){
-  const scalar=a===1?"":a===-1?"−":String(a);
+  const scalar=a===1?"":a===-1?"−":a<0?"−"+Math.abs(a):String(a);
   return scalar+rootFactor(roots[0])+rootFactor(roots[1]);
 }
 const signGlyph=Object.freeze({"<":"<",">":">","<=":"≤",">=":"≥"});
