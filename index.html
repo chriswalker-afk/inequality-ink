@@ -7,7 +7,7 @@
   <meta name="description" content="Practise inequalities on interactive number lines and reveal colourful pixel-art pictures as you go." />
   <title>Inequality Ink | Pixel-art maths</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M12 12h18v18H12zm22 0h18v18H34zM12 34h18v18H12z' fill='%23f6a17e'/%3E%3Cpath d='M34 34h18v18H34z' fill='%237cc2af'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=desktop-home-v1" />
   <script type="module" src="./app.mjs"></script>
 </head>
 <body>
@@ -21,8 +21,8 @@
       </a>
       <div class="top-actions">
         <nav class="studio-switch" aria-label="Art style">
-          <a class="studio-tab is-active" href="./" aria-current="page">▦ Pixel Art</a>
-          <a class="studio-tab" href="./regions/">◇ Graph Art</a>
+          <a class="studio-tab is-active" href="./" aria-current="page"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.2"/><rect x="11" y="2" width="7" height="7" rx="1.2"/><rect x="2" y="11" width="7" height="7" rx="1.2"/><rect x="11" y="11" width="7" height="7" rx="1.2"/></svg></span><span>Pixel Art</span></a>
+          <a class="studio-tab" href="./regions/"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M2.5 2.5v15h15"/><path d="m2.5 12 7.5-7 7.5 8v4.5h-15z" fill="currentColor" fill-opacity=".17"/><path d="m2.5 12 7.5-7 7.5 8" stroke-linejoin="round"/></svg></span><span>Graph Art</span></a>
         </nav>
         <button type="button" id="helpButton" class="top-button">How to play <span aria-hidden="true">?</span></button>
       </div>
@@ -32,14 +32,15 @@
       <section id="introScreen" class="intro-grid" aria-labelledby="introTitle">
         <div class="intro-copy">
           <div class="eyebrow"><span class="spark-dot"></span> THE NUMBER-LINE ART STUDIO</div>
-          <h1 id="introTitle">Every inequality<br><em>paints a line.</em></h1>
+          <h1 id="introTitle">Every inequality<br> <em>paints a line.</em></h1>
           <p class="intro-lead" id="introLead">Represent inequalities on number lines. Each correct answer reveals more of a mystery picture. Finish to see it come together in full colour.</p>
           <div class="intro-steps">
             <div><span>01</span><p id="introStepOne"><b>Read or solve</b> the inequality.</p></div>
             <div><span>02</span><p id="introStepTwo"><b>Plot the endpoints</b> with the right circles.</p></div>
             <div><span>03</span><p id="introStepThree"><b>Finish the picture</b> to discover the colourful surprise.</p></div>
           </div>
-          
+        </div>
+        <div class="intro-challenge-column">
           <div class="level-heading"><span class="eyebrow">CHOOSE YOUR CHALLENGE</span><span id="levelProgress" aria-live="polite"></span></div>
           <div class="level-grid" role="group" aria-label="Difficulty level">
             <button type="button" data-level="mirror" class="level-card selected" aria-pressed="true">
@@ -59,51 +60,55 @@
             </button>
           </div>
           <p id="levelDescription" class="level-description">Represent one-sided inequalities to complete a mystery picture.</p>
-          <div class="picture-picker-shell">
-            <div class="picture-picker-heading">
-              <span class="eyebrow">CHOOSE A PICTURE</span>
-              <span id="picturePickerStatus" aria-live="polite">5 steps to explore</span>
-            </div>
-            <p id="pictureJourneyHelp" class="picture-journey-help">Start with a quick win, then build to bigger pictures.</p>
-            <div class="picture-path-heading">
-              <strong>Your picture journey</strong>
-              <span id="picturePathProgress" aria-live="polite">0 of 5 completed</span>
-            </div>
-            <div id="pictureStepTrack" class="picture-step-track" aria-label="Five-step picture journey"></div>
-            <div id="picturePicker" class="picture-picker" role="group" aria-label="Choose a picture"></div>
-            <details id="morePicturesSection" class="more-pictures">
-              <summary id="morePicturesToggle">More pictures</summary>
-              <div id="extraPicturePicker" class="picture-picker extra-picture-picker" role="group" aria-label="More pictures"></div>
-            </details>
-          </div>
-          <div class="intro-buttons">
-            <button type="button" class="button button-primary button-large" id="startButton">Start picture ↗</button>
-            <button type="button" class="button button-light" id="practiceButton"
-              title="Try two number-line questions without changing picture progress">Just for practice</button>
-          </div>
-          <p id="practiceStatus" class="practice-status" role="status" aria-live="polite" hidden></p>
-          <p class="tiny-copy" id="pictureSummary">14 picture rows • About 15–20 minutes • No login needed</p>
-          <section class="quest-invite" aria-labelledby="questInviteTitle">
-            <div class="quest-invite-copy">
-              <span class="eyebrow">OPTIONAL EXTENSION ✦</span>
-              <h2 id="questInviteTitle">Quadratic Quest</h2>
-              <p>Five optional mystery pictures, from simple factorised quadratics to a full mixed challenge. Your normal picture journey stays separate.</p>
-            </div>
-            <div class="quest-invite-actions">
-              <button type="button" id="questEnter" class="button button-light">Explore Quadratic Quest →</button>
-              <span id="questEntryProgress">5 pictures · 6 to 14 questions · Separate progress</span>
-            </div>
-          </section>
         </div>
-        <div class="intro-art" aria-hidden="true">
-          <div class="sticker sticker-top">mystery<br>picture!</div>
-          <div class="intro-art-frame">
-            <div class="art-frame-heading"><span class="status-dot"></span> YOUR CANVAS <span id="introGridSize">10 × 16</span></div>
-            <svg id="introPixelArt" class="intro-sprite" viewBox="0 0 10 16" role="img" aria-label="A partially shaded pixel-art canvas"></svg>
-            <div class="art-caption"><span>◼ ◼ ◻ ◻</span> <span id="introArtCaption">Keep solving to reveal more</span></div>
+        <div class="picture-picker-shell">
+          <div class="picture-picker-heading">
+            <span class="eyebrow">CHOOSE A PICTURE</span>
+            <span id="picturePickerStatus" aria-live="polite">5 steps to explore</span>
           </div>
-          <div class="sticker sticker-bottom">Made for curious mathematicians ✦</div>
+          <p id="pictureJourneyHelp" class="picture-journey-help">Start with a quick win, then build to bigger pictures.</p>
+          <div class="picture-path-heading">
+            <strong>Your picture journey</strong>
+            <span id="picturePathProgress" aria-live="polite">0 of 5 completed</span>
+          </div>
+          <div id="pictureStepTrack" class="picture-step-track" aria-label="Five-step picture journey"></div>
+          <div id="picturePicker" class="picture-picker" role="group" aria-label="Choose a picture"></div>
+          <details id="morePicturesSection" class="more-pictures">
+            <summary id="morePicturesToggle">More pictures</summary>
+            <div id="extraPicturePicker" class="picture-picker extra-picture-picker" role="group" aria-label="More pictures"></div>
+          </details>
         </div>
+        <div class="intro-canvas-column">
+          <div class="intro-art" aria-hidden="true">
+            <div class="sticker sticker-top">mystery<br>picture!</div>
+            <div class="intro-art-frame">
+              <div class="art-frame-heading"><span class="status-dot"></span> YOUR CANVAS <span id="introGridSize">10 × 16</span></div>
+              <svg id="introPixelArt" class="intro-sprite" viewBox="0 0 10 16" role="img" aria-label="A partially shaded pixel-art canvas"></svg>
+              <div class="art-caption"><span>◼ ◼ ◻ ◻</span> <span id="introArtCaption">Keep solving to reveal more</span></div>
+            </div>
+            <div class="sticker sticker-bottom">Made for curious mathematicians ✦</div>
+          </div>
+          <div class="intro-action-column">
+            <div class="intro-buttons">
+              <button type="button" class="button button-primary button-large" id="startButton">Start picture ↗</button>
+              <button type="button" class="button button-light" id="practiceButton"
+                title="Try two number-line questions without changing picture progress">Just for practice</button>
+            </div>
+            <p id="practiceStatus" class="practice-status" role="status" aria-live="polite" hidden></p>
+            <p class="tiny-copy" id="pictureSummary">14 picture rows • About 15–20 minutes • No login needed</p>
+          </div>
+        </div>
+        <section class="quest-invite" aria-labelledby="questInviteTitle">
+          <div class="quest-invite-copy">
+            <span class="eyebrow">OPTIONAL EXTENSION ✦</span>
+            <h2 id="questInviteTitle">Quadratic Quest</h2>
+            <p>Five optional mystery pictures, from simple factorised quadratics to a full mixed challenge. Your normal picture journey stays separate.</p>
+          </div>
+          <div class="quest-invite-actions">
+            <button type="button" id="questEnter" class="button button-light">Explore Quadratic Quest →</button>
+            <span id="questEntryProgress">5 pictures · 6 to 14 questions · Separate progress</span>
+          </div>
+        </section>
       </section>
 
       <section id="playScreen" class="play-screen" hidden aria-labelledby="playTitle">

@@ -1046,3 +1046,307 @@ body.paint-session{overflow:hidden}
 @media(max-width:380px){
   .studio-tab{font-size:.71rem;padding:6px 4px}
 }
+
+
+/* Desktop home workspace v1 — retain the existing mobile card styling and
+   game screens while making Start picture visible on laptop-height displays. */
+@media(min-width:741px){
+  .topbar{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    align-items:center;
+    padding:7px 0 14px;
+  }
+  .topbar .brand{grid-column:1;grid-row:1;justify-self:start}
+  .topbar .top-actions{display:contents}
+  .topbar .studio-switch{grid-column:2;grid-row:1;justify-self:center}
+  .topbar .top-actions>.top-button{
+    grid-column:3;grid-row:1;justify-self:end
+  }
+  #introScreen.intro-grid{
+    min-height:0;
+    align-items:start;
+    padding:7px 0 34px;
+    column-gap:clamp(14px,1.7vw,23px);
+    row-gap:15px;
+  }
+  #introScreen .intro-copy{grid-area:intro;min-width:0}
+  #introScreen .intro-copy .eyebrow{font-size:.65rem}
+  #introScreen .intro-copy h1{
+    font-size:clamp(2.1rem,3.3vw,2.9rem);
+    letter-spacing:-.07em;
+    line-height:1.1;
+    margin:8px 0 5px;
+  }
+  #introScreen .intro-copy h1 br{display:none}
+  #introScreen .intro-lead{
+    font-size:.88rem;
+    line-height:1.48;
+    max-width:960px;
+    margin:0;
+    color:#727d8a;
+  }
+  #introScreen .intro-steps{display:none}
+  #introScreen .intro-challenge-column{
+    grid-area:challenges;min-width:0
+  }
+  #introScreen .level-heading{
+    margin:1px 0 8px;gap:7px
+  }
+  #introScreen .level-heading #levelProgress{
+    font-size:.68rem;white-space:nowrap
+  }
+  #introScreen .level-grid{
+    grid-template-columns:1fr;
+    max-width:none;gap:7px
+  }
+  #introScreen .level-card{
+    min-height:52px;padding:8px 10px;
+    border-radius:12px;gap:9px
+  }
+  #introScreen .level-card b{font-size:.77rem}
+  #introScreen .level-card small{font-size:.65rem}
+  #introScreen .level-icon{
+    width:30px;height:30px;flex:0 0 30px;font-size:1rem
+  }
+  #introScreen .level-description{
+    min-height:0;font-size:.73rem;
+    line-height:1.45;margin:8px 0 0
+  }
+  #introScreen .picture-picker-shell{
+    grid-area:pictures;min-width:0;
+    max-width:none;margin:0
+  }
+  #introScreen .picture-picker-heading{margin:2px 0 7px;gap:7px}
+  #introScreen .picture-picker-heading #picturePickerStatus{
+    font-size:.67rem;white-space:nowrap
+  }
+  #introScreen .picture-journey-help{display:none}
+  #introScreen .picture-path-heading{margin:6px 0 5px;gap:7px}
+  #introScreen .picture-path-heading strong,
+  #introScreen .picture-path-heading span{font-size:.69rem}
+  #introScreen .picture-step-track{margin:6px 0 10px;gap:5px}
+  #introScreen .picture-step{height:21px}
+  #introScreen .picture-picker{
+    grid-template-columns:1fr;gap:7px
+  }
+  #introScreen .picture-option{
+    padding:8px 9px;min-height:54px;
+    border-radius:12px;gap:8px
+  }
+  #introScreen .picture-option-icon{
+    width:32px;height:32px;flex-basis:32px;border-radius:9px
+  }
+  #introScreen .picture-option-copy{gap:2px}
+  #introScreen .picture-option-copy strong{font-size:.78rem}
+  #introScreen .picture-option-copy small{font-size:.64rem}
+  #introScreen .picture-option-meta{font-size:.63rem}
+  #introScreen .more-pictures{margin:8px 0 0;padding:0 10px}
+  #introScreen .more-pictures summary{padding:8px 3px;font-size:.72rem}
+  #introScreen .extra-picture-picker{
+    grid-template-columns:1fr;
+    padding-bottom:9px
+  }
+  #introScreen .intro-canvas-column{
+    grid-area:canvas;
+    display:flex;flex-direction:column;
+    align-self:start;min-width:0
+  }
+  #introScreen .intro-art{
+    position:relative;
+    max-width:none;
+    padding:8px 12px 11px;
+    margin:0
+  }
+  #introScreen .intro-art-frame{
+    padding:12px;
+    border-radius:18px;
+    transform:rotate(1deg)
+  }
+  #introScreen .art-frame-heading{font-size:.63rem}
+  #introScreen .intro-sprite{
+    display:block;
+    width:auto;
+    height:clamp(160px,26vh,218px);
+    max-width:100%;
+    max-height:218px;
+    margin:8px auto 9px
+  }
+  #introScreen .art-caption{font-size:.71rem}
+  #introScreen .sticker{
+    font-size:.64rem;padding:7px 9px;border-radius:10px
+  }
+  #introScreen .sticker-top{top:-2px;right:0}
+  #introScreen .sticker-bottom{left:0;bottom:0}
+  #introScreen .intro-action-column{margin-top:7px}
+  #introScreen .intro-buttons{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:8px;
+  }
+  #introScreen .intro-buttons .button{min-width:0;white-space:nowrap}
+  #introScreen #startButton{
+    min-height:46px;
+    padding:11px 12px;
+    font-size:.81rem;
+  }
+  #introScreen #practiceButton{
+    padding:10px 11px;
+    font-size:.72rem
+  }
+  #introScreen .tiny-copy{
+    margin:10px 0 0;
+    text-align:center;
+    font-size:.68rem
+  }
+  #introScreen .practice-status{margin:8px 0 0;font-size:.72rem}
+  #introScreen .quest-invite{
+    grid-area:extensions;
+    margin:2px 0 0;
+    padding:13px 16px;
+    border-radius:14px;
+  }
+  #introScreen .quest-invite h2{font-size:1.12rem;margin:3px 0}
+  #introScreen .quest-invite p{max-width:720px;font-size:.75rem}
+}
+/* Keep the main three decisions side by side on large desktops. */
+@media(min-width:1200px){
+  #introScreen.intro-grid{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.91fr);
+    grid-template-areas:
+      "intro intro intro"
+      "challenges pictures canvas"
+      "extensions extensions extensions";
+  }
+}
+/* At tablet and small laptop widths, keep Start beside the selectors.
+   The canvas never pushes the Start action below the picture list. */
+@media(min-width:741px) and (max-width:1199px){
+  #introScreen.intro-grid{
+    grid-template-columns:minmax(0,1fr) minmax(0,.95fr);
+    grid-template-areas:
+      "intro intro"
+      "challenges canvas"
+      "pictures canvas"
+      "extensions extensions";
+    row-gap:12px;
+  }
+  #introScreen .intro-canvas-column{position:sticky;top:12px}
+  #introScreen .level-grid,
+  #introScreen .picture-picker{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  #introScreen .level-card{padding:8px 7px;gap:6px}
+  #introScreen .level-card b{font-size:.72rem}
+  #introScreen .level-card small{font-size:.61rem}
+  #introScreen .level-icon{width:27px;height:27px;flex-basis:27px}
+  #introScreen .picture-option{padding:7px;gap:6px}
+  #introScreen .picture-option-icon{
+    width:28px;height:28px;flex-basis:28px
+  }
+  #introScreen .picture-option-copy strong{font-size:.72rem}
+  #introScreen .picture-option-copy small,
+  #introScreen .picture-option-meta{font-size:.61rem}
+  #introScreen .intro-sprite{height:clamp(170px,30vh,255px);max-height:255px}
+  #introScreen .extra-picture-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+/* The existing mobile reading order, headline and large cards are preserved.
+   Display:contents only separates the canvas preview from its action buttons
+   so Start remains before the optional extension, as in the original design. */
+@media(max-width:740px){
+  #introScreen.intro-grid{
+    display:grid;
+    min-height:0;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:
+      "intro"
+      "challenges"
+      "pictures"
+      "actions"
+      "extensions"
+      "art";
+    gap:0;
+    align-items:start;
+    padding:28px 0;
+  }
+  #introScreen .intro-copy{grid-area:intro;min-width:0}
+  #introScreen .intro-challenge-column{grid-area:challenges;min-width:0}
+  #introScreen .picture-picker-shell{grid-area:pictures;min-width:0}
+  #introScreen .intro-canvas-column{display:contents}
+  #introScreen .intro-action-column{grid-area:actions;min-width:0}
+  #introScreen .quest-invite{grid-area:extensions}
+  #introScreen .intro-art{grid-area:art}
+}
+
+/* Polished, centred studio navigation; stable even for previously visited
+   links. SVG symbols replace the Unicode characters of the first prototype. */
+.studio-switch{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  padding:4px;
+  border-radius:13px;
+  border:1px solid #e0ded9;
+  background:#eeece7;
+  white-space:nowrap;
+}
+.studio-switch .studio-tab{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:39px;
+  border-radius:9px;
+  padding:9px 15px;
+  background:transparent;
+  color:#65738a;
+  font-size:.8rem;
+  font-weight:800;
+  letter-spacing:0;
+  line-height:1;
+  text-decoration:none;
+  box-shadow:none;
+  transition:background .15s,color .15s;
+}
+.studio-switch .studio-tab:visited:not([aria-current="page"]){
+  color:#65738a;
+  text-decoration:none;
+}
+.studio-switch .studio-tab:hover:not([aria-current="page"]){
+  background:#faf8f4;color:#314b62;text-decoration:none;
+}
+.studio-switch .studio-tab.is-active,
+.studio-switch .studio-tab[aria-current="page"],
+.studio-switch .studio-tab[aria-current="page"]:visited{
+  background:#2e3b58;
+  color:#fff;
+  box-shadow:0 2px 6px #17274025;
+  text-decoration:none;
+}
+.studio-switch .studio-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:17px;height:17px;flex:0 0 17px
+}
+.studio-switch .studio-icon svg{
+  display:block;width:17px;height:17px;
+  stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round
+}
+@media(max-width:740px){
+  .studio-switch{width:auto;max-width:100%;flex:1 1 auto}
+  .studio-switch .studio-tab{
+    flex:1 1 50%;padding:8px 9px;
+    min-height:38px;font-size:.76rem;gap:6px
+  }
+}
+@media(max-width:380px){
+  .studio-switch .studio-tab{padding:7px 6px;font-size:.72rem}
+}
+
+/* Narrow phones: let the switch wrap naturally rather than clip or shrink labels. */
+@media(max-width:350px){
+  .topbar .top-actions{flex-wrap:wrap}
+  .topbar .studio-switch{flex:1 1 100%;width:100%}
+  .topbar .top-actions>.top-button{margin-left:auto}
+}
