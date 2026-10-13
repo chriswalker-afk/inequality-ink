@@ -86,8 +86,8 @@ The historical [Phase 3 prototype](PLOT_SHADE_PROTOTYPE.md) remains available.
 
 A shared **Pixel Art / Graph Art** selector switches between independent
 maths experiences. Pixel Art keeps its number-line modes and saved progress.
-Graph Art at [regions/](regions/) has **three modes, each with five unique
-pictures** and independently saved journeys:
+Graph Art at [regions/](regions/) has **four modes, each with five unique
+primary pictures**, optional Step Up practice art, and independently saved journeys:
 
 - **Find & Fill:** all inequalities for one mathematical shape are shown
   together. Students identify and paint their **common solution region**.
@@ -103,8 +103,11 @@ pictures** and independently saved journeys:
   quadratic curves, absolute-value graphs, circles and straight lines.
   Five unique pictures progress from two to seven coloured pieces. Correct
   selections persist until Check; incorrect curved regions flash red and clear.
+- **Plot & Shade:** students construct missing boundaries with exact points,
+  choose solid or dashed, then fill the common region. Lines, circles,
+  parabolas and V-shaped graphs build five pictures from two to seven pieces.
 
-All three modes follow the Pixel Art progression labels **Starter → Step Up →
+All four modes follow the Pixel Art progression labels **Starter → Step Up →
 Building → Challenge → Big Finish**. No stage is locked, and partial
 progress saves by picture and mode. The picture itself is always formed from
 real simultaneous inequalities; decorative finishing touches are added only
