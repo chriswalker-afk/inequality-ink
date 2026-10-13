@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {initPlotArt,PLOT_SAVE_KEY,PLOT_SAVE_KEY_V2,readPlotSave}
   from "./regions/plot-art.mjs";
-import {PLOT_PICTURES,plotSteps,plotRule} from "./regions/plot-pictures.mjs";
+import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES,plotSteps,plotRule,validatePlotGallery} from "./regions/plot-pictures.mjs";
 import {satisfiesAll,curvedCellAt} from "./regions/curved-engine.mjs";
 
 class Element{
@@ -368,4 +368,32 @@ test("Plot picture deep links launch directly and return to unified Graph Art",(
   assert.equal(s.redirects.at(-1),"./?mode=plot&picture=ice-cream-dream");
   const direct=session({},false,"?picture=invalid-picture");
   assert.equal(direct.$("plotPicker").hidden,false);
+});
+
+
+test("Snow Globe practices two circles and a line in a separate saved Plot & Shade picture",()=>{
+  assert.equal(validatePlotGallery(),true);
+  assert.equal(PLOT_PRACTICE_PICTURES.length,1);
+  const p=PLOT_PRACTICE_PICTURES[0];
+  assert.equal(p.step,2);
+  assert.equal(p.pieces.length,3);
+  const s=session();
+  assert.equal(s.$("plotPictureCards").children.length,5);
+  assert.equal(s.$("plotPracticeCards").children.length,1);
+  s.$("plotPracticeCards").children[0].click();
+  assert.equal(s.$("plotGameTitle").textContent,p.name);
+  for(const part of p.pieces){
+    for(let i=0;i<plotSteps(part).length;i++)plotBoundary(s,part,i);
+    const spot=spotFor(part);
+    s.app.pickAt(spot.x,spot.y);
+    s.$("plotCheckRegion").click();
+  }
+  assert.equal(s.$("plotSummary").hidden,false);
+  assert.equal(s.$("plotNextPicture").hidden,true);
+  assert.equal(s.$("plotReveal").getAttribute("open"),"");
+  assert.equal(s.app.readProgress().done,3);
+  const restored=session(Object.fromEntries(s.store),false,"?picture="+p.id);
+  assert.equal(restored.$("plotSummary").hidden,false);
+  assert.equal(restored.app.readProgress().done,3);
+  assert.equal(restored.$("plotPictureCards").children.length,5);
 });
