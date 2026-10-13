@@ -461,7 +461,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function checkPlot(){
     if(save.phase!=="plot"||screen!=="play")return;
-    const checked=checkConstruction({kind:current().plot.kind,
+    const checked=checkConstruction({kind:step().kind,
       rule:targetRule()},save.points);
     if(!checked.correct){
       notify(checked.message,"error");playView();return;
@@ -483,8 +483,20 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     if(save.phase!=="style")return;
     const result=checkBoundaryStyle(targetRule(),save.styleChoice);
     if(!result.correct){notify(result.message,"error");playView();return;}
-    save.phase="shade";hint="";persist();
-    notify(result.message,"success");playView();
+    save.verified.push({ruleId:step().ruleId,style:save.styleChoice,
+      points:save.points.map(pt=>({...pt}))});
+    save.plotIndex++;save.points=[];save.styleChoice=null;
+    activePoint=-1;cursor={x:0,y:0};hint="";
+    const total=plotSteps(current()).length;
+    if(save.plotIndex<total){
+      save.phase="plot";
+      notify("Correct boundary! "+save.plotIndex+" of "+total+
+        " built. Now plot the next missing graph.","success");
+    }else{
+      save.phase="shade";
+      notify("All boundaries constructed! Now fill their common region.","success");
+    }
+    persist();playView();
   }
   function pickAt(x,y){
     if(screen!=="play"||save.phase!=="shade")return;
@@ -526,7 +538,8 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       notify("Check which inequalities are true.","error");playView();return;
     }
     save.done++;save.phase="plot";save.points=[];
-    save.styleChoice=null;persist();selected=null;clearFlash();
+    save.styleChoice=null;save.plotIndex=0;save.verified=[];
+    persist();selected=null;clearFlash();drag=null;
     activePoint=-1;cursor={x:0,y:0};hint="";
     if(!current()){setScreen("summary");openReveal();}
     else{
@@ -535,18 +548,13 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }
   }
   function restart(){
-    clearFlash();stopReveal();
-    save=fresh();save.replays=readPlotSave(storage).replays+1;
+    clearFlash();stopReveal();drag=null;
+    const replays=save.replays;
+    save=fresh();save.replays=replays+1;
     selected=null;activePoint=-1;cursor={x:0,y:0};hint="";
     persist();notify("Begin by plotting the missing graph.");setScreen("play");
   }
-  function begin(){
-    if(save.done===PLOT_PICTURE.pieces.length)restart();
-    else{
-      clearFlash();selected=null;hint="";notify("Continue your mathematical picture.");
-      setScreen("play");
-    }
-  }
+  function begin(){choosePicture(saved.picture);}
   function stopReveal(){
     for(const id of revealTimers)win.clearTimeout?.(id);
     revealTimers=[];
