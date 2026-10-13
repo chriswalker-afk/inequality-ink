@@ -292,6 +292,12 @@ export function validatePicture(picture){
        step<1||step>PICTURE_TIERS.length)
       throw Error(picture.id+": invalid progression stage for "+level);
   }
+  for(const [level,step] of Object.entries(picture.legacyMathStage||{})){
+    if(!picture.levels.includes(level)||!Number.isInteger(step)||
+       step<1||step>PICTURE_TIERS.length||
+       Number.isInteger(picture.progression?.[level]))
+      throw Error(picture.id+": invalid preserved maths stage for "+level);
+  }
   if(picture.family==="half"&&(picture.levels.length!==1||picture.levels[0]!=="mirror"))
     throw Error(picture.id+": half pictures require Mirror Mode");
   if(picture.paint)validatePaintPicture(picture);
