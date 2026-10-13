@@ -1,6 +1,6 @@
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,
-  signedDifference
+  signedDifference,satisfiesAll
 } from "./curved-engine.mjs";
 import {
   CURVE_PICTURES,CURVE_STAGES,curvePicture,validateCurveGallery
@@ -449,8 +449,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   function hintPoint(part){
     const candidates=[];
     for(let x=-4.5;x<=4.5;x+=.5)for(let y=-4.5;y<=4.5;y+=.5){
-      const match=curvedCellAt(part.rules,x,y,.14);
-      if(match?.correct){
+      if(satisfiesAll(part.rules,x,y)){
         const score=Math.min(...part.rules.map(r=>{
           if(r.kind==="circle")
             return Math.abs(Math.hypot(x-r.cx,y-r.cy)-r.r);
