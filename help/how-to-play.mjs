@@ -201,8 +201,11 @@ function currentMode() {
   const body=document.body;
   if(body.classList.contains("plot-page"))return "plot";
   if(body.classList.contains("curve-page"))return "curve";
-  if(body.classList.contains("regions-page"))
+  if(body.classList.contains("regions-page")){
+    if(document.getElementById("graphModePlot")?.getAttribute("aria-pressed")==="true")return "plot";
+    if(document.getElementById("graphModeCurve")?.getAttribute("aria-pressed")==="true")return "curve";
     return document.getElementById("graphModeBuild")?.getAttribute("aria-pressed")==="true"?"build":"find";
+  }
   const quest=document.getElementById("quadraticScreen");
   if(quest&&!quest.hidden)return "quadratic";
   return document.querySelector(".level-card[aria-pressed=true]")?.dataset.level
