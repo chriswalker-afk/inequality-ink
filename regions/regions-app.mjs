@@ -7,7 +7,7 @@ import {
   GRAPH_ART_DETAIL_COLORS,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
   graphPicture,graphModeGallery,graphLegacyExtras,graphTotalBoundaries,
   graphCellAt,graphArrow,validateGraphPictureLibrary
-} from "./graph-art-pictures.mjs";
+} from "./graph-art-pictures.mjs?v=decorative-contrast-v5";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-REGION_WORLD.xmin)*GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
