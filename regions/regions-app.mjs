@@ -4,7 +4,7 @@ import {
 } from "./regions-engine.mjs";
 import {
   GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
-  GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
+  GRAPH_ART_DETAIL_COLORS,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
   graphPicture,graphModeGallery,graphLegacyExtras,graphTotalBoundaries,
   graphCellAt,graphArrow,validateGraphPictureLibrary
 } from "./graph-art-pictures.mjs";
@@ -123,8 +123,15 @@ function decorations(doc,svg,p,stages=Infinity){
     for(const d of p.details){
       if(d.stage>=stages)continue;
       if(d.type==="line"){
-        el(doc,"line",{x1:px(d.x1),y1:py(d.y1),x2:px(d.x2),y2:py(d.y2),
-          stroke:d.color,"stroke-width":Math.max(2,d.width*unit),
+        const points={x1:px(d.x1),y1:py(d.y1),
+          x2:px(d.x2),y2:py(d.y2)};
+        const width=Math.max(2,d.width*unit);
+        // The narrow dark under-stroke keeps pale snowcaps legible on green
+        // mountains and on the near-white canvas.
+        if(d.outline)el(doc,"line",{...points,stroke:d.outline,
+          "stroke-width":width+3,"stroke-linecap":"round",
+          "pointer-events":"none"},svg);
+        el(doc,"line",{...points,stroke:d.color,"stroke-width":width,
           "stroke-linecap":"round","pointer-events":"none"},svg);
       }else if(d.type==="circle"||d.type==="ellipse"){
         el(doc,"ellipse",{cx:px(d.x),cy:py(d.y),
@@ -133,6 +140,7 @@ function decorations(doc,svg,p,stages=Infinity){
       }else if(d.type==="rect"){
         el(doc,"rect",{x:px(d.x),y:py(d.y+d.h),
           width:d.w*unit,height:d.h*unit,rx:4,fill:d.color,
+          ...(d.outline?{stroke:d.outline,"stroke-width":2.5}:{}),
           "pointer-events":"none"},svg);
       }else if(d.type==="star"){
         const nodes=[];
@@ -142,7 +150,10 @@ function decorations(doc,svg,p,stages=Infinity){
           nodes.push([px(d.x+Math.cos(theta)*r),py(d.y+Math.sin(theta)*r)]);
         }
         el(doc,"polygon",{points:nodes.map(pair=>pair.join(",")).join(" "),
-          fill:d.color,"pointer-events":"none"},svg);
+          fill:d.color,
+          ...(d.outline?{stroke:d.outline,"stroke-width":2.5,
+            "stroke-linejoin":"round"}:{}),
+          "pointer-events":"none"},svg);
       }
     }
     return;
@@ -152,17 +163,18 @@ function decorations(doc,svg,p,stages=Infinity){
       el(doc,"rect",{x:px(x1),y:py(y2),width:px(x2)-px(x1),
         height:py(y1)-py(y2),rx:3,fill,...attrs},svg);
     for(const x of [-1.72,1.03]){
-      rectangle(x,-.65,x+.7,.1,"#b9dfe5",{stroke:"#f8f6eb","stroke-width":3});
+      rectangle(x,-.65,x+.7,.1,"#b9dfe5",{
+        stroke:GRAPH_ART_DETAIL_COLORS.deepTeal,"stroke-width":3});
       el(doc,"line",{x1:px(x+.35),y1:py(-.65),x2:px(x+.35),y2:py(.1),
-        stroke:"#e3f8f4","stroke-width":2},svg);
+        stroke:GRAPH_ART_DETAIL_COLORS.deepTeal,"stroke-width":2},svg);
     }
     el(doc,"circle",{cx:px(.47),cy:py(-2.13),r:4,fill:"#f7e7a5"},svg);
     textSvg(doc,svg,px(3.4),py(3.4),"✦",{"text-anchor":"middle",
-      "font-size":32,fill:"#e6af6c"},svg);
+      "font-size":32,fill:GRAPH_ART_DETAIL_COLORS.gold},svg);
   }else{
     for(const [x,y] of [[-3.9,4.1],[3.8,3.7],[-3.4,-4.2]]){
       textSvg(doc,svg,px(x),py(y),"✧",{"font-size":25,"text-anchor":"middle",
-        fill:"#d6a77d"});
+        fill:GRAPH_ART_DETAIL_COLORS.terracotta});
     }
     el(doc,"circle",{cx:px(0),cy:py(0),r:9,fill:"#f5e3be","fill-opacity":.65},svg);
   }
