@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <meta name="theme-color" content="#f5f1e9" />
-  <meta name="description" content="Create real graph art by finding curved regions bounded by quadratic inequalities." />
+  <meta name="description" content="Create real graph art from parabolas, absolute-value graphs and circles." />
   <title>Curve &amp; Fill | Graph Art | Inequality Ink</title>
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
   <link rel="stylesheet" href="./regions.css?v=five-stage-v4" />
-  <link rel="stylesheet" href="./curve-art.css?v=butterfly-reveal-v3" />
-  <script type="module" src="./curve-art.mjs?v=butterfly-reveal-v3"></script>
+  <link rel="stylesheet" href="./curve-art.css?v=curve-full-v5" />
+  <script type="module" src="./curve-art.mjs?v=curve-full-v5"></script>
 </head>
 <body class="regions-page curve-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -41,32 +41,21 @@
             <p>Find the common region between curves.</p>
           </div>
           <div class="graph-journey-status">
-            <strong id="curveGalleryProgress" aria-live="polite">0 of 1 pictures finished</strong>
-            <span>Starter prototype · progress saves independently.</span>
+            <strong id="curveGalleryProgress" aria-live="polite">0 of 5 pictures finished</strong>
+            <span>Choose any stage. Progress saves separately for each picture.</span>
           </div>
-          <div class="graph-picture-grid curve-picture-grid" role="group" aria-label="Curve & Fill pictures">
-            <button type="button" class="graph-picture-card is-recommended" id="curvePictureCard" aria-label="Start Parabola Butterfly">
-              <svg id="curvePreviewGraph" viewBox="0 0 620 620" aria-hidden="true"></svg>
-              <span class="graph-picture-info">
-                <span class="graph-stage">1 · STARTER · 2 PIECES</span>
-                <strong id="curveCardTitle">Two wings, one picture</strong>
-                <small>Discover a colourful picture using intersecting parabolas. Finishing details arrive at the big reveal.</small>
-                <span class="graph-card-maths">Quadratic inequalities · curved intersections</span>
-                <span class="graph-card-progress"><span id="curveCardProgressFill"></span></span>
-                <span class="graph-card-go" id="curveCardAction">Start picture →</span>
-              </span>
-            </button>
-          </div>
-          <p class="curve-gallery-footnote">One starter picture is available in this prototype. The full five-stage Curve &amp; Fill journey comes next.</p>
+          <div id="curveStageTrack" class="graph-stage-track" role="group" aria-label="Five-step Curve & Fill progression"></div>
+          <div id="curvePictureCards" class="graph-picture-grid curve-picture-grid" role="group" aria-label="Five curved inequality pictures"></div>
+          <p class="curve-gallery-footnote">Five unique pictures · Starter → Step Up → Building → Challenge → Big Finish. No locked stages.</p>
         </section>
       </section>
       <section id="curvePlay" class="graph-play" hidden aria-label="Curve & Fill activity">
         <div class="graph-game-top">
           <button type="button" id="curveBack" class="graph-quiet-button">← Pictures</button>
           <div class="graph-game-title">
-            <span class="eyebrow">CURVE &amp; FILL · STEP 1 · STARTER</span>
-            <h1>Parabola Butterfly</h1>
-            <span class="graph-game-focus">Quadratic inequalities · intersecting curves</span>
+            <span class="eyebrow" id="curveGameMode">CURVE &amp; FILL · STEP 1 · STARTER</span>
+            <h1 id="curveGameTitle">Parabola Butterfly</h1>
+            <span class="graph-game-focus" id="curveGameFocus">Quadratic inequalities · intersecting curves</span>
           </div>
           <span id="graphPieceCount" class="graph-piece-pill">Piece 1 of 2</span>
         </div>
@@ -83,7 +72,7 @@
               <svg id="graphArtGraph" viewBox="0 0 620 620" tabindex="0" role="group" aria-label="Interactive coordinate graph. Tap a region or use arrow keys and Enter to fill it."></svg>
             </div>
             <div class="graph-canvas-footer">
-              <span>Tap the correct region, then press Check. Keyboard: arrows + Enter.</span>
+              <span id="graphCanvasInstruction">Tap the correct region, then press Check. Keyboard: arrows + Enter.</span>
               <span class="graph-canvas-key">◌ Ghost boundary &nbsp; ▰ Painted piece</span>
             </div>
           </section>
@@ -117,11 +106,12 @@
       <section id="curveSummary" class="graph-summary" hidden aria-labelledby="curveSummaryTitle">
         <div class="eyebrow">YOUR MATHEMATICAL ART IS COMPLETE ✦</div>
         <h1 id="curveSummaryTitle">Parabola Butterfly</h1>
-        <p>You created each wing by finding the intersection of its curved inequalities. Watch the butterfly come to life!</p>
-        <div class="graph-summary-stats">2 curved regions · 6 inequalities · 1 finished picture</div>
+        <p id="curveSummaryText">You created each coloured region by finding the intersection of its inequalities.</p>
+        <div id="curveSummaryStats" class="graph-summary-stats">2 curved regions · 6 inequalities</div>
         <div class="graph-summary-buttons">
           <button type="button" id="curveReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
           <button type="button" id="curveRestart" class="button button-light">Make this picture again ↻</button>
+          <button type="button" id="curveNextPicture" class="button button-primary">Explore next picture →</button>
           <button type="button" id="curveChooseAgain" class="button button-light">Choose another picture</button>
         </div>
       </section>
@@ -144,7 +134,7 @@
         <button type="button" id="curveRevealClose" class="graph-reveal-close" aria-label="Close picture reveal">×</button>
       </header>
       <div class="graph-reveal-board">
-        <svg id="graphRevealSvg" viewBox="0 0 620 620" role="img" aria-label="Completed butterfly made from coloured curved inequalities"></svg>
+        <svg id="graphRevealSvg" viewBox="0 0 620 620" role="img" aria-label="Completed picture made from coloured curved inequalities"></svg>
       </div>
       <div class="graph-reveal-foot">
         <p id="graphRevealStatus" role="status" aria-live="polite">Watch your regions come together.</p>

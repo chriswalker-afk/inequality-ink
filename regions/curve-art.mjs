@@ -1,39 +1,72 @@
 import {
-  WORLD,PICTURE,CURVE_DETAIL_STAGES,regionPaths,boundaryPoints,curvedCellAt,validatePicture
+  WORLD,regionPaths,boundaryPoints,curvedCellAt,
+  signedDifference,satisfiesAll
 } from "./curved-engine.mjs";
+import {
+  CURVE_PICTURES,CURVE_STAGES,curvePicture,validateCurveGallery
+} from "./curve-pictures.mjs?v=full-mode-v5";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-WORLD.xmin)*GRID/(WORLD.xmax-WORLD.xmin);
 const py=y=>PAD+(WORLD.ymax-y)*GRID/(WORLD.ymax-WORLD.ymin);
 const path=(points,close=false)=>points.map((p,i)=>
   (i?"L":"M")+px(p.x).toFixed(2)+" "+py(p.y).toFixed(2)).join(" ")+(close?" Z":"");
-export const CURVE_SAVE_KEY="inequality-ink-curve-fill-prototype-v1";
 
+// Version one was the original two-wing butterfly. Never overwrite that save.
+export const CURVE_SAVE_KEY="inequality-ink-curve-fill-prototype-v1";
+export const CURVE_SAVE_KEY_V2="inequality-ink-curve-fill-v2";
+const defaultRecord=()=>({done:0,replays:0});
+function parseSave(storage,key){
+  try{return JSON.parse(storage.getItem(key));}catch{return null;}
+}
 export function readCurveSave(storage){
-  try{
-    const raw=JSON.parse(storage.getItem(CURVE_SAVE_KEY));
-    if(raw&&Number.isInteger(raw.done)&&raw.done>=0&&raw.done<=PICTURE.pieces.length){
-      return {done:raw.done,replays:Number.isInteger(raw.replays)&&raw.replays>=0?raw.replays:0};
+  const raw=parseSave(storage,CURVE_SAVE_KEY_V2);
+  const picture=curvePicture(raw?.picture)?.id||CURVE_PICTURES[0].id;
+  const records={};
+  for(const p of CURVE_PICTURES){
+    const r=raw?.records?.[p.id];
+    if(r&&Number.isInteger(r.done)&&r.done>=0&&r.done<=p.pieces.length&&
+        Number.isInteger(r.replays)&&r.replays>=0&&r.replays<=100000)
+      records[p.id]={done:r.done,replays:r.replays};
+  }
+  // Copy first-generation progress into the named butterfly slot on first
+  // reading. It is not deleted, and all subsequent saves go into v2.
+  if(!records["parabola-butterfly"]){
+    const legacy=parseSave(storage,CURVE_SAVE_KEY);
+    if(legacy&&Number.isInteger(legacy.done)&&legacy.done>=0&&legacy.done<=2){
+      records["parabola-butterfly"]={
+        done:legacy.done,
+        replays:Number.isInteger(legacy.replays)&&legacy.replays>=0?legacy.replays:0
+      };
     }
-  }catch{}
-  return {done:0,replays:0};
+  }
+  const active=records[picture]||defaultRecord();
+  return {picture,records,done:active.done,replays:active.replays};
 }
 
 export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
-  validatePicture();
+  validateCurveGallery();
   const $=id=>doc.getElementById(id);
-  const graph=$("graphArtGraph"),preview=$("curvePreviewGraph"),reveal=$("curveReveal"),revealSvg=$("graphRevealSvg");
-  let saved=readCurveSave(storage),screen="picker",selected=null,flash=null,
-    cursor={x:0,y:0},message="",status="",hint="",flashTimer=null,revealTimers=[];
+  const graph=$("graphArtGraph"),reveal=$("curveReveal"),revealSvg=$("graphRevealSvg");
+  const start=readCurveSave(storage);
+  let saved={picture:start.picture,records:start.records};
+  let screen="picker",selected=null,flash=null,cursor={x:0,y:0},
+    message="",status="",hint="",flashTimer=null,revealTimers=[];
 
-  function persist(){try{storage.setItem(CURVE_SAVE_KEY,JSON.stringify(saved));}catch{}}
+  function picture(){return curvePicture(saved.picture);}
+  function record(){
+    if(!saved.records[saved.picture])saved.records[saved.picture]=defaultRecord();
+    return saved.records[saved.picture];
+  }
+  function current(){return picture().pieces[record().done]||null;}
+  function persist(){
+    try{storage.setItem(CURVE_SAVE_KEY_V2,JSON.stringify(saved));}catch{}
+  }
   function notify(text,type=""){message=text;status=type;}
-  function current(){return PICTURE.pieces[saved.done]||null;}
   function el(svg,tag,attrs={}){
     const node=doc.createElementNS(NS,tag);
-    for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));
-    svg.append(node);
-    return node;
+    for(const [k,v]of Object.entries(attrs))node.setAttribute(k,String(v));
+    svg.append(node);return node;
   }
   function label(svg,x,y,value,attrs={}){
     const t=el(svg,"text",{x,y,...attrs});
@@ -50,34 +83,30 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       el(svg,"line",{x1:PAD,y1:py(n),x2:SIZE-PAD,y2:py(n),stroke:"#7692a0",
         "stroke-opacity":n===0?.48:.15,"stroke-width":n===0?2:1});
       if(n!==0&&n%2===0){
-        label(svg,px(n),py(0)+18,String(n).replace("-","−"),{
-          "font-size":13,"text-anchor":"middle",fill:"#8596a2"});
-        label(svg,px(0)-12,py(n)+5,String(n).replace("-","−"),{
-          "font-size":13,"text-anchor":"end",fill:"#8596a2"});
+        label(svg,px(n),py(0)+18,String(n).replace("-","−"),
+          {"font-size":13,"text-anchor":"middle",fill:"#8596a2"});
+        label(svg,px(0)-12,py(n)+5,String(n).replace("-","−"),
+          {"font-size":13,"text-anchor":"end",fill:"#8596a2"});
       }
     }
     label(svg,px(5)-8,py(0)-10,"x",{"font-size":17,fill:"#546f80"});
     label(svg,px(0)+11,py(5)+22,"y",{"font-size":17,fill:"#546f80"});
   }
   function drawPaths(svg,paths,attrs={},className=""){
-    for(const points of paths){
-      const node=el(svg,"path",{d:path(points,true),"pointer-events":"none",...attrs});
+    for(const pts of paths){
+      const node=el(svg,"path",{d:path(pts,true),"pointer-events":"none",...attrs});
       if(className)node.classList?.add(className);
     }
   }
   function drawPiece(svg,part,attrs={},className=""){
     drawPaths(svg,regionPaths(part.rules),attrs,className);
   }
-  // Coordinate-based decorations share the real mathematical viewBox. SVG
-  // attributes are self-contained, so PNG downloads retain every detail.
-  function drawDetails(svg,maxStage=Infinity,enterStage=0){
+  function drawDetails(svg,p,maxStage=Infinity,enterStage=0){
     const unit=GRID/(WORLD.xmax-WORLD.xmin);
-    for(const d of PICTURE.details||[]){
+    for(const d of p.details||[]){
       if(d.stage>maxStage)continue;
-      const props={
-        "data-curve-detail":d.id,"data-detail-stage":d.stage,
-        "pointer-events":"none"
-      };
+      const props={"data-curve-detail":d.id,"data-detail-stage":d.stage,
+        "pointer-events":"none"};
       let node;
       if(d.type==="ellipse"){
         node=el(svg,"ellipse",{...props,cx:px(d.x),cy:py(d.y),
@@ -119,72 +148,155 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       }
     }
   }
-  function miniature(){
-    baseGraph(preview,{grid:false});
-    for(const [i,part] of PICTURE.pieces.entries()){
-      const finished=i<saved.done;
-      drawPiece(preview,part,{fill:finished?part.color:"#bfcac7",
-        "fill-opacity":finished?1:.22,stroke:finished?"#fff9ee":"#bfcac7",
-        "stroke-dasharray":finished?"":"9 7","stroke-width":3});
+  function miniature(svg,p,progress){
+    baseGraph(svg,{grid:false});
+    for(const [i,part]of p.pieces.entries()){
+      const painted=i<progress;
+      // Like Find & Fill: a small early clue, not a spoiled completed image.
+      const visible=painted||i<Math.min(2,p.pieces.length);
+      drawPiece(svg,part,{
+        fill:painted?part.color:"#bfcac7",
+        "fill-opacity":painted?1:visible?.22:.075,
+        stroke:painted?"#fff9ee":"#bfcac7",
+        "stroke-dasharray":painted?"":"9 7","stroke-width":painted?3:1.5
+      });
     }
-    if(saved.done===PICTURE.pieces.length)drawDetails(preview);
+    if(progress===p.pieces.length)drawDetails(svg,p);
   }
   function pickerView(){
-    miniature();
-    const done=saved.done,total=PICTURE.pieces.length;
-    $("curveGalleryProgress").textContent=(done===total?"1 of 1":"0 of 1")+" pictures finished";
-    $("curveCardTitle").textContent=done===total?PICTURE.name:PICTURE.clue;
-    $("curveCardProgressFill").style.width=(100*done/total)+"%";
-    $("curveCardAction").textContent=done===total?"✓ Finished · Play again":
-      done?"Continue · "+done+"/"+total+" pieces →":"Start picture →";
-    $("curvePictureCard").setAttribute("aria-label",(done===total?"Replay ":"Start or continue ")+PICTURE.name);
+    const completed=CURVE_PICTURES.filter(p=>
+      saved.records[p.id]?.done===p.pieces.length).length;
+    const recommended=CURVE_PICTURES.find(p=>
+      saved.records[p.id]?.done!==p.pieces.length)||CURVE_PICTURES[4];
+    $("curveGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+      (completed===5?"All five stages complete!":"Next up: "+recommended.stage);
+    const stages=$("curveStageTrack");stages.replaceChildren();
+    for(const p of CURVE_PICTURES){
+      const done=saved.records[p.id]?.done||0;
+      const finished=done===p.pieces.length;
+      const item=doc.createElement("div");
+      item.className="graph-step-node"+
+        (finished?" is-complete":"")+
+        (p.id===recommended.id?" is-recommended":"");
+      item.setAttribute("aria-label",p.stage+", "+
+        (finished?"complete":done+" of "+p.pieces.length+" pieces"));
+      const dot=doc.createElement("span");
+      dot.className="graph-step-number";dot.textContent=finished?"✓":String(p.step);
+      const caption=doc.createElement("span");
+      caption.textContent=p.stage;
+      item.append(dot,caption);stages.append(item);
+    }
+    const cards=$("curvePictureCards");cards.replaceChildren();
+    for(const p of CURVE_PICTURES){
+      const r=saved.records[p.id]||defaultRecord();
+      const finished=r.done===p.pieces.length;
+      const card=doc.createElement("button");
+      card.type="button";card.className="graph-picture-card"+
+        (p.id===recommended.id?" is-recommended":"");
+      card.setAttribute("aria-label",p.clue+", "+p.stage+", "+
+        p.pieces.length+" mathematical pieces, "+r.done+" completed");
+      card.setAttribute("data-curve-picture",p.id);
+      const svg=doc.createElementNS(NS,"svg");
+      svg.setAttribute("viewBox","0 0 620 620");
+      svg.setAttribute("aria-hidden","true");
+      miniature(svg,p,r.done);
+      const info=doc.createElement("span");info.className="graph-picture-info";
+      const stage=doc.createElement("span");
+      stage.className="graph-stage";
+      stage.textContent=p.step+" · "+p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
+      const name=doc.createElement("strong");
+      name.textContent=finished?p.name:p.clue;
+      const description=doc.createElement("small");
+      description.textContent=p.description;
+      const focus=doc.createElement("span");
+      focus.className="graph-card-maths";focus.textContent=p.focus;
+      const progress=doc.createElement("span");progress.className="graph-card-progress";
+      const bar=doc.createElement("span");
+      bar.style.width=(100*r.done/p.pieces.length)+"%";
+      progress.append(bar);
+      const go=doc.createElement("span");go.className="graph-card-go";
+      go.textContent=finished?"✓ Finished · Play again":
+        r.done?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":
+        "Start picture →";
+      info.append(stage,name,description,focus,progress,go);
+      card.append(svg,info);
+      card.addEventListener("click",()=>choosePicture(p.id));
+      cards.append(card);
+    }
+  }
+  function choosePicture(id){
+    const p=curvePicture(id);if(!p)return;
+    stopFlash();stopReveal();
+    saved.picture=p.id;
+    if(record().done===p.pieces.length){
+      record().done=0;record().replays++;
+    }
+    persist();selected=null;hint="";cursor={x:0,y:0};
+    notify("Find the common region.");setScreen("play");
   }
   function draw(){
     baseGraph(graph);
-    for(let i=0;i<saved.done;i++){
-      const part=PICTURE.pieces[i];
-      drawPiece(graph,part,{fill:part.color,stroke:"#fff9ec","stroke-width":3,
-        "data-region-layer":"finished-"+part.id});
+    const p=picture(),r=record();
+    for(let i=0;i<r.done;i++){
+      const f=p.pieces[i];
+      drawPiece(graph,f,{fill:f.color,stroke:"#fff9ec","stroke-width":3,
+        "data-region-layer":"finished-"+f.id});
     }
     const part=current();
     if(!part)return;
     drawBoundaries(graph,part);
-    if(selected)drawPaths(graph,selected.paths,{fill:part.color,"fill-opacity":.52,
-      stroke:part.color,"stroke-width":2,"data-region-layer":"selection"},"graph-good-flash");
-    if(flash)drawPaths(graph,flash.paths,{fill:"#e65d65","fill-opacity":.55,
-      stroke:"#ca343e","stroke-width":3,"data-region-layer":"wrong"},"graph-wrong-flash");
+    if(selected)drawPaths(graph,selected.paths,{
+      fill:part.color,"fill-opacity":.52,stroke:part.color,"stroke-width":2,
+      "data-region-layer":"selection"},"graph-good-flash");
+    if(flash)drawPaths(graph,flash.paths,{
+      fill:"#e65d65","fill-opacity":.55,stroke:"#ca343e","stroke-width":3,
+      "data-region-layer":"wrong"},"graph-wrong-flash");
     el(graph,"circle",{cx:px(cursor.x),cy:py(cursor.y),r:7,
       fill:"none",stroke:"#408c7c","stroke-width":2,
       "stroke-dasharray":"3 2","pointer-events":"none"});
-    graph.setAttribute("aria-label","Coordinate graph. "+saved.done+
-      " completed pieces. Move with arrow keys and press Enter to fill the region under the keyboard cursor.");
+    graph.setAttribute("aria-label","Coordinate graph. "+r.done+
+      " completed pieces. Use the arrow keys to move and Enter to fill the region under the keyboard cursor.");
   }
   function playView(){
-    const part=current();
+    const p=picture(),r=record(),part=current();
     if(!part){setScreen("summary");return;}
-    $("graphPieceCount").textContent="Piece "+(saved.done+1)+" of "+PICTURE.pieces.length;
-    $("graphCanvasCount").textContent=saved.done+" / "+PICTURE.pieces.length;
-    $("graphProgressFill").style.width=(100*saved.done/PICTURE.pieces.length)+"%";
-    $("graphProgress").setAttribute("aria-valuenow",String(Math.round(100*saved.done/PICTURE.pieces.length)));
-    $("graphTaskKicker").textContent="PIECE "+(saved.done+1)+" OF "+PICTURE.pieces.length;
+    $("curveGameMode").textContent="CURVE & FILL · STEP "+p.step+" · "+p.stage.toUpperCase();
+    $("curveGameTitle").textContent=p.name;
+    $("curveGameFocus").textContent=p.focus;
+    $("graphPieceCount").textContent="Piece "+(r.done+1)+" of "+p.pieces.length;
+    $("graphCanvasCount").textContent=r.done+" / "+p.pieces.length;
+    $("graphProgressFill").style.width=(100*r.done/p.pieces.length)+"%";
+    $("graphProgress").setAttribute("aria-valuenow",String(Math.round(100*r.done/p.pieces.length)));
+    $("graphTaskKicker").textContent="PIECE "+(r.done+1)+" OF "+p.pieces.length;
     $("graphTaskTitle").textContent=part.name;
     $("graphPieceSwatch").style.background=part.color;
-    $("graphRuleCount").textContent=part.rules.length+" inequalities";
+    $("graphRuleCount").textContent=part.rules.length+
+      (part.rules.length===1?" inequality":" inequalities");
     const holder=$("graphRuleList");holder.replaceChildren();
     for(const rr of part.rules){
       const item=doc.createElement("div");
       item.className="graph-rule-item";
-      const eq=doc.createElement("span");eq.textContent=rr.text;
-      const state=doc.createElement("span");state.className="rule-state";state.textContent="AND";
-      item.append(eq,state);holder.append(item);
+      const equation=doc.createElement("span");equation.textContent=rr.text;
+      const state=doc.createElement("span");state.className="rule-state";
+      state.textContent="AND";item.append(equation,state);holder.append(item);
     }
-    $("graphFeedback").textContent=message||"Tap the region where all inequalities are true.";
+    $("graphFeedback").textContent=message||
+      "Tap the region where all inequalities are true.";
     $("graphFeedback").className="graph-feedback"+(status?" "+status:"");
     $("graphHintText").textContent=hint;
     $("graphHintText").hidden=!hint;
     draw();
   }
-  function summaryView(){ $("curveSummaryTitle").textContent=PICTURE.name; }
+  function summaryView(){
+    const p=picture();
+    $("curveSummaryTitle").textContent=p.name;
+    $("curveSummaryText").textContent=
+      "You created "+p.pieces.length+" coloured shapes by finding the intersection of their curved inequalities.";
+    const boundaries=p.pieces.reduce((n,part)=>n+part.rules.length,0);
+    $("curveSummaryStats").textContent=p.pieces.length+" regions · "+boundaries+
+      " inequalities · "+p.stage;
+    $("curveNextPicture").hidden=p.step===CURVE_PICTURES.length;
+  }
   function setScreen(next){
     screen=next;
     $("curvePicker").hidden=next!=="picker";
@@ -196,7 +308,9 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     if(next==="summary")summaryView();
   }
   function stopFlash(){
-    if(flashTimer!==null){win.clearTimeout?.(flashTimer);flashTimer=null;}
+    if(flashTimer!==null){
+      win.clearTimeout?.(flashTimer);flashTimer=null;
+    }
     flash=null;
   }
   function pickAt(x,y){
@@ -231,11 +345,17 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   }
   function checkFill(){
     if(screen!=="play"||!current())return;
-    if(!selected){notify("First fill the region satisfying all the inequalities.","error");playView();return;}
-    if(!selected.correct){notify("Check which inequalities are true.","error");playView();return;}
-    saved.done++;persist();selected=null;stopFlash();
-    cursor={x:0,y:0};hint="";
-    if(saved.done===PICTURE.pieces.length){
+    if(!selected){
+      notify("First fill the region satisfying all the inequalities.","error");
+      playView();return;
+    }
+    if(!selected.correct){
+      notify("Check which inequalities are true.","error");
+      playView();return;
+    }
+    record().done++;
+    persist();selected=null;stopFlash();cursor={x:0,y:0};hint="";
+    if(!current()){
       setScreen("summary");openReveal();
     }else{
       notify("Beautiful! That mathematical shape is now part of your picture.","success");
@@ -243,8 +363,9 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     }
   }
   function restart(){
-    stopFlash();stopReveal();selected=null;cursor={x:0,y:0};hint="";
-    saved.done=0;saved.replays++;persist();
+    stopFlash();stopReveal();
+    record().done=0;record().replays++;
+    persist();selected=null;cursor={x:0,y:0};hint="";
     notify("Find the common region.");setScreen("play");
   }
   function stopReveal(){
@@ -256,42 +377,47 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     if(id!=null)revealTimers.push(id);
   }
   function revealStage(count,detailCount=0,finished=false){
+    const p=picture(),n=p.pieces.length;
     baseGraph(revealSvg,{grid:false});
-    for(const [i,part] of PICTURE.pieces.slice(0,count).entries()){
+    for(const [i,part]of p.pieces.slice(0,count).entries()){
       const enter=!finished&&detailCount===0&&i===count-1;
-      drawPiece(revealSvg,part,{fill:part.color,stroke:"#fff9ec",
-        "stroke-width":3.5,"data-reveal-wing":part.id},
-        enter?"curve-wing-enter":"");
+      drawPiece(revealSvg,part,{
+        fill:part.color,stroke:"#fff9ec","stroke-width":3.5,
+        "data-reveal-wing":part.id},
+        enter?"curve-piece-enter":"");
     }
-    if(count===PICTURE.pieces.length&&detailCount>0)
-      drawDetails(revealSvg,detailCount,finished?0:detailCount);
+    if(count===n&&detailCount>0)
+      drawDetails(revealSvg,p,detailCount,finished?0:detailCount);
     $("graphRevealStatus").textContent=finished?
-      "Your "+PICTURE.name+" is complete! Real curved regions, beautiful finishing details.":
-      count<PICTURE.pieces.length?
-        "Mathematical wing "+count+" of "+PICTURE.pieces.length+" revealed":
-        detailCount>0?
-          CURVE_DETAIL_STAGES[detailCount-1].label:
-          "Both real quadratic regions have been filled. Here come the finishing touches…";
-    $("graphRevealTitle").textContent=finished?PICTURE.name+" ✦":
-      detailCount>0?"Your butterfly is coming to life!":"Your art is coming together!";
+      "Your "+p.name+" is complete! Every coloured region is a real intersection of its inequalities.":
+      count<n?"Mathematical shape "+count+" of "+n+" revealed":
+      detailCount===0?"All the curved regions are complete. Finishing touches are appearing…":
+      ["Patterns and highlights are appearing…",
+       "More details are taking shape…",
+       "Final touches bring your artwork to life…"][detailCount-1];
+    $("graphRevealTitle").textContent=finished?p.name+" ✦":
+      detailCount>0?"Your picture is coming to life!":"Your art is coming together!";
     $("curveRevealSkip").hidden=finished;
     $("curveRevealAgain").hidden=!finished;
     $("curveDownload").hidden=!finished;
+    revealSvg.setAttribute("aria-label",count===n?
+      "Curved inequality art: "+p.name:"Curved mathematical picture in progress");
   }
   function showFinished(){
-    stopReveal();revealStage(PICTURE.pieces.length,CURVE_DETAIL_STAGES.length,true);
+    stopReveal();revealStage(picture().pieces.length,3,true);
   }
   function playReveal(){
     stopReveal();revealStage(0);
     if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
       showFinished();return;
     }
-    const n=PICTURE.pieces.length,pieceMs=630,detailMs=490;
-    PICTURE.pieces.forEach((_,i)=>later(()=>revealStage(i+1),pieceMs*(i+1)));
+    const p=picture(),n=p.pieces.length;
+    const pieceMs=n>5?450:580,detailMs=420;
+    p.pieces.forEach((_,i)=>later(()=>revealStage(i+1),pieceMs*(i+1)));
     const start=pieceMs*(n+1);
-    for(const stage of CURVE_DETAIL_STAGES)
-      later(()=>revealStage(n,stage.stage),start+detailMs*(stage.stage-1));
-    later(showFinished,start+detailMs*CURVE_DETAIL_STAGES.length+300);
+    for(let stage=1;stage<=3;stage++)
+      later(()=>revealStage(n,stage),start+detailMs*(stage-1));
+    later(showFinished,start+detailMs*3+150);
   }
   function openReveal(){
     if(reveal.showModal)reveal.showModal();
@@ -307,40 +433,53 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   function savePNG(){
     const xml=new XMLSerializer().serializeToString(revealSvg);
     const canvas=doc.createElement("canvas");canvas.width=1100;canvas.height=1100;
-    const ctx=canvas.getContext?.("2d");
-    if(!ctx)return;
+    const ctx=canvas.getContext?.("2d");if(!ctx)return;
     const blob=new Blob([xml],{type:"image/svg+xml;charset=utf-8"});
     const url=URL.createObjectURL(blob),image=new Image();
     image.onload=()=>{
       ctx.fillStyle="#fffaf0";ctx.fillRect(0,0,1100,1100);
       ctx.drawImage(image,0,0,1100,1100);URL.revokeObjectURL(url);
-      const a=doc.createElement("a");a.download="inequality-ink-"+PICTURE.id+".png";
+      const a=doc.createElement("a");
+      a.download="inequality-ink-"+picture().id+".png";
       a.href=canvas.toDataURL("image/png");a.click();
     };
     image.onerror=()=>URL.revokeObjectURL(url);
     image.src=url;
   }
+  function hintPoint(part){
+    const candidates=[];
+    for(let x=-4.5;x<=4.5;x+=.5)for(let y=-4.5;y<=4.5;y+=.5){
+      if(satisfiesAll(part.rules,x,y)){
+        const score=Math.min(...part.rules.map(r=>{
+          if(r.kind==="circle")
+            return Math.abs(Math.hypot(x-r.cx,y-r.cy)-r.r);
+          return Math.abs(signedDifference(r,x,y))/
+            (r.kind==="vertical"?1:Math.abs(r.a||0)+1);
+        }));
+        candidates.push({x,y,score});
+      }
+    }
+    candidates.sort((a,b)=>b.score-a.score);
+    return candidates[0]||null;
+  }
   function showHint(){
     if(screen!=="play"||!current())return;
-    hint=saved.done===0?
-      "Try the test point (−1, 0). Check that it lies above the first parabola, below the second, and to the left of the y-axis.":
-      "Try the test point (1, 0). Check both parabolas and remember that the vertical boundary is strict.";
-    notify("A hint has appeared below.");
-    playView();
+    const part=current(),point=hintPoint(part);
+    hint=point?
+      "Try the test point ("+point.x+", "+point.y+"). Check it against every inequality. Which curved region contains that point?":
+      "Try a test point away from the boundaries. Check whether it satisfies every inequality.";
+    notify("A hint has appeared below.");playView();
   }
-  $("curvePictureCard").addEventListener("click",()=>{
-    stopFlash();selected=null;cursor={x:0,y:0};hint="";
-    if(saved.done===PICTURE.pieces.length){
-      saved.done=0;saved.replays++;persist();
-    }
-    notify("Find the common region.");setScreen("play");
+
+  $("curveBack").addEventListener("click",()=>{
+    stopFlash();stopReveal();selected=null;setScreen("picker");
   });
-  $("curveBack").addEventListener("click",()=>{stopFlash();selected=null;setScreen("picker");});
   $("graphUndoFill").addEventListener("click",clearSelection);
   $("graphCheckFill").addEventListener("click",checkFill);
   $("graphHint").addEventListener("click",showHint);
   $("curveRestart").addEventListener("click",restart);
   $("curveChooseAgain").addEventListener("click",()=>setScreen("picker"));
+  $("curveNextPicture").addEventListener("click",()=>setScreen("picker"));
   $("curveReplayReveal").addEventListener("click",openReveal);
   $("curveRevealClose").addEventListener("click",closeReveal);
   $("curveRevealSkip").addEventListener("click",showFinished);
@@ -371,7 +510,9 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     }
   });
   setScreen("picker");
-  return {pickAt,checkFill,readProgress:()=>({...saved}),render:()=>setScreen(screen),
-    start:()=>{$("curvePictureCard").click();},showFinished};
+  return {pickAt,checkFill,readProgress:()=>({
+      ...saved,records:{...saved.records},done:record().done,replays:record().replays
+    }),render:()=>setScreen(screen),choose:choosePicture,
+    start:()=>choosePicture(saved.picture),showFinished};
 }
 if(typeof document!=="undefined"&&document.getElementById("curvePicker"))initCurveArt();

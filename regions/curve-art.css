@@ -1,27 +1,33 @@
 /* Curve & Fill deliberately inherits Graph Art's shared layout, panels,
    feedback colours, reveal, and good/wrong region animations. */
-.curve-page .curve-picture-grid{grid-template-columns:minmax(0,220px);justify-content:start}
-.curve-page .curve-picture-grid .graph-picture-card{min-height:280px}
+.curve-page .curve-picture-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.curve-page .curve-picture-grid .graph-picture-card{min-height:0}
 .curve-page .curve-gallery-footnote{font-size:.74rem;color:#788993;line-height:1.5;margin:12px 0 0}
 .curve-page .graph-rule-item{cursor:default}
 .curve-page .graph-reveal-board svg{touch-action:auto}
+@media(min-width:780px) and (max-width:1120px){
+ .curve-page .curve-picture-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:779px){
+ .curve-page .curve-picture-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media(max-width:480px){
   .curve-page .curve-picture-grid{grid-template-columns:minmax(0,1fr)}
   .curve-page .curve-picture-grid .graph-picture-card{min-height:0}
 }
 /* Staged full-screen big reveal: wing fills first, then pattern/body/sparkles.
    Animations are decorative only; mathematical regions never change. */
-.curve-page #graphRevealSvg .curve-wing-enter{
+.curve-page #graphRevealSvg .curve-piece-enter{
   transform-box:fill-box;
   transform-origin:center;
-  animation:curve-wing-appear .68s cubic-bezier(.2,.8,.2,1) both;
+  animation:curve-piece-appear .68s cubic-bezier(.2,.8,.2,1) both;
 }
 .curve-page #graphRevealSvg .curve-detail-enter{
   transform-box:fill-box;
   transform-origin:center;
   animation:curve-detail-pop .6s cubic-bezier(.2,1.45,.38,1) both;
 }
-@keyframes curve-wing-appear{
+@keyframes curve-piece-appear{
   from{opacity:.12;transform:scale(.87)}
   to{opacity:1;transform:scale(1)}
 }
@@ -30,6 +36,11 @@
   to{opacity:1;transform:scale(1)}
 }
 @media(prefers-reduced-motion:reduce){
-  .curve-page #graphRevealSvg .curve-wing-enter,
+  .curve-page #graphRevealSvg .curve-piece-enter,
   .curve-page #graphRevealSvg .curve-detail-enter{animation:none!important}
 }
+
+.curve-page .graph-mode-card[href]{text-decoration:none}
+.curve-page .graph-card-progress span{transition:width .3s ease}
+.curve-page .graph-canvas-footer{line-height:1.45}
+.curve-page .graph-rule-item{overflow-wrap:anywhere;min-width:0}
