@@ -1,0 +1,92 @@
+/* Shared, mode-aware How to play dialog for Pixel Art and Graph Art.
+   Deliberately independent of game panels, scores and saved progress. */
+.howplay-dialog {
+  box-sizing:border-box;
+  border:1px solid #d5e1d9;
+  border-radius:22px;
+  padding:0;
+  width:min(660px,calc(100vw - 28px));
+  max-width:660px;
+  max-height:calc(100dvh - 28px);
+  overflow:hidden;
+  color:#32475f;
+  background:#fffcf8;
+  font:inherit;
+  box-shadow:0 24px 85px #172f35b8;
+}
+.howplay-dialog::backdrop{background:#1c2f46a8;backdrop-filter:blur(4px)}
+.howplay-shell{display:flex;flex-direction:column;min-height:0;max-height:calc(100dvh - 28px)}
+.howplay-header{
+  flex:none;display:flex;justify-content:space-between;align-items:start;gap:14px;
+  padding:22px 25px 12px;background:linear-gradient(135deg,#f0f7f0,#fffcf8 75%);
+}
+.howplay-eyebrow{display:block;font-size:.65rem;font-weight:850;letter-spacing:.12em;color:#3e927f}
+.howplay-header h2{margin:4px 0 0;line-height:1.13;font-size:clamp(1.45rem,3.2vw,2rem);letter-spacing:-.04em;color:#2a4657}
+.howplay-close{
+  display:grid;place-items:center;width:38px;height:38px;flex:none;
+  border:1px solid #d9e3dc;border-radius:11px;background:#fff;
+  font-size:1.4rem;font-weight:600;color:#476773;cursor:pointer
+}
+.howplay-close:hover{background:#eaf4ed}
+.howplay-intro{flex:none;padding:0 25px 15px;background:linear-gradient(135deg,#f0f7f0,#fffcf8 75%)}
+.howplay-intro>strong{font-size:.95rem;color:#386d63}
+.howplay-intro>p{margin:5px 0 0;font-size:.79rem;line-height:1.5;color:#617784}
+.howplay-intro .howplay-now{
+  padding:9px 11px;margin-top:11px;border-radius:10px;
+  border:1px solid #b9dccb;background:#e8f6ed;color:#337967;
+  font-weight:750;
+}
+.howplay-tabs{
+  flex:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;padding:9px 22px 0;border-top:1px solid #e5e9e2;
+}
+.howplay-tabs button{
+  min-width:0;padding:11px 4px;border:1px solid transparent;border-bottom:3px solid transparent;
+  border-radius:9px 9px 0 0;background:transparent;color:#71828b;
+  font-size:.78rem;font-weight:850;cursor:pointer;
+}
+.howplay-tabs button:hover{color:#377e70;background:#f2f8f2}
+.howplay-tabs button[aria-selected=true]{color:#2d806b;background:#eaf6ed;border-color:#d0e5d7;border-bottom-color:#4f9e82}
+.howplay-dialog button:focus-visible,.howplay-panel:focus-visible{outline:3px solid #e0a851;outline-offset:2px}
+.howplay-panel{
+  min-height:135px;overflow:auto;overscroll-behavior:contain;
+  padding:16px 25px 22px;flex:1;
+}
+.howplay-entry{display:flex;gap:13px;align-items:start;padding:13px 0;border-bottom:1px solid #ecede7}
+.howplay-entry:last-child{border-bottom:0}
+.howplay-entry-mark{
+  flex:0 0 35px;height:35px;border-radius:11px;background:#e8f5ee;color:#35816d;
+  display:grid;place-items:center;font-size:.79rem;font-weight:900;
+}
+.howplay-entry strong{font-size:.9rem;color:#354e5f}
+.howplay-entry p{font-size:.82rem;line-height:1.58;color:#647786;margin:4px 0 0}
+.howplay-example{border:1px solid #dee8e1;background:#f8fbf7;padding:12px 13px 7px;border-radius:13px;margin:0 0 7px}
+.howplay-example-label{color:#3e8f7c;font-size:.62rem;letter-spacing:.11em;font-weight:900}
+.howplay-example svg{display:block;width:100%;height:auto;max-height:160px;margin:4px auto}
+.howplay-example p{margin:3px 0 5px;color:#496776;font-size:.76rem;line-height:1.4;text-align:center}
+.howplay-footer{
+  flex:none;display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:12px 25px 17px;border-top:1px solid #e5eae3;background:#fffdf9;
+}
+.howplay-footer span{font-size:.69rem;color:#83908f}
+.howplay-done{
+  border:0;border-radius:11px;background:#368e79;color:#fff;
+  padding:11px 15px;font-size:.79rem;font-weight:850;cursor:pointer;
+}
+.howplay-done:hover{background:#277a66}
+@media(max-width:540px){
+  .howplay-dialog{width:calc(100vw - 14px);max-height:calc(100dvh - 14px);border-radius:16px}
+  .howplay-shell{max-height:calc(100dvh - 14px)}
+  .howplay-header{padding:16px 16px 9px}
+  .howplay-intro{padding:0 16px 11px}
+  .howplay-tabs{padding:7px 10px 0;gap:3px}
+  .howplay-tabs button{padding:10px 3px;font-size:.74rem}
+  .howplay-panel{padding:9px 16px 14px}
+  .howplay-entry{padding:11px 0;gap:10px}
+  .howplay-entry-mark{flex-basis:30px;height:30px;font-size:.71rem}
+  .howplay-entry p{font-size:.79rem}
+  .howplay-footer{padding:10px 16px calc(12px + env(safe-area-inset-bottom));gap:8px}
+  .howplay-footer span{font-size:.64rem}
+  .howplay-done{padding:11px 12px;font-size:.75rem}
+}
+@media(prefers-reduced-motion:reduce){.howplay-dialog::backdrop{backdrop-filter:none}}

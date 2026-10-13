@@ -1449,10 +1449,7 @@ $("revealDialog").addEventListener("close",()=>{
   // Native dismissal (for example, browser back) also reveals the summary.
   if(screen!=="finish")closeReveal();
 });
-$("helpButton").onclick=()=>$("helpDialog").showModal();
-$("closeHelp").onclick=()=>$("helpDialog").close();
-$("doneHelp").onclick=()=>$("helpDialog").close();
-$("helpDialog").addEventListener("click",e=>{if(e.target===$("helpDialog"))$("helpDialog").close();});
+// Shared mode-aware guide is attached by help/how-to-play.mjs.
 updateLevelSelector();
 show("introScreen");
 // Quadratic Quest is isolated from the five familiar modes and their saved

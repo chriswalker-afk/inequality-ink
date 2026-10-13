@@ -8,6 +8,8 @@
   <title>Inequality Ink | Pixel-art maths</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M12 12h18v18H12zm22 0h18v18H34zM12 34h18v18H12z' fill='%23f6a17e'/%3E%3Cpath d='M34 34h18v18H34z' fill='%237cc2af'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./styles.css?v=paint-desktop-v3" />
+  <link rel="stylesheet" href="./help/how-to-play.css?v=guide-v1" />
+  <script type="module" src="./help/how-to-play.mjs?v=guide-v1"></script>
   <script type="module" src="./app.mjs?v=mixed-gallery-v1"></script>
 </head>
 <body>
@@ -24,7 +26,7 @@
           <a class="studio-tab is-active" href="./" aria-current="page"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.2"/><rect x="11" y="2" width="7" height="7" rx="1.2"/><rect x="2" y="11" width="7" height="7" rx="1.2"/><rect x="11" y="11" width="7" height="7" rx="1.2"/></svg></span><span>Pixel Art</span></a>
           <a class="studio-tab" href="./regions/"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M2.5 2.5v15h15"/><path d="m2.5 12 7.5-7 7.5 8v4.5h-15z" fill="currentColor" fill-opacity=".17"/><path d="m2.5 12 7.5-7 7.5 8" stroke-linejoin="round"/></svg></span><span>Graph Art</span></a>
         </nav>
-        <button type="button" id="helpButton" class="top-button">How to play <span aria-hidden="true">?</span></button>
+        <button type="button" id="helpButton" class="top-button" data-how-to-play>How to play <span aria-hidden="true">?</span></button>
       </div>
     </header>
 
@@ -558,19 +560,6 @@
       <svg id="questRevealArt" viewBox="0 0 10 6" role="img" aria-label="The completed Prism of Possibilities picture"></svg>
       <p id="questRevealCaption">Six quadratic inequalities. One bright discovery.</p>
       <button type="button" class="button button-primary" id="questRevealClose">See your results →</button>
-    </div>
-  </dialog>
-  <dialog id="helpDialog" class="help-dialog" aria-labelledby="helpTitle">
-    <div class="help-inner">
-      <div class="dialog-head"><h2 id="helpTitle">How to play</h2><button type="button" id="closeHelp" aria-label="Close help">×</button></div>
-      <p>Represent the inequality accurately. Check the endpoints, the circles and the direction of the shading. Each correct answer completes another part of the picture.</p>
-      <div class="help-rule"><span class="open-circle"></span><div><b>Open circle</b><p>The endpoint is excluded: &lt; or &gt;.</p></div></div>
-      <div class="help-rule"><span class="closed-circle"></span><div><b>Closed circle</b><p>The endpoint is included: ≤ or ≥.</p></div></div>
-      <div class="help-rule"><span class="help-star">↔</span><div><b>Between two endpoints</b><p>Place both circles and shade the segment between them.</p></div></div>
-      <div class="help-rule"><span class="help-star">◧</span><div><b>Mirror Mode</b><p>Represent one-sided inequalities using the correct circle and arrow. Complete all the questions to reveal the picture.</p></div></div>
-      <div class="help-rule"><span class="help-star">▦</span><div><b>Paint by Inequalities</b><p>Select a colour beside its inequality. Tap or swipe over each integer-labelled square that satisfies that inequality. You can edit only the highlighted row. After a correct check, the numbers vanish and the colours remain.</p></div></div>
-      <p class="dialog-foot">Click or tap a circle to switch between open and closed. Drag it to move its endpoint, tap a number-line tick, or use the +/− buttons. After a correct check, the next question appears automatically. When dividing an inequality by a negative number, reverse the signs.</p>
-      <button type="button" class="button button-primary dialog-done" id="doneHelp">Got it!</button>
     </div>
   </dialog>
 </body>

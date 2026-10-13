@@ -185,7 +185,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   const graph=$("graphArtGraph"),reveal=$("graphReveal"),revealSvg=$("graphRevealSvg");
   let saved=readGraphArtSave(storage),screen="picker",choiceSide=null,
     choiceStyle=null,selected=null,flash=null,message="",status="",hint="",
-    revealTimers=[],cursor={x:0,y:0},activeReveal=false,
+    hintStage=0,hintKey="",revealTimers=[],cursor={x:0,y:0},activeReveal=false,
     pendingPieceTimer=null,lastAddedArrow=null,buildRevealPhase="idle";
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
@@ -200,6 +200,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function notify(s,type=""){message=s;status=type;}
   function resetChoices(){
     choiceSide=null;choiceStyle=null;selected=null;hint="";
+    hintStage=0;hintKey="";
     lastAddedArrow=null;
   }
   function setScreen(next){
@@ -474,6 +475,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphFeedback").className="graph-feedback"+(status?" "+status:"");
     $("graphHintText").textContent=hint;
     $("graphHintText").hidden=!hint;
+    const scope=mode()+":"+saved.picture+":"+r.done+":"+(mode()==="build"?r.line:0);
+    const stage=scope===hintKey?hintStage:0;
+    $("graphHint").textContent=stage>=3?"✳ All hints shown":
+      stage?"✳ More help ("+(stage+1)+"/3)":"✳ Give me a hint";
+    $("graphHint").disabled=(mode()==="build"&&allBuilt)||stage>=3;
     draw();
   }
   function pickAt(x,y){
@@ -670,10 +676,31 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function showHint(){
     if(screen!=="play"||pendingPieceTimer!==null||
       (mode()==="build"&&current()&&record().line===current().rules.length))return;
-    const part=current(),rr=mode()==="build"?rule():part.rules[0];
-    hint=mode()==="build"?regionHint(rr):
-      "Try a point in a candidate region. Check it against every inequality. "+regionHint(rr);
-    notify("A hint has appeared below.");
+    const part=current(),rr=mode()==="build"?rule():part.rules[0],r=record();
+    const key=mode()+":"+saved.picture+":"+r.done+":"+(mode()==="build"?r.line:0);
+    if(key!==hintKey){hintKey=key;hintStage=0;}
+    hintStage=Math.min(3,hintStage+1);
+    if(mode()==="build"){
+      hint=hintStage===1?"First find the direction of the solution from the inequality. Then decide if equality is included.":
+        hintStage===2?regionHint(rr):
+          "For "+rr.text+", choose "+regionSide(rr)+" and a "+regionBoundaryStyle(rr)+" boundary.";
+    }else if(hintStage===1){
+      hint="Read every inequality, then find the area where all their allowed sides overlap.";
+    }else if(hintStage===2){
+      hint="Check one boundary at a time. For the first inequality: "+regionHint(rr);
+    }else{
+      let answer=null,best=-1;
+      for(let x=-4.5;x<=4.5;x+=.5)for(let y=-4.5;y<=4.5;y+=.5){
+        if(!pointSatisfiesAll(part.rules,x,y))continue;
+        const distance=Math.min(...part.rules.map(b=>
+          Math.abs(b.a*x+b.b*y-b.c)/Math.hypot(b.a,b.b)));
+        if(distance>best){best=distance;answer={x,y};}
+      }
+      hint=answer?"The point ("+answer.x+", "+answer.y+
+        ") satisfies every inequality. Fill the region containing it.":
+        "Find a point away from every line, and check it in all the inequalities.";
+    }
+    notify("Hint "+hintStage+" of 3 is shown below.");
     playView();
   }
 
