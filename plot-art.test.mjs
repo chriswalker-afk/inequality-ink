@@ -78,7 +78,7 @@ const cards=s=>s.$("plotPictureCards").children;
 function spotFor(part){
   for(let x=-4.5;x<=4.5;x+=.25)
     for(let y=-4.5;y<=4.5;y+=.25)
-      if(satisfiesAll(part.rules,x,y)&&curvedCellAt(part.rules,x,y,.07)?.correct)
+      if(satisfiesAll(part.rules,x,y)&&curvedCellAt(part.rules,x,y)?.correct)
         return {x,y};
   throw Error("No selectable point for "+part.id);
 }
