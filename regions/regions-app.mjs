@@ -5,13 +5,13 @@ import {
   regionBoundaryStyle,regionCorrect,regionHint,pointSatisfiesAll
 } from "./regions-engine.mjs";
 import {
-  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
+  GRAPH_ART_PICTURES,GRAPH_PRACTICE_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
   GRAPH_ART_DETAIL_COLORS,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
-  graphPicture,graphModeGallery,graphLegacyExtras,graphTotalBoundaries,
+  graphPicture,graphModeGallery,graphPracticeGallery,graphLegacyExtras,graphTotalBoundaries,reverseInequalityOptions,
   graphCellAt,graphArrow,validateGraphPictureLibrary
-} from "./graph-art-pictures.mjs?v=decorative-contrast-v5";
-import {CURVE_PICTURES} from "./curve-pictures.mjs?v=full-mode-v5";
-import {PLOT_PICTURES} from "./plot-pictures.mjs";
+} from "./graph-art-pictures.mjs?v=phase6-v1";
+import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES} from "./curve-pictures.mjs?v=phase6-v1";
+import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=phase6-v1";
 import {regionPaths} from "./curved-engine.mjs";
 import {readCurveSave} from "./curve-art.mjs";
 import {readPlotSave} from "./plot-art.mjs";
@@ -36,7 +36,7 @@ export function readGraphArtSave(storage){
   const output=clean();
   if(GRAPH_ART_MODES.some(m=>m.id===raw.mode))output.mode=raw.mode;
   if(graphPicture(raw.picture))output.picture=raw.picture;
-  for(const mode of GRAPH_ART_MODES)for(const p of GRAPH_ART_PICTURES){
+  for(const mode of GRAPH_ART_MODES)for(const p of [...GRAPH_ART_PICTURES,...GRAPH_PRACTICE_PICTURES]){
     const id=key(mode.id,p.id),record=raw.records?.[id];
     if(validRecord(record,p)){
       output.records[id]={
@@ -207,8 +207,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   if(requestedPicture&&hubGalleryAvailable(hubMode,requestedPicture))
     hubSelections[hubMode]=requestedPicture;
   function hubGalleryAvailable(m,id){
-    return (m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
-      graphModeGallery(m)).some(p=>p.id===id)||
+    return [...(m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
+      graphModeGallery(m)),
+      ...(m==="curve"?CURVE_PRACTICE_PICTURES:m==="plot"?PLOT_PRACTICE_PICTURES:
+        graphPracticeGallery(m))].some(p=>p.id===id)||
       ((m==="fill"||m==="build")&&
         graphLegacyExtras(m,saved.records).some(p=>p.id===id));
   }
@@ -269,6 +271,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function hubGallery(m){
     return m==="curve"?CURVE_PICTURES:
       m==="plot"?PLOT_PICTURES:graphModeGallery(m);
+  }
+  function hubPracticeGallery(m){
+    return m==="curve"?CURVE_PRACTICE_PICTURES:
+      m==="plot"?PLOT_PRACTICE_PICTURES:graphPracticeGallery(m);
   }
   function hubRecord(m,p,curve,plot){
     if(m==="curve")return curve.records[p.id]||{done:0,replays:0};
@@ -336,7 +342,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     hubMiniature($("graphPreviewSvg"),p,done,m);
   }
   function startHubPicture(){
-    const p=[...hubGallery(hubMode),...
+    const p=[...hubGallery(hubMode),...hubPracticeGallery(hubMode),...
       ((hubMode==="fill"||hubMode==="build")?
         graphLegacyExtras(hubMode,saved.records):[])].find(
           item=>item.id===hubSelections[hubMode]);
@@ -379,9 +385,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphGalleryProgress").textContent=completed+" of 5 completed";
     const extras=hubMode==="fill"||hubMode==="build"?
       graphLegacyExtras(hubMode,saved.records):[];
-    if(![...gallery,...extras].some(p=>p.id===hubSelections[hubMode]))
+    const practice=hubPracticeGallery(hubMode);
+    if(![...gallery,...practice,...extras].some(p=>p.id===hubSelections[hubMode]))
       hubSelections[hubMode]=recommended.id;
-    const selectedPicture=[...gallery,...extras].find(
+    const selectedPicture=[...gallery,...practice,...extras].find(
       p=>p.id===hubSelections[hubMode])||recommended;
     const track=$("graphStageTrack");
     track.replaceChildren();
@@ -409,16 +416,16 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
         }
       }catch{}
       for(const card of [...$("graphPictureCards").children,
-        ...$("graphExtraCards").children]){
+        ...$("graphPracticeCards").children,...$("graphExtraCards").children]){
         const active=card.getAttribute("data-hub-picture")===hubSelections[hubMode];
         card.setAttribute("aria-pressed",String(active));
         card.classList.toggle("is-selected",active);
       }
-      const p=[...gallery,...extras].find(p=>
+      const p=[...gallery,...practice,...extras].find(p=>
         p.id===hubSelections[hubMode]);
       if(p)updateHubPreview(p,hubMode,getRecord(p));
     }
-    function makeCard(p,extra=false){
+    function makeCard(p,extra=false,practise=false){
       const r=getRecord(p),finished=r.done===p.pieces.length;
       const selected=p.id===hubSelections[hubMode];
       const card=doc.createElement("button");
@@ -439,7 +446,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       hubMiniature(svg,p,r.done,hubMode);
       const info=doc.createElement("span");info.className="graph-picture-info";
       const stage=doc.createElement("span");stage.className="graph-stage";
-      stage.textContent=(extra?"BONUS · ":p.step+" · ")+
+      stage.textContent=(practise?"PRACTISE · ":extra?"BONUS · ":p.step+" · ")+
         p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
       const name=doc.createElement("strong");
       name.textContent=finished?p.name:p.clue;
@@ -463,6 +470,9 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     const cards=$("graphPictureCards");cards.replaceChildren();
     for(const p of gallery)cards.append(makeCard(p));
+    $("graphPracticeSection").hidden=practice.length===0;
+    const practiceCards=$("graphPracticeCards");practiceCards.replaceChildren();
+    for(const p of practice)practiceCards.append(makeCard(p,false,true));
     $("graphMorePictures").hidden=extras.length===0;
     const extraCards=$("graphExtraCards");extraCards.replaceChildren();
     for(const p of extras)extraCards.append(makeCard(p,true));
@@ -790,7 +800,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       {value:graphTotalBoundaries(p),label:"Inequalities"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("graphNextPicture").hidden=p.step===GRAPH_ART_STAGES.length||
+    $("graphNextPicture").hidden=!!p.practice||p.step===GRAPH_ART_STAGES.length||
       p.mode!==mode();
     $("graphNextPicture").textContent="Next picture →";
   }
