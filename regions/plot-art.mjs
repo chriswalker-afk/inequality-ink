@@ -1,7 +1,7 @@
 import {
-  WORLD,regionPaths,boundaryPoints,curvedCellAt
+  WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
-import {PLOT_PICTURE,plotRule,validatePlotPicture} from "./plot-pictures.mjs";
+import {PLOT_PICTURES,PLOT_PICTURE,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs";
 import {
   POINT_STEP,snapPoint,samePoint,constructBoundary,checkConstruction,
   checkBoundaryStyle,previewPaths,validSavedPoints
@@ -13,48 +13,79 @@ const py=y=>PAD+(WORLD.ymax-y)*GRID/(WORLD.ymax-WORLD.ymin);
 const path=(points,close=false)=>points.map((p,i)=>
   (i?"L":"M")+px(p.x).toFixed(2)+" "+py(p.y).toFixed(2)).join(" ")+(close?" Z":"");
 const nice=n=>String(n).replace("-","−");
+// Read-only prototype save imported on first use; never overwrite it.
 export const PLOT_SAVE_KEY="inequality-ink-plot-shade-prototype-v1";
-const fresh=()=>({done:0,phase:"plot",points:[],styleChoice:null,replays:0});
-
+export const PLOT_SAVE_KEY_V2="inequality-ink-plot-shade-v2";
+const fresh=()=>({done:0,phase:"plot",points:[],styleChoice:null,replays:0,
+  plotIndex:0,verified:[]});
+function safeJson(storage,key){
+  try{return JSON.parse(storage.getItem(key));}catch{return null;}
+}
+function cleanRecord(raw,p,legacy=false){
+  const r=fresh();
+  if(!raw||!Number.isInteger(raw.done)||raw.done<0||raw.done>p.pieces.length)return r;
+  r.done=raw.done;
+  r.replays=Number.isInteger(raw.replays)&&raw.replays>=0&&raw.replays<1e6?
+    raw.replays:0;
+  if(r.done===p.pieces.length)return r;
+  const part=p.pieces[r.done],steps=plotSteps(part);
+  const verified=Array.isArray(raw.verified)?raw.verified:[];
+  for(let i=0;i<Math.min(steps.length,verified.length);i++){
+    const row=verified[i],step=steps[i],rule=plotRule(part,i);
+    if(row?.ruleId!==step.ruleId||!validSavedPoints(row.points)||
+      !checkConstruction({kind:step.kind,rule},row.points).correct||
+      !checkBoundaryStyle(rule,row.style).correct)break;
+    r.verified.push({ruleId:row.ruleId,points:row.points.map(pt=>({...pt})),style:row.style});
+  }
+  if(legacy&&raw.phase==="shade"&&steps.length===1&&
+     !r.verified.length&&validSavedPoints(raw.points)&&
+     checkConstruction({kind:steps[0].kind,rule:plotRule(part)},raw.points).correct&&
+     checkBoundaryStyle(plotRule(part),raw.styleChoice).correct)
+    r.verified.push({ruleId:steps[0].ruleId,
+      points:raw.points.map(pt=>({...pt})),style:raw.styleChoice});
+  r.plotIndex=r.verified.length;
+  if(r.plotIndex===steps.length){r.phase="shade";return r;}
+  r.points=validSavedPoints(raw.points)?raw.points.map(pt=>({...pt})):[];
+  if(raw.phase==="style"&&r.points.length===2&&
+     checkConstruction({kind:steps[r.plotIndex].kind,
+       rule:plotRule(part,r.plotIndex)},r.points).correct){
+    r.phase="style";
+    r.styleChoice=["solid","dashed"].includes(raw.styleChoice)?
+      raw.styleChoice:null;
+  }
+  return r;
+}
 export function readPlotSave(storage){
-  const state=fresh();
-  try{
-    const raw=JSON.parse(storage.getItem(PLOT_SAVE_KEY));
-    if(!raw||!Number.isInteger(raw.done)||raw.done<0||
-       raw.done>PLOT_PICTURE.pieces.length)return state;
-    state.done=raw.done;
-    state.replays=Number.isInteger(raw.replays)&&raw.replays>=0?raw.replays:0;
-    if(state.done===PLOT_PICTURE.pieces.length)return state;
-    const p=PLOT_PICTURE.pieces[state.done];
-    state.points=validSavedPoints(raw.points)?raw.points.map(pt=>({x:pt.x,y:pt.y})):[];
-    if(raw.phase==="style"||raw.phase==="shade"){
-      const checked=checkConstruction({kind:p.plot.kind,rule:plotRule(p)},state.points);
-      if(checked.correct){
-        state.phase=raw.phase;
-        if(raw.styleChoice==="solid"||raw.styleChoice==="dashed")
-          state.styleChoice=raw.styleChoice;
-        if(state.phase==="shade"&&!checkBoundaryStyle(plotRule(p),state.styleChoice).correct){
-          state.phase="style";state.styleChoice=null;
-        }
-      }
-    }
-  }catch{}
-  return state;
+  const raw=safeJson(storage,PLOT_SAVE_KEY_V2),records={};
+  for(const p of PLOT_PICTURES)if(raw?.records?.[p.id])
+    records[p.id]=cleanRecord(raw.records[p.id],p);
+  if(!records["little-umbrella"]){
+    const legacy=safeJson(storage,PLOT_SAVE_KEY);
+    if(legacy&&Number.isInteger(legacy.done)&&legacy.done>=0&&legacy.done<=2)
+      records["little-umbrella"]=cleanRecord(legacy,PLOT_PICTURE,true);
+  }
+  const picture=plotPicture(raw?.picture)?.id||PLOT_PICTURES[0].id;
+  return {picture,records,...(records[picture]||fresh())};
 }
 
 export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
-  validatePlotPicture();
+  validatePlotGallery();
   const $=id=>doc.getElementById(id),svg=$("plotGraph"),
-    preview=$("plotPreviewGraph"),reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
-  let save=readPlotSave(storage),screen="picker",selected=null,wrong=null,
+    reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
+  const restored=readPlotSave(storage);
+  let saved={picture:restored.picture,records:restored.records};
+  let save=saved.records[saved.picture]||fresh();
+  let screen="picker",selected=null,wrong=null,
     cursor={x:0,y:0},activePoint=save.points.length-1,drag=null,
     message="",status="",hint="",flashTimer=null,revealTimers=[];
-
+  function picture(){return plotPicture(saved.picture);}
   function persist(){
-    try{storage.setItem(PLOT_SAVE_KEY,JSON.stringify(save));}catch{}
+    saved.records[saved.picture]=save;
+    try{storage.setItem(PLOT_SAVE_KEY_V2,JSON.stringify(saved));}catch{}
   }
-  function current(){return PLOT_PICTURE.pieces[save.done]||null;}
-  function targetRule(){return current()?plotRule(current()):null;}
+  function current(){return picture().pieces[save.done]||null;}
+  function step(){return current()?plotSteps(current())[save.plotIndex]||null:null;}
+  function targetRule(){return step()?plotRule(current(),save.plotIndex):null;}
   function notify(text,type=""){message=text;status=type;}
   function el(root,tag,attrs={}){
     const node=doc.createElementNS(NS,tag);
@@ -103,9 +134,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
         "pointer-events":"none",...attrs});
     }
   }
-  function drawDetails(root,maxStage=Infinity,enterStage=0){
+  function drawDetails(root,p,maxStage=Infinity,enterStage=0){
     const unit=GRID/(WORLD.xmax-WORLD.xmin);
-    for(const d of PLOT_PICTURE.details){
+    for(const d of p.details){
       if(d.stage>maxStage)continue;
       const attrs={"data-plot-detail":d.id,"data-detail-stage":d.stage,
         "pointer-events":"none"};let node;
