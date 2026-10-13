@@ -131,6 +131,7 @@ test("Saving and loading preserve progress across both modes and old picture IDs
       "build:aurora-crystal":{done:2,line:2,replays:1},
       "fill:little-house":{done:3,line:0,replays:0},
       "build:little-house":{done:1,line:0,replays:0},
+      "fill:aurora-crystal":{done:1,line:0,replays:0},
       "fill:signal-flag":{done:1,line:0,replays:0},
       "build:moonlit-castle":{done:99,line:0,replays:0}
     }}));
