@@ -192,9 +192,12 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       const finished=r.done===p.pieces.length;
       const card=doc.createElement("button");
       card.type="button";card.className="graph-picture-card"+
+        (finished?" is-complete":"")+
         (p.id===recommended.id?" is-recommended":"");
-      card.setAttribute("aria-label",p.clue+", "+p.stage+", "+
-        p.pieces.length+" mathematical pieces, "+r.done+" completed");
+      card.setAttribute("aria-label",finished?
+        "View completed picture: "+p.name+", "+p.stage:
+        (r.done?"Continue picture: ":"Start picture: ")+p.clue+", "+p.stage+
+        ", "+r.done+" of "+p.pieces.length+" pieces completed");
       card.setAttribute("data-curve-picture",p.id);
       const svg=doc.createElementNS(NS,"svg");
       svg.setAttribute("viewBox","0 0 620 620");
@@ -215,9 +218,8 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       bar.style.width=(100*r.done/p.pieces.length)+"%";
       progress.append(bar);
       const go=doc.createElement("span");go.className="graph-card-go";
-      go.textContent=finished?"✓ Finished · Play again":
-        r.done?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":
-        "Start picture →";
+      go.textContent=finished?"✓ Completed · View picture →":
+        r.done?"Continue picture →":"Start picture →";
       info.append(stage,name,description,focus,progress,go);
       card.append(svg,info);
       card.addEventListener("click",()=>choosePicture(p.id));
@@ -228,11 +230,10 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     const p=curvePicture(id);if(!p)return;
     stopFlash();stopReveal();
     saved.picture=p.id;
-    if(record().done===p.pieces.length){
-      record().done=0;record().replays++;
-    }
+    const finished=record().done===p.pieces.length;
     persist();selected=null;hint="";hintStage=0;hintKey="";cursor={x:0,y:0};
-    notify("Find the common region.");setScreen("play");
+    if(finished){setScreen("summary");openReveal();}
+    else{notify("Find the common region.");setScreen("play");}
   }
   function draw(){
     baseGraph(graph);
@@ -368,6 +369,8 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     }
   }
   function restart(){
+    if(typeof win.confirm==="function"&&!win.confirm(
+      "Restart this picture? Only this picture's progress will be reset."))return;
     stopFlash();stopReveal();
     record().done=0;record().replays++;
     persist();selected=null;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
@@ -492,6 +495,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   $("graphCheckFill").addEventListener("click",checkFill);
   $("graphHint").addEventListener("click",showHint);
   $("curveRestart").addEventListener("click",restart);
+  $("curveRestartPlaying").addEventListener("click",restart);
   $("curveChooseAgain").addEventListener("click",()=>setScreen("picker"));
   $("curveNextPicture").addEventListener("click",()=>setScreen("picker"));
   $("curveReplayReveal").addEventListener("click",openReveal);
