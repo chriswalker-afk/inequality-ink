@@ -56,6 +56,7 @@ function expandedPolynomial(a,b,c){
   return result||"0";
 }
 function rootFactor(root){
+  if(root===0)return "x";
   return "(x "+(root<0?"+ "+(-root):"− "+root)+")";
 }
 function factorForm(a,roots){
