@@ -78,6 +78,25 @@ test("Saves are separate by picture and mode, and invalid data is discarded",()=
   assert.deepEqual(saved.records["build:aurora-crystal"],{done:2,line:2,replays:1});
   assert.equal(saved.records["fill:little-house"].done,3);
   assert.equal(saved.records["build:little-house"],undefined);
+  // A completed final boundary saved just before a page refresh is already
+  // correct and must advance to the next piece, not discard ALL progress.
+  db.set(GRAPH_ART_SAVE_KEY,JSON.stringify({
+    mode:"build",picture:"aurora-crystal",records:{
+      "build:aurora-crystal":{done:1,line:3,replays:0}
+    }}));
+  assert.deepEqual(readGraphArtSave(storage).records["build:aurora-crystal"],
+    {done:2,line:0,replays:0});
+  db.set(GRAPH_ART_SAVE_KEY,JSON.stringify({
+    mode:"build",picture:"aurora-crystal",records:{
+      "build:aurora-crystal":{done:4,line:4,replays:0}
+    }}));
+  assert.deepEqual(readGraphArtSave(storage).records["build:aurora-crystal"],
+    {done:5,line:0,replays:0});
+  db.set(GRAPH_ART_SAVE_KEY,JSON.stringify({
+    mode:"build",picture:"aurora-crystal",records:{
+      "build:aurora-crystal":{done:0,line:10,replays:0}
+    }}));
+  assert.equal(readGraphArtSave(storage).records["build:aurora-crystal"],undefined);
   db.set(GRAPH_ART_SAVE_KEY,"broken");
   assert.equal(readGraphArtSave(storage).mode,"fill");
 });
@@ -96,7 +115,7 @@ test("Graph studio remains independent, responsive and self-contained",()=>{
   for(const id of ["graphPicker","graphPlay","graphArtGraph","graphModeFill",
     "graphModeBuild","graphPictureCards","graphRuleList","graphCheckFill",
     "graphUndoFill","graphSideA","graphSideB","graphSolid","graphDashed",
-    "graphAddLine","graphFeedback","graphHint","graphHintText","graphReveal",
+    "graphAddLine","graphFeedback","graphOverlapText","graphHint","graphHintText","graphReveal",
     "graphRevealSvg","graphRevealSkip","graphRevealClose","graphReplayReveal"]){
     assert.ok(ids.includes(id),"Missing "+id);
   }
@@ -133,7 +152,7 @@ class Element{
     for(const fn of this.listeners.get(name)||[])fn({
       target:this,clientX:0,clientY:0,preventDefault(){},...data});
   }
-  click(data={}){this.fire("click",data);}
+  click(data={}){if(!this.disabled)this.fire("click",data);}
   getBoundingClientRect(){return {left:0,top:0,width:620,height:620};}
   querySelectorAll(selector){
     if(selector==="[data-direction-arrow]")
@@ -235,4 +254,113 @@ test("Keyboard can navigate the fill canvas and saved partial build resumes",()=
   $("graphSideB").click();$("graphAddLine").click();
   assert.equal(app.readProgress().records["build:little-house"].line,1);
   assert.equal(JSON.parse(store.get(GRAPH_ART_SAVE_KEY)).records["build:little-house"].line,1);
+});
+
+
+test("Build arrows have real visible polygon heads and point inward",()=>{
+  const s=session(),{$,app}=s;
+  $("graphModeBuild").click();
+  $("graphPictureCards").children[0].click();
+  const rr=GRAPH_ART_PICTURES[0].pieces[0].rules[0];
+  const sideButton=[$("graphSideA"),$("graphSideB")]
+    .find(b=>b.dataset.side===regionSide(rr));
+  sideButton.click();$("graphSolid").click();$("graphAddLine").click();
+  const graph=$("graphArtGraph");
+  const arrows=graph.children.filter(x=>x.getAttribute("data-direction-arrow")!==null);
+  assert.equal(arrows.length,1);
+  assert.equal(arrows[0].getAttribute("class"),"graph-arrow-enter");
+  assert.deepEqual(arrows[0].children.map(child=>child.tagName),["line","polygon"]);
+  const head=arrows[0].children[1];
+  assert.ok(head.getAttribute("points").split(" ").length===3,
+    "Arrowhead is an actual three-point triangle");
+  assert.match(arrows[0].getAttribute("style"),/--graph-enter-x:/);
+  assert.ok(graph.children.some(x=>
+    x.getAttribute("data-region-layer")==="running-intersection"),
+    "A correct half-plane should begin a visible intersection preview");
+  assert.match($("graphOverlapText").textContent,/1 of 4 lines added/);
+  assert.match($("graphCanvasInstruction").textContent,/faint teal area/i);
+});
+test("All five crystal facets re-enable Build controls after each green pulse",()=>{
+  const s=session(),{$,app,timers}=s;
+  $("graphModeBuild").click();
+  $("graphPictureCards").children[1].click();
+  const crystal=GRAPH_ART_PICTURES[1];
+  for(const [index,part] of crystal.pieces.entries()){
+    assert.equal($("graphAddLine").disabled,false,
+      "Add boundary must be enabled at start of piece "+(index+1));
+    assert.equal($("graphActiveEquation").textContent,part.rules[0].text);
+    for(const [ruleIndex,rr] of part.rules.entries()){
+      const expected=regionSide(rr);
+      const button=[$("graphSideA"),$("graphSideB")]
+        .find(b=>b.dataset.side===expected);
+      assert.ok(button,"Missing correct button for "+rr.text);
+      assert.equal(button.disabled,false);
+      button.click();
+      $(rr.inclusive?"graphSolid":"graphDashed").click();
+      $("graphAddLine").click();
+      assert.equal(app.readProgress().records["build:aurora-crystal"].line,ruleIndex+1);
+    }
+    assert.equal($("graphAddLine").disabled,true,
+      "Controls should lock only while finishing piece "+(index+1));
+    assert.equal($("graphSideA").disabled,true);
+    assert.match($("graphOverlapText").textContent,/ALL inequalities are true/);
+    assert.ok($("graphArtGraph").children.some(x=>
+      x.getAttribute("data-region-layer")==="intersection-celebration"));
+    const arrows=$("graphArtGraph").children.filter(x=>
+      x.getAttribute("data-direction-arrow")!==null);
+    assert.equal(arrows.length,part.rules.length);
+    assert.ok(arrows.every(x=>x.getAttribute("class")==="graph-arrow-converge"));
+    timers.at(-1)(); // Advance fake animation timer.
+    assert.equal(app.readProgress().records["build:aurora-crystal"].done,index+1);
+    assert.equal(app.readProgress().records["build:aurora-crystal"].line,0);
+    if(index<crystal.pieces.length-1){
+      assert.equal($("graphAddLine").disabled,false,
+        "Next shape's Add button must recover after previous animation");
+      assert.equal($("graphSideA").disabled,false);
+      assert.equal($("graphSideB").disabled,false);
+      assert.equal($("graphHint").disabled,false);
+      assert.equal($("graphTaskTitle").textContent,crystal.pieces[index+1].name);
+    }
+  }
+  assert.equal($("graphSummary").hidden,false);
+});
+test("Leaving mid-animation commits the finished piece; stale callbacks cannot advance it again",()=>{
+  const s=session(),{$,app,timers,storage}=s;
+  $("graphModeBuild").click();
+  $("graphPictureCards").children[1].click();
+  const part=GRAPH_ART_PICTURES[1].pieces[0];
+  for(const rr of part.rules){
+    const btn=[$("graphSideA"),$("graphSideB")]
+      .find(b=>b.dataset.side===regionSide(rr));
+    btn.click();$(rr.inclusive?"graphSolid":"graphDashed").click();
+    $("graphAddLine").click();
+  }
+  const obsoleteTimer=timers.at(-1);
+  assert.equal(app.readProgress().records["build:aurora-crystal"].line,3);
+  $("graphBack").click();
+  assert.equal($("graphPicker").hidden,false);
+  assert.equal(app.readProgress().records["build:aurora-crystal"].done,1);
+  assert.equal(app.readProgress().records["build:aurora-crystal"].line,0);
+  obsoleteTimer(); // Cancelled timer must do nothing even if it fires.
+  assert.equal(app.readProgress().records["build:aurora-crystal"].done,1);
+  $("graphPictureCards").children[1].click();
+  assert.equal($("graphTaskTitle").textContent,"Golden facet");
+  assert.equal($("graphAddLine").disabled,false);
+  const resumed=initRegionsApp({
+    doc:fakeDoc(),storage,win:s.win
+  });
+  assert.equal(resumed.readProgress().records["build:aurora-crystal"].done,1);
+});
+test("Completed boundary saved just before reloading resumes at the next facet",()=>{
+  const s=session(),{$,app,storage}=s;
+  $("graphModeBuild").click();$("graphPictureCards").children[0].click();
+  for(const rr of GRAPH_ART_PICTURES[0].pieces[0].rules){
+    [$("graphSideA"),$("graphSideB")].find(b=>
+      b.dataset.side===regionSide(rr)).click();
+    $("graphSolid").click();$("graphAddLine").click();
+  }
+  assert.equal(app.readProgress().records["build:little-house"].line,4);
+  const refreshed=initRegionsApp({doc:fakeDoc(),storage,win:s.win});
+  assert.deepEqual(refreshed.readProgress().records["build:little-house"],
+    {done:1,line:0,replays:0});
 });
