@@ -261,14 +261,14 @@ const gift=picture({
 const mountains=picture({
   id:"mountain-morning",name:"Mountain Morning",mode:"build",step:2,
   clue:"Peak Performance",description:"Three regions form peaks and morning sunshine.",
-  focus:"Add rising and falling straight-line boundaries.",
+  focus:"Rising and falling boundaries, plus your first strict (dashed) line.",
   pieces:[
     polygonPiece("mountain-left","The first mountain","#7ca9a5",
       [[-4.5,-3],[-.5,1],[3.5,-3]]),
     polygonPiece("mountain-right","The second mountain","#648fad",
       [[-1,-3],[2,0],[4,-3]]),
     polygonPiece("mountain-sun","The morning sun","#f3cb72",
-      diamond(3,3,1,1))
+      diamond(3,3,1,1),{strict:[1]})
   ],
   details:[
     L(0,-.5,1,-1.15,.35,"#e9f4ef",.10),
