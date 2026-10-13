@@ -1,4 +1,5 @@
 import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
+import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
   REGION_WORLD,intersectRegion,lineOnRegionGraph,regionSide,regionSideOptions,
   regionBoundaryStyle,regionCorrect,regionHint,pointSatisfiesAll
@@ -190,7 +191,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   const $=id=>doc.getElementById(id);
   const graph=$("graphArtGraph"),reveal=$("graphReveal"),revealSvg=$("graphRevealSvg");
   let saved=readGraphArtSave(storage),screen="picker",choiceSide=null,
-    choiceStyle=null,selected=null,flash=null,message="",status="",hint="",
+    choiceStyle=null,selected=null,flash=null,why=null,message="",status="",hint="",
     hintStage=0,hintKey="",revealTimers=[],cursor={x:0,y:0},activeReveal=false,
     pendingPieceTimer=null,lastAddedArrow=null,buildRevealPhase="idle";
   const HUB_MODES=[
@@ -222,8 +223,13 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function current(){return picture().pieces[record().done]||null;}
   function rule(){return current()?.rules[record().line]||null;}
   function notify(s,type=""){message=s;status=type;}
+  function setWhy(value){
+    why=value;
+    // An attempt never opens an explanation by itself.
+    $("graphWhy").open=false;
+  }
   function resetChoices(){
-    choiceSide=null;choiceStyle=null;selected=null;hint="";
+    choiceSide=null;choiceStyle=null;selected=null;hint="";setWhy(null);
     hintStage=0;hintKey="";
     lastAddedArrow=null;
   }
@@ -315,6 +321,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphPreviewStage").textContent=p.step+" · "+p.stage;
     $("graphPreviewName").textContent=label;
     $("graphPreviewFocus").textContent=p.focus||p.description;
+    $("graphPreviewSkills").textContent="Skills · "+pictureSkills(p,m).join(" · ");
     const pending=m==="build"&&done<p.pieces.length&&
       r.line===p.pieces[done].rules.length;
     const stages=finished?"✓ Completed — revisit your artwork":
@@ -438,7 +445,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       name.textContent=finished?p.name:p.clue;
       const desc=doc.createElement("small");desc.textContent=p.description;
       const focus=doc.createElement("span");focus.className="graph-card-maths";
-      focus.textContent=p.focus;
+      focus.textContent=pictureSkills(p,hubMode).slice(0,3).join(" · ");
       const go=doc.createElement("span");go.className="graph-card-go";
       go.textContent=finished?"✓ Completed":r.done||r.line?
         "Continue picture":"Ready to start";
@@ -624,6 +631,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       (mode()==="fill"?"Tap the region where all inequalities are true.":
         "Choose a side and a line style for the highlighted inequality.");
     $("graphFeedback").className="graph-feedback"+(status?" "+status:"");
+    $("graphWhy").hidden=!why;
+    $("graphWhyText").textContent=why?.text||"";
     $("graphHintText").textContent=hint;
     $("graphHintText").hidden=!hint;
     const scope=mode()+":"+saved.picture+":"+r.done+":"+(mode()==="build"?r.line:0);
@@ -642,6 +651,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(!candidate.correct){
       flash=candidate;selected=null;
+      setWhy(explainRegionChoice(current().rules,{x,y}));
       notify("Not quite. That region fails at least one of the inequalities. Try another.","error");
       playView();
       if(flashTimer)win.clearTimeout?.(flashTimer);
@@ -650,6 +660,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     flash=null;
     selected=selected?"":candidate;
+    setWhy(selected?explainRegionChoice(current().rules,{x,y}):null);
     notify(selected?"Region filled. Press Check when you are ready.":
       "Fill removed. Choose a region again.");
     playView();
@@ -666,16 +677,23 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       pendingPieceTimer!==null||buildRevealPhase==="ready")return;
     const rr=rule();if(!rr)return;
     if(!choiceSide||!choiceStyle){
+      setWhy(null);
       notify("Choose both the direction and whether the line is solid or dashed.","error");
       playView();return;
     }
     if(!regionCorrect(rr,choiceSide,choiceStyle)){
+      setWhy({text:choiceSide!==regionSide(rr)?
+        "For "+rr.text+", the satisfying side is "+regionSide(rr)+
+        ". Choose a test point to check which side is true.":
+        "For "+rr.text+", use a "+regionBoundaryStyle(rr)+
+        " boundary because equality is "+(rr.inclusive?"included.":"excluded.")});
       notify(choiceSide!==regionSide(rr)?
         "Not quite. Try substituting a point on the side you selected.":
         rr.inclusive?"Equality is included: use a solid boundary.":
           "Strict inequalities need a dashed boundary.","error");
       playView();return;
     }
+    setWhy(null);
     record().line++;
     persist();
     lastAddedArrow=rr.id;
@@ -896,7 +914,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     cancelBuildRevealTimer();
     setScreen("picker");
   });
-  $("graphUndoFill").addEventListener("click",()=>{selected=null;flash=null;notify("Fill cleared. Choose a region.");playView();});
+  $("graphUndoFill").addEventListener("click",()=>{selected=null;flash=null;setWhy(null);notify("Fill cleared. Choose a region.");playView();});
   $("graphCheckFill").addEventListener("click",checkFill);
   for(const id of ["graphSideA","graphSideB"])$(id).addEventListener("click",()=>{
     if(pendingPieceTimer!==null)return;
