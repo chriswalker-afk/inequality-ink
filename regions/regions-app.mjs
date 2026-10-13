@@ -162,7 +162,14 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphSummary").hidden=next!=="summary";
     $("how-graph-art-works").hidden=next==="play";
     if(next==="picker")pickerView();
-    if(next==="play")playView();
+    if(next==="play"){
+      // A saved finished boundary resumes on its review, while selecting a
+      // different, unfinished picture must restore fully working controls.
+      const p=current();
+      buildRevealPhase=mode()==="build"&&p&&
+        record().line===p.rules.length?"ready":"idle";
+      playView();
+    }
     if(next==="summary")summaryView();
   }
   function miniature(svg,p){
@@ -196,7 +203,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       name.textContent=r.done===p.pieces.length?p.name:p.clue;
       const desc=doc.createElement("small");desc.textContent=p.description;
       const go=doc.createElement("span");go.className="graph-card-go";
+      const pendingReview=mode()==="build"&&r.done<p.pieces.length&&
+        r.line===p.pieces[r.done].rules.length;
       go.textContent=r.done===p.pieces.length?"✓ Completed · Play again":
+        pendingReview?"Review your completed region →":
         r.done?"Continue picture · "+r.done+"/"+p.pieces.length+" pieces":
           "Start picture →";
       info.append(stage,name,desc,go);card.append(svg,info);
