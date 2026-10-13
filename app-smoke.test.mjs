@@ -42,7 +42,10 @@ class FakeElement {
     this.onclick?.();
     for(const listener of this.listeners.get("click")||[])listener();
   }
-  change(){this.onchange?.(this.value);}
+  change(){
+    this.onchange?.(this.value);
+    for(const listener of this.listeners.get("change")||[])listener({target:this});
+  }
   focus(){}
   blur(){}
   setSelectionRange(start,end){this.selectionStart=start;this.selectionEnd=end;}
