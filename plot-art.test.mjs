@@ -129,7 +129,8 @@ test("Graph Art appearance, five-stage cards, and mobile dock are present",()=>{
   assert.match(page,/regions\.css/);
   assert.match(page,/class="region-workspace graph-workspace plot-workspace"/);
   assert.match(page,/class="graph-feedback"/);
-  assert.match(home,/href="\.\/plot\.html"/);
+  assert.match(home,/id="graphModePlot"/);
+  assert.match(home,/id="graphStartPicture"/);
   assert.match(css,/#plotGraph\{[^}]*touch-action:none/);
   assert.ok(!page.includes("STARTER PROTOTYPE"));
   const s=session();
