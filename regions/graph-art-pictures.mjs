@@ -409,7 +409,7 @@ const diamondKite=Object.freeze({...picture({
     S(2,-3.65,2.9,.2,DETAIL.amber),
     L(2,-.4,-3.8,.35,-3.5,DETAIL.mintInk,.065)
   ]
-}),practiceType:"reverse"});
+}),practice:true,practiceType:"reverse"});
 export const GRAPH_PRACTICE_PICTURES=Object.freeze([campTent,diamondKite]);
 export const graphPracticeGallery=mode=>GRAPH_PRACTICE_PICTURES.filter(p=>p.mode===mode);
 // Graph-to-inequality multiple choice: four genuinely different boundary
