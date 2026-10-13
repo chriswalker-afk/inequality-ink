@@ -24,18 +24,21 @@ function initialState(){
   return {selectedPicture:"prism",
     progress:Object.fromEntries(QUEST_PICTURES.map(p=>[p.id,fresh()]))};
 }
-function suggestedPicture(state){
+function suggestedPicture(state,explicitSelection=false){
   const selected=questPictureById(state.selectedPicture);
-  // Preserve an ongoing chosen picture; otherwise suggest the first unfinished.
+  // A consciously chosen unfinished picture survives reload; an already
+  // completed picture instead points students towards their next step.
   if(selected){
     const done=state.progress[selected.id].done;
-    if(done>0&&done<selected.questions.length)return selected.id;
+    if(done<selected.questions.length&&(done>0||explicitSelection))
+      return selected.id;
   }
   return QUEST_PICTURES.find(p=>
     state.progress[p.id].done<p.questions.length)?.id||"nova";
 }
 export function readQuadraticSave(storage){
   const state=initialState();
+  let explicitSelection=false;
   try{
     const current=storage.getItem(QUEST_SAVE_KEY_V2);
     if(current!==null){
@@ -44,8 +47,10 @@ export function readQuadraticSave(storage){
         typeof parsed.progress==="object"){
         for(const p of QUEST_PICTURES)
           state.progress[p.id]=validProgress(parsed.progress[p.id],p);
-        if(questPictureById(parsed.selectedPicture))
+        if(questPictureById(parsed.selectedPicture)){
           state.selectedPicture=parsed.selectedPicture;
+          explicitSelection=true;
+        }
       }
     }else{
       // One-way migration: keep the existing Prism-of-Possibilities prototype
@@ -57,7 +62,7 @@ export function readQuadraticSave(storage){
   }catch{
     // Corrupt individual saves must never stop the site loading.
   }
-  state.selectedPicture=suggestedPicture(state);
+  state.selectedPicture=suggestedPicture(state,explicitSelection);
   return state;
 }
 function mk(doc,tag,attributes={},parent=null){
