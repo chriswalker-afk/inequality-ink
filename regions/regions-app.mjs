@@ -217,6 +217,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
   function mode(){return saved.mode;}
+  function isReverse(){return mode()==="build"&&picture()?.practiceType==="reverse";}
   function record(){
     const k=key(mode(),saved.picture);
     if(!saved.records[k])saved.records[k]=blank();
@@ -484,6 +485,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const p=picture(),r=record(),part=current();
     // Preview the overlap of accepted half-planes BEHIND the already painted
     // pieces, so it never tints or visually changes completed artwork.
+    if(part&&isReverse()&&rule()){
+      // The highlighted half-plane is the question; never print its rule
+      // until the player selects a matching inequality.
+      polygon(graph,doc,intersectRegion([rule()]),{
+        fill:"#61c2a7","fill-opacity":.2,
+        stroke:"#459c82","stroke-width":1.5,"stroke-opacity":.72,
+        "data-region-layer":"reverse-target","pointer-events":"none"
+      });
+    }
     if(part&&mode()==="build"&&r.line>0){
       const candidate=intersectRegion(part.rules.slice(0,r.line));
       polygon(graph,doc,candidate,{fill:"#72c5ac","fill-opacity":.11,
@@ -571,12 +581,16 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphTaskKicker").textContent="PIECE "+(r.done+1)+" OF "+p.pieces.length;
     $("graphTaskTitle").textContent=part.name;
     $("graphPieceSwatch").style.background=part.color;
-    $("graphCanvasHeading").textContent=mode()==="fill"?"Find the overlap":"Build the region";
+    $("graphCanvasHeading").textContent=mode()==="fill"?"Find the overlap":
+      isReverse()?"Read the shaded region":"Build the region";
     $("graphTaskLead").textContent=mode()==="fill"?
       "All these inequalities must be true together. Fill their common region.":
+      isReverse()?"Read each highlighted line and shaded half-plane. Choose the matching inequality.":
       "For each inequality, choose the correct side and boundary style. All the arrows will point into the common region.";
     $("graphCanvasInstruction").textContent=mode()==="fill"?
       "Tap the correct region, then press Check. Keyboard: arrows + Enter.":
+      isReverse()&&!allBuilt?
+        "The dark boundary and pale green shading form the question. Choose its inequality.":
       allBuilt?
         (converging?
           "Watch the arrows meet: the green overlap satisfies ALL the inequalities.":
@@ -586,22 +600,44 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
           "Each arrow points towards the half-plane satisfying that inequality.";
     $("graphRuleCount").textContent=part.rules.length+" inequalities";
     $("graphFillControls").hidden=mode()!=="fill";
-    $("graphBuildControls").hidden=mode()!=="build";
+    $("graphBuildControls").hidden=mode()!=="build"||isReverse();
+    $("graphReverseControls").hidden=!isReverse();
     const holder=$("graphRuleList");holder.replaceChildren();
     part.rules.forEach((rr,i)=>{
       const item=doc.createElement(mode()==="build"?"button":"div");
       item.className="graph-rule-item"+(mode()==="build"&&i===r.line?" selected":"")+
         (mode()==="build"&&i<r.line?" done":"");
-      const eq=doc.createElement("span");eq.textContent=rr.text;
+      const eq=doc.createElement("span");
+      eq.textContent=isReverse()&&i>=r.line?
+        (i===r.line?"Read the highlighted graph":"Upcoming graph"):rr.text;
       const state=doc.createElement("span");state.className="rule-state";
       state.textContent=mode()==="fill"?"AND":i<r.line?"✓ Added":i===r.line?"● Now":"○ Next";
       item.append(eq,state);
       if(mode()==="build"){
         item.type="button";item.disabled=i!==r.line||pendingPieceTimer!==null;
-        item.addEventListener("click",()=>{notify("Choose a side and a line style.");playView();});
+        item.addEventListener("click",()=>{
+          notify(isReverse()?"Choose the inequality matching the shaded side.":
+            "Choose a side and a line style.");playView();
+        });
       }
       holder.append(item);
     });
+    if(isReverse()){
+      const options=$("graphReverseChoices");options.replaceChildren();
+      if(rule()&&!allBuilt){
+        for(const option of reverseInequalityOptions(rule())){
+          const button=doc.createElement("button");
+          button.type="button";button.textContent=option;
+          button.addEventListener("click",()=>chooseReverseOption(option));
+          options.append(button);
+        }
+      }
+      $("graphReverseWaiting").hidden=!converging;
+      $("graphReverseNext").hidden=!awaitingNext;
+      $("graphReverseNext").disabled=!awaitingNext;
+      $("graphReverseNext").textContent=r.done===p.pieces.length-1?
+        "Finish picture ✦":"Next piece →";
+    }
     if(mode()==="build"){
       $("graphBuildControls").classList.toggle("is-solved",allBuilt);
       $("graphAddLine").hidden=allBuilt;
@@ -683,7 +719,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     finishPiece();
   }
   function addLine(){
-    if(screen!=="play"||mode()!=="build"||
+    if(screen!=="play"||mode()!=="build"||isReverse()||
       pendingPieceTimer!==null||buildRevealPhase==="ready")return;
     const rr=rule();if(!rr)return;
     if(!choiceSide||!choiceStyle){
@@ -703,6 +739,23 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
           "Strict inequalities need a dashed boundary.","error");
       playView();return;
     }
+    acceptBuildBoundary();
+  }
+  function chooseReverseOption(option){
+    if(screen!=="play"||!isReverse()||pendingPieceTimer!==null||
+      buildRevealPhase==="ready"||!rule())return;
+    const rr=rule();
+    if(option!==rr.text){
+      setWhy({text:"The dark line has a "+regionBoundaryStyle(rr)+
+        " boundary. The green side is "+regionSide(rr)+
+        ". The inequality represented is "+rr.text+"."});
+      notify("Not quite. Compare the shaded side and the boundary style.","error");
+      playView();return;
+    }
+    acceptBuildBoundary();
+  }
+  function acceptBuildBoundary(){
+    const rr=rule();if(!rr)return;
     setWhy(null);
     record().line++;
     persist();
@@ -890,7 +943,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const key=mode()+":"+saved.picture+":"+r.done+":"+(mode()==="build"?r.line:0);
     if(key!==hintKey){hintKey=key;hintStage=0;}
     hintStage=Math.min(3,hintStage+1);
-    if(mode()==="build"){
+    if(isReverse()){
+      hint=hintStage===1?"Check which side of the highlighted boundary is shaded.":
+        hintStage===2?"Use < or > for dashed lines and ≤ or ≥ for solid lines. Combine this with the shaded direction.":
+          "The displayed graph represents "+rr.text+".";
+    }else if(mode()==="build"){
       hint=hintStage===1?"First find the direction of the solution from the inequality. Then decide if equality is included.":
         hintStage===2?regionHint(rr):
           "For "+rr.text+", choose "+regionSide(rr)+" and a "+regionBoundaryStyle(rr)+" boundary.";
@@ -942,6 +999,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphNextPiece").addEventListener("click",()=>{
     if(screen!=="play"||mode()!=="build"||
        buildRevealPhase==="converging")return;
+    finishPiece();
+  });
+  $("graphReverseNext").addEventListener("click",()=>{
+    if(screen!=="play"||!isReverse()||
+      buildRevealPhase==="converging")return;
     finishPiece();
   });
   $("graphHint").addEventListener("click",showHint);
