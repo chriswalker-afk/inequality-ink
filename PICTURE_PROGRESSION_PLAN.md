@@ -1,5 +1,28 @@
 # Picture Progression Plan
 
+**October 2026 update — Mixed Challenge now has its own artwork.**
+The original sections below document the first rollout, which deliberately
+reused Full/Solve pictures in Mixed. That initial reuse has since been
+superseded. Mixed now has an **independent five-picture primary journey**,
+each requiring Mirror Mode, Full Picture and Solve & Paint skills:
+
+| Step | Mixed clue | Finished art | Questions |
+| --- | --- | --- | ---: |
+| Starter | Pocket Guardian | Little Shield | 6 |
+| Step Up | Visitor from Above | Flying Saucer | 8 |
+| Building | Against the Clock | Golden Hourglass | 10 |
+| Challenge | Flutter By | Butterfly | 12 |
+| Big Finish | Here Be Dragons | Dragon Guardian | 14 |
+
+New picture definitions live in `mixed-pictures.mjs`; the other modes'
+paths are unaffected. The original shared Mixed pictures (including
+Enchanted Potion) are retained under **More pictures**, preserving all
+existing IDs, questions and saved progress. Every core Mixed picture
+contains mirrored one-sided, full bounded and algebraic problems, with
+more difficult negative-coefficient questions in the finale.
+
+---
+
 **Status:** **Quick-win progression implemented** — five accessible picture stages in every mode; classroom evaluation and optional soft unlocking remain future considerations.
 **Scope:** Inequality Ink, all five challenge modes
 **Goal:** Make early successes happen after only a handful of questions, then visibly build towards more demanding pictures, while keeping the mathematical integrity and the existing saved work.
