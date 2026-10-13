@@ -388,7 +388,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("plotFeedback").textContent=message||"Place two points to construct the boundary.";
     $("plotHintText").hidden=!hint;
     $("plotHintText").textContent=hint;
-    const currentHintKey=save.done+":"+save.phase+":"+save.plotIndex;
+    const currentHintKey=saved.picture+":"+save.done+":"+save.phase+":"+save.plotIndex;
     const availableHintStage=hintKey===currentHintKey?hintStage:0;
     $("plotHint").textContent=availableHintStage>=3?"✳ All hints shown":
       availableHintStage?"✳ More help ("+(availableHintStage+1)+"/3)":"✳ Give me a hint";
@@ -642,7 +642,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function giveHint(){
     if(screen!=="play"||!current())return;
-    const key=save.done+":"+save.phase+":"+save.plotIndex;
+    const key=saved.picture+":"+save.done+":"+save.phase+":"+save.plotIndex;
     if(hintKey!==key){hintKey=key;hintStage=0;}
     hintStage=Math.min(hintStage+1,3);
     if(save.phase==="plot"){
