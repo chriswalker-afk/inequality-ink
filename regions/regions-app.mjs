@@ -201,6 +201,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   const requestedMode=new URLSearchParams(win.location?.search||"").get("mode");
   let hubMode=HUB_MODES.some(m=>m.id===requestedMode)?requestedMode:saved.mode;
   const hubSelections={};
+  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  if(requestedPicture&&hubGalleryAvailable(hubMode,requestedPicture))
+    hubSelections[hubMode]=requestedPicture;
+  function hubGalleryAvailable(m,id){
+    return (m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
+      graphModeGallery(m)).some(p=>p.id===id)||
+      ((m==="fill"||m==="build")&&
+        graphLegacyExtras(m,saved.records).some(p=>p.id===id));
+  }
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
   function mode(){return saved.mode;}
@@ -318,7 +327,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     hubMiniature($("graphPreviewSvg"),p,done,m);
   }
   function startHubPicture(){
-    const p=hubGallery(hubMode).find(p=>p.id===hubSelections[hubMode]);
+    const p=[...hubGallery(hubMode),...
+      ((hubMode==="fill"||hubMode==="build")?
+        graphLegacyExtras(hubMode,saved.records):[])].find(
+          item=>item.id===hubSelections[hubMode]);
     if(!p)return;
     if(hubMode==="curve"||hubMode==="plot"){
       const url="./"+(hubMode==="curve"?"curve.html":"plot.html")+
@@ -337,6 +349,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       if(win.history?.replaceState&&win.location){
         const url=new URL(win.location.href);
         url.searchParams.set("mode",next);
+        if(hubSelections[next])url.searchParams.set("picture",hubSelections[next]);
+        else url.searchParams.delete("picture");
         win.history.replaceState(null,"",url.pathname+url.search+url.hash);
       }
     }catch{}
@@ -354,9 +368,12 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphModeDescription").textContent=
       HUB_MODES.find(m=>m.id===hubMode).description;
     $("graphGalleryProgress").textContent=completed+" of 5 completed";
-    if(!gallery.some(p=>p.id===hubSelections[hubMode]))
+    const extras=hubMode==="fill"||hubMode==="build"?
+      graphLegacyExtras(hubMode,saved.records):[];
+    if(![...gallery,...extras].some(p=>p.id===hubSelections[hubMode]))
       hubSelections[hubMode]=recommended.id;
-    const selectedPicture=gallery.find(p=>p.id===hubSelections[hubMode]);
+    const selectedPicture=[...gallery,...extras].find(
+      p=>p.id===hubSelections[hubMode])||recommended;
     const track=$("graphStageTrack");
     track.replaceChildren();
     for(const p of gallery){
@@ -374,19 +391,23 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       item.append(dot,caption);track.append(item);
     }
     function highlightSelected(){
+      try{
+        if(win.history?.replaceState&&win.location){
+          const url=new URL(win.location.href);
+          url.searchParams.set("mode",hubMode);
+          url.searchParams.set("picture",hubSelections[hubMode]);
+          win.history.replaceState(null,"",url.pathname+url.search+url.hash);
+        }
+      }catch{}
       for(const card of [...$("graphPictureCards").children,
         ...$("graphExtraCards").children]){
         const active=card.getAttribute("data-hub-picture")===hubSelections[hubMode];
         card.setAttribute("aria-pressed",String(active));
         card.classList.toggle("is-selected",active);
       }
-      const p=[...gallery,...graphLegacyExtrasForHub()].find(p=>
+      const p=[...gallery,...extras].find(p=>
         p.id===hubSelections[hubMode]);
       if(p)updateHubPreview(p,hubMode,getRecord(p));
-    }
-    function graphLegacyExtrasForHub(){
-      return hubMode==="fill"||hubMode==="build"?
-        graphLegacyExtras(hubMode,saved.records):[];
     }
     function makeCard(p,extra=false){
       const r=getRecord(p),finished=r.done===p.pieces.length;
@@ -433,7 +454,6 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     const cards=$("graphPictureCards");cards.replaceChildren();
     for(const p of gallery)cards.append(makeCard(p));
-    const extras=graphLegacyExtrasForHub();
     $("graphMorePictures").hidden=extras.length===0;
     const extraCards=$("graphExtraCards");extraCards.replaceChildren();
     for(const p of extras)extraCards.append(makeCard(p,true));
