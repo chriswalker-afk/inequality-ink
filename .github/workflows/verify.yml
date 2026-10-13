@@ -30,3 +30,6 @@ jobs:
           node --check regions/curved-engine.mjs
           node --check regions/curve-pictures.mjs
           node --check regions/curve-art.mjs
+          node --check regions/plot-engine.mjs
+          node --check regions/plot-pictures.mjs
+          node --check regions/plot-art.mjs
