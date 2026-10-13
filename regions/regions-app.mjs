@@ -46,10 +46,6 @@ function textSvg(doc,svg,x,y,content,attrs={}){
 }
 function baseGraph(svg,doc,{grid=true}={}){
   svg.replaceChildren();
-  const defs=el(doc,"defs",{},svg);
-  const marker=el(doc,"marker",{id:"graph-arrowhead",viewBox:"0 0 10 10",
-    refX:9,refY:5,markerWidth:5,markerHeight:5,orient:"auto-start-reverse"},defs);
-  el(doc,"path",{d:"M0 0 L10 5 L0 10 Z",fill:"#398b78"},marker);
   el(doc,"rect",{x:PAD,y:PAD,width:GRID,height:GRID,rx:9,
     fill:"#fffcf8",stroke:"#d8dfd9","stroke-width":2},svg);
   if(!grid)return;
@@ -74,6 +70,38 @@ function boundary(doc,svg,r,attrs={}){
     x2:px(points[1].x),y2:py(points[1].y),stroke:"#607d94",
     "stroke-width":2.2,"stroke-dasharray":r.inclusive?"":"8 7",
     "pointer-events":"none",...attrs},svg);
+}
+// A shaft plus a REAL triangular polygon, rather than an external SVG marker.
+// This remains a visible arrowhead in Chromium, Firefox, Safari and exported SVG.
+function directionArrow(doc,svg,ruleDef,region,{enter=false,agree=false}={}){
+  const a=graphArrow(ruleDef,region);
+  if(!a)return null;
+  const x1=px(a.x1),y1=py(a.y1),x2=px(a.x2),y2=py(a.y2);
+  const len=Math.hypot(x2-x1,y2-y1);
+  if(len<1)return null;
+  const ux=(x2-x1)/len,uy=(y2-y1)/len;
+  const headLength=12,headHalfWidth=7.5;
+  const baseX=x2-ux*headLength,baseY=y2-uy*headLength;
+  const points=[
+    [x2,y2],
+    [baseX-uy*headHalfWidth,baseY+ux*headHalfWidth],
+    [baseX+uy*headHalfWidth,baseY-ux*headHalfWidth]
+  ];
+  const group=el(doc,"g",{
+    "data-direction-arrow":ruleDef.id,
+    "data-arrow-tip-x":x2.toFixed(2),
+    "data-arrow-tip-y":y2.toFixed(2),
+    "class":agree?"graph-arrow-converge":enter?"graph-arrow-enter":"",
+    "style":"--graph-enter-x:"+(-ux*14).toFixed(1)+
+      "px;--graph-enter-y:"+(-uy*14).toFixed(1)+"px",
+    "aria-hidden":"true","pointer-events":"none"
+  },svg);
+  el(doc,"line",{x1,y1,x2:x2-ux*5,y2:y2-uy*5,stroke:"#187f67",
+    "stroke-width":4,"stroke-linecap":"round"},group);
+  el(doc,"polygon",{points:points.map(([x,y])=>x.toFixed(2)+
+    ","+y.toFixed(2)).join(" "),fill:"#147d64",stroke:"#fffef8",
+    "stroke-width":1.25,"stroke-linejoin":"round"},group);
+  return group;
 }
 function decorations(doc,svg,p){
   if(p.details==="house"){
@@ -181,6 +209,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(!part)return;
     const points=intersectRegion(part.rules);
+    // Each correctly interpreted inequality reduces the candidate solution.
+    // This translucent INTERSECTION is computed from those rules, never from art.
+    if(mode()==="build"&&r.line>0){
+      const candidate=intersectRegion(part.rules.slice(0,r.line));
+      polygon(graph,doc,candidate,{fill:"#72c5ac","fill-opacity":.11,
+        stroke:"#39a186","stroke-width":1.5,"stroke-opacity":.64,
+        "stroke-dasharray":"6 6","data-region-layer":"running-intersection",
+        "pointer-events":"none"});
+    }
     for(const rr of part.rules){
       boundary(doc,graph,rr,{stroke:mode()==="fill"?"#5b7890":"#a5b7bf",
         "stroke-width":mode()==="fill"?2.6:1.65,
@@ -208,19 +245,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
         const rr=part.rules[i];
         boundary(doc,graph,rr,{stroke:"#3b8175","stroke-width":3.2,
           "stroke-opacity":1});
-        const arrow=graphArrow(rr,points);
-        if(arrow){
-          const line=el(doc,"line",{x1:px(arrow.x1),y1:py(arrow.y1),
-            x2:px(arrow.x2),y2:py(arrow.y2),
-            stroke:"#398b78","stroke-width":3.8,
-            "marker-end":"url(#graph-arrowhead)",
-            "pointer-events":"none","data-direction-arrow":rr.id},graph);
-          if(r.line===part.rules.length)line.classList?.add("graph-arrow-pulse");
-        }
+        directionArrow(doc,graph,rr,points,{
+          enter:r.line<part.rules.length&&lastAddedArrow===rr.id,
+          agree:r.line===part.rules.length
+        });
       }
       if(rule())boundary(doc,graph,rule(),{stroke:"#304f78",
         "stroke-width":4,"stroke-opacity":1});
     }
+    lastAddedArrow=null;
     graph.setAttribute("aria-label",mode()==="fill"?
       "Coordinate graph. "+r.done+" completed pieces. Move with arrow keys and press Enter to fill the region under the keyboard cursor.":
       "Coordinate graph. "+r.line+" of "+part.rules.length+" boundaries correctly added to this piece.");
