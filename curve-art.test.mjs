@@ -31,7 +31,7 @@ class Element{
   showModal(){this.setAttribute("open","");}
   close(){this.removeAttribute("open");}
 }
-function session(initial={},reduced=false){
+function session(initial={},reduced=false,query=""){
   const html=readFileSync(new URL("./regions/curve.html",import.meta.url),"utf8");
   const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   const elements=new Map(ids.map(id=>[id,new Element(id)]));
@@ -47,15 +47,16 @@ function session(initial={},reduced=false){
     ["inequality-ink-graph-art-v2","keep existing progress"],
     ["inequality-ink-v5","keep pixel progress"],...Object.entries(initial)
   ]);
-  const callbacks=new Map();let next=0;
+  const callbacks=new Map(),redirects=[];let next=0;
   const win={
     setTimeout:(fn,ms)=>{const id=++next;callbacks.set(id,{fn,ms});return id;},
     clearTimeout:id=>callbacks.delete(id),
-    matchMedia:()=>({matches:reduced})
+    matchMedia:()=>({matches:reduced}),
+    location:{search:query,assign:url=>redirects.push(url)}
   };
   const storage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
   const app=initCurveArt({doc,storage,win});
-  return {doc,store,storage,callbacks,win,app,$:doc.getElementById};
+  return {doc,store,storage,callbacks,redirects,win,app,$:doc.getElementById};
 }
 const layer=(s,name)=>s.$("graphArtGraph").children.filter(n=>n.getAttribute("data-region-layer")===name);
 const details=svg=>svg.children.filter(n=>n.getAttribute("data-curve-detail")!==null);
@@ -233,4 +234,14 @@ test("keyboard selection, hints and retry remain usable on all modes",()=>{
   assert.equal(s.$("curveGameTitle").textContent,"Orbit Flower");
   s.$("graphHint").click();
   assert.equal(s.$("graphHintText").hidden,false);
+});
+
+test("Curve picture deep links launch directly and return to unified Graph Art",()=>{
+  const s=session({},true,"?picture=rolling-hills");
+  assert.equal(s.$("curvePlay").hidden,false);
+  assert.equal(s.$("curveGameTitle").textContent,"Rolling Hills");
+  s.$("curveBack").click();
+  assert.equal(s.redirects.at(-1),"./?mode=curve&picture=rolling-hills");
+  const direct=session({},false,"?picture=invalid-picture");
+  assert.equal(direct.$("curvePicker").hidden,false);
 });

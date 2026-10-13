@@ -8,6 +8,11 @@ import {
   graphPicture,graphModeGallery,graphLegacyExtras,graphTotalBoundaries,
   graphCellAt,graphArrow,validateGraphPictureLibrary
 } from "./graph-art-pictures.mjs?v=decorative-contrast-v5";
+import {CURVE_PICTURES} from "./curve-pictures.mjs?v=full-mode-v5";
+import {PLOT_PICTURES} from "./plot-pictures.mjs";
+import {regionPaths} from "./curved-engine.mjs";
+import {readCurveSave} from "./curve-art.mjs";
+import {readPlotSave} from "./plot-art.mjs";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-REGION_WORLD.xmin)*GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
@@ -187,6 +192,24 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     choiceStyle=null,selected=null,flash=null,message="",status="",hint="",
     hintStage=0,hintKey="",revealTimers=[],cursor={x:0,y:0},activeReveal=false,
     pendingPieceTimer=null,lastAddedArrow=null,buildRevealPhase="idle";
+  const HUB_MODES=[
+    {id:"fill",button:"graphModeFill",description:"Read all the inequalities, then fill the region they share."},
+    {id:"build",button:"graphModeBuild",description:"Choose the side and the boundary style of each inequality; watch their overlap appear."},
+    {id:"curve",button:"graphModeCurve",description:"Find the region common to parabolas, circles and other curved boundaries."},
+    {id:"plot",button:"graphModePlot",description:"Plot each missing line or curve before deciding its style and shading."}
+  ];
+  const requestedMode=new URLSearchParams(win.location?.search||"").get("mode");
+  let hubMode=HUB_MODES.some(m=>m.id===requestedMode)?requestedMode:saved.mode;
+  const hubSelections={};
+  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  if(requestedPicture&&hubGalleryAvailable(hubMode,requestedPicture))
+    hubSelections[hubMode]=requestedPicture;
+  function hubGalleryAvailable(m,id){
+    return (m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
+      graphModeGallery(m)).some(p=>p.id===id)||
+      ((m==="fill"||m==="build")&&
+        graphLegacyExtras(m,saved.records).some(p=>p.id===id));
+  }
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
   function mode(){return saved.mode;}
@@ -220,94 +243,224 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(next==="summary")summaryView();
   }
-  function miniature(svg,p,completed=false){
+  function miniature(svg,p,progress=0){
     baseGraph(svg,doc,{grid:false});
     p.pieces.forEach((f,i)=>{
-      const visible=completed||i<Math.min(2,p.pieces.length);
+      const painted=i<progress;
+      const visible=painted||i<Math.min(2,p.pieces.length);
       polygon(svg,doc,intersectRegion(f.rules),{
-        fill:visible?f.color:"#bfcac7",
-        "fill-opacity":visible?1:.22,
-        stroke:visible?"#fff9ee":"#bfcac7",
-        "stroke-dasharray":visible?"":"9 7","stroke-width":3
+        fill:painted?f.color:"#bfcac7",
+        "fill-opacity":painted?1:visible?.22:.075,
+        stroke:painted?"#fff9ee":"#bfcac7",
+        "stroke-dasharray":painted?"":"9 7","stroke-width":3
       });
     });
-    if(completed)decorations(doc,svg,p);
+    if(progress===p.pieces.length)decorations(doc,svg,p);
+  }
+  // The hub lets all four modes share a single three-decision starting screen.
+  // Each activity still owns its own independent save data and mathematical code.
+  function hubGallery(m){
+    return m==="curve"?CURVE_PICTURES:
+      m==="plot"?PLOT_PICTURES:graphModeGallery(m);
+  }
+  function hubRecord(m,p,curve,plot){
+    if(m==="curve")return curve.records[p.id]||{done:0,replays:0};
+    if(m==="plot")return plot.records[p.id]||{done:0,replays:0};
+    return saved.records[key(m,p.id)]||blank();
+  }
+  function hubMiniature(svg,p,done,m){
+    if(m==="fill"||m==="build"){miniature(svg,p,done);return;}
+    baseGraph(svg,doc,{grid:false});
+    p.pieces.forEach((part,i)=>{
+      const painted=i<done;
+      for(const points of regionPaths(part.rules,undefined,125))
+        polygon(svg,doc,points,{
+          fill:painted?part.color:"#c1cfca",
+          "fill-opacity":painted?1:i<2?.22:.055,
+          stroke:painted?"#fff9eb":"#b3c2bc",
+          "stroke-dasharray":painted?"":"9 7",
+          "stroke-width":painted?3:1.7
+        });
+    });
+    if(done===p.pieces.length){
+      const scale=GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
+      for(const d of p.details||[]){
+        const common={"pointer-events":"none"};
+        if(d.type==="circle"||d.type==="ellipse"){
+          const attrs={...common,cx:px(d.x),cy:py(d.y),fill:d.fill,
+            stroke:d.stroke||"none","stroke-width":(d.width||.04)*scale};
+          if(d.type==="circle")el(doc,"circle",{...attrs,r:d.r*scale},svg);
+          else el(doc,"ellipse",{...attrs,rx:d.rx*scale,ry:d.ry*scale},svg);
+        }else if(d.type==="curve"){
+          el(doc,"path",{...common,d:"M"+px(d.x1)+" "+py(d.y1)+
+            " Q"+px(d.cx)+" "+py(d.cy)+" "+px(d.x2)+" "+py(d.y2),
+            fill:"none",stroke:d.stroke,"stroke-width":(d.width||.04)*scale,
+            "stroke-linecap":"round","stroke-linejoin":"round"},svg);
+        }else if(d.type==="star"){
+          const vertices=Array.from({length:10},(_,i)=>{
+            const r=d.r*(i%2?.42:1),a=-Math.PI/2+i*Math.PI/5;
+            return px(d.x+Math.cos(a)*r)+","+py(d.y+Math.sin(a)*r);
+          }).join(" ");
+          el(doc,"polygon",{...common,points:vertices,fill:d.fill,
+            stroke:d.stroke||"none","stroke-width":(d.width||.04)*scale},svg);
+        }
+      }
+    }
+  }
+  function updateHubPreview(p,m,r){
+    const done=r.done||0,finished=done===p.pieces.length;
+    const selected=p.clue||p.name;
+    const label=finished?p.name:selected;
+    $("graphPreviewStage").textContent=p.step+" · "+p.stage;
+    $("graphPreviewName").textContent=label;
+    $("graphPreviewFocus").textContent=p.focus||p.description;
+    const pending=m==="build"&&done<p.pieces.length&&
+      r.line===p.pieces[done].rules.length;
+    const stages=finished?"✓ Completed — revisit your artwork":
+      pending?"Ready to review the finished region":
+      done?done+" of "+p.pieces.length+" pieces complete · Continue where you left off":
+      p.step===1?"Quick win · Ready to start":"Not started · Pick any stage";
+    $("graphPreviewProgress").textContent=stages;
+    $("graphStartPicture").textContent=finished?"View completed picture ↗":
+      done||r.line?"Continue picture ↗":"Start picture ↗";
+    $("graphPreviewSvg").setAttribute("aria-label",
+      "Mathematical preview of "+label+", "+done+" of "+p.pieces.length+" pieces complete");
+    hubMiniature($("graphPreviewSvg"),p,done,m);
+  }
+  function startHubPicture(){
+    const p=[...hubGallery(hubMode),...
+      ((hubMode==="fill"||hubMode==="build")?
+        graphLegacyExtras(hubMode,saved.records):[])].find(
+          item=>item.id===hubSelections[hubMode]);
+    if(!p)return;
+    if(hubMode==="curve"||hubMode==="plot"){
+      const url="./"+(hubMode==="curve"?"curve.html":"plot.html")+
+        "?picture="+encodeURIComponent(p.id);
+      if(typeof win.location?.assign==="function")win.location.assign(url);
+      else if(win.location)win.location.href=url;
+    }else choosePicture(p.id,hubMode);
+  }
+  function changeHubMode(next){
+    if(!HUB_MODES.some(x=>x.id===next))return;
+    hubMode=next;
+    if(next==="fill"||next==="build"){saved.mode=next;persist();}
+    // Share the selected mode in the URL, so the browser Back button and
+    // links from the standalone pages can return to the right challenge.
+    try{
+      if(win.history?.replaceState&&win.location){
+        const url=new URL(win.location.href);
+        url.searchParams.set("mode",next);
+        if(hubSelections[next])url.searchParams.set("picture",hubSelections[next]);
+        else url.searchParams.delete("picture");
+        win.history.replaceState(null,"",url.pathname+url.search+url.hash);
+      }
+    }catch{}
+    pickerView();
   }
   function pickerView(){
-    for(const m of GRAPH_ART_MODES){
-      const b=$(m.id==="fill"?"graphModeFill":"graphModeBuild");
-      b.setAttribute("aria-pressed",String(mode()===m.id));
-    }
-    const gallery=graphModeGallery(mode());
-    const completed=gallery.filter(p=>
-      saved.records[key(mode(),p.id)]?.done===p.pieces.length).length;
-    const recommended=gallery.find(p=>
-      saved.records[key(mode(),p.id)]?.done!==p.pieces.length)||gallery[4];
-    $("graphModeDescription").textContent=mode()==="fill"?
-      "Start with two simple regions; work towards nine with strict and mixed-form inequalities.":
-      "Start with solid straight boundaries; finish with eight complex intersecting regions.";
-    $("graphGalleryProgress").textContent=completed+" of 5 completed · "+
-      (completed===5?"All five stages complete!":"Next up: "+recommended.stage);
-    const track=$("graphStageTrack");track.replaceChildren();
+    for(const m of HUB_MODES)
+      $(m.button).setAttribute("aria-pressed",String(hubMode===m.id));
+    const curveSave=readCurveSave(storage),plotSave=readPlotSave(storage);
+    const gallery=hubGallery(hubMode);
+    const getRecord=p=>hubRecord(hubMode,p,curveSave,plotSave);
+    const completed=gallery.filter(p=>getRecord(p).done===p.pieces.length).length;
+    const recommended=gallery.find(p=>getRecord(p).done!==p.pieces.length)||
+      gallery[gallery.length-1];
+    $("graphModeDescription").textContent=
+      HUB_MODES.find(m=>m.id===hubMode).description;
+    $("graphGalleryProgress").textContent=completed+" of 5 completed";
+    const extras=hubMode==="fill"||hubMode==="build"?
+      graphLegacyExtras(hubMode,saved.records):[];
+    if(![...gallery,...extras].some(p=>p.id===hubSelections[hubMode]))
+      hubSelections[hubMode]=recommended.id;
+    const selectedPicture=[...gallery,...extras].find(
+      p=>p.id===hubSelections[hubMode])||recommended;
+    const track=$("graphStageTrack");
+    track.replaceChildren();
     for(const p of gallery){
-      const r=saved.records[key(mode(),p.id)]||blank();
-      const item=doc.createElement("div");
+      const r=getRecord(p),finished=r.done===p.pieces.length;
+      const item=doc.createElement("span");
       item.className="graph-step-node"+
-        (r.done===p.pieces.length?" is-complete":"")+
-        (p.id===recommended.id?" is-recommended":"");
+        (finished?" is-complete":"")+
+        (p.id===selectedPicture.id?" is-recommended":"");
       item.setAttribute("aria-label",p.stage+" stage, "+
-        (r.done===p.pieces.length?"complete":r.done+" of "+p.pieces.length+" pieces"));
-      const dot=doc.createElement("span");dot.className="graph-step-number";
-      dot.textContent=r.done===p.pieces.length?"✓":String(p.step);
+        (finished?"completed":r.done+" of "+p.pieces.length+" pieces"));
+      const dot=doc.createElement("span");
+      dot.className="graph-step-number";
+      dot.textContent=finished?"✓":String(p.step);
       const caption=doc.createElement("span");caption.textContent=p.stage;
       item.append(dot,caption);track.append(item);
     }
+    function highlightSelected(){
+      try{
+        if(win.history?.replaceState&&win.location){
+          const url=new URL(win.location.href);
+          url.searchParams.set("mode",hubMode);
+          url.searchParams.set("picture",hubSelections[hubMode]);
+          win.history.replaceState(null,"",url.pathname+url.search+url.hash);
+        }
+      }catch{}
+      for(const card of [...$("graphPictureCards").children,
+        ...$("graphExtraCards").children]){
+        const active=card.getAttribute("data-hub-picture")===hubSelections[hubMode];
+        card.setAttribute("aria-pressed",String(active));
+        card.classList.toggle("is-selected",active);
+      }
+      const p=[...gallery,...extras].find(p=>
+        p.id===hubSelections[hubMode]);
+      if(p)updateHubPreview(p,hubMode,getRecord(p));
+    }
     function makeCard(p,extra=false){
-      const r=saved.records[key(mode(),p.id)]||blank();
-      const card=doc.createElement("button");card.type="button";
-      const finished=r.done===p.pieces.length;
+      const r=getRecord(p),finished=r.done===p.pieces.length;
+      const selected=p.id===hubSelections[hubMode];
+      const card=doc.createElement("button");
+      card.type="button";
       card.className="graph-picture-card"+
         (finished?" is-complete":"")+
+        (selected?" is-selected":"")+
         (!extra&&p.id===recommended.id?" is-recommended":"");
-      card.setAttribute("aria-label",finished?
-        "View completed picture: "+p.name+", "+p.stage:
-        (r.done||r.line?"Continue picture: ":"Start picture: ")+
-        p.clue+", "+p.stage+", "+r.done+" of "+p.pieces.length+" pieces completed");
+      card.setAttribute("data-hub-picture",p.id);
+      card.setAttribute("aria-pressed",String(selected));
+      card.setAttribute("aria-label",(finished?"Completed: ":
+        r.done||r.line?"Continue: ":"Start: ")+
+        (finished?p.name:p.clue)+", "+p.stage+
+        ", "+r.done+" of "+p.pieces.length+" pieces. Select to preview.");
       const svg=doc.createElementNS(NS,"svg");
       svg.setAttribute("viewBox","0 0 620 620");
       svg.setAttribute("aria-hidden","true");
-      miniature(svg,p,r.done===p.pieces.length);
+      hubMiniature(svg,p,r.done,hubMode);
       const info=doc.createElement("span");info.className="graph-picture-info";
       const stage=doc.createElement("span");stage.className="graph-stage";
       stage.textContent=(extra?"BONUS · ":p.step+" · ")+
         p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
       const name=doc.createElement("strong");
-      name.textContent=r.done===p.pieces.length?p.name:p.clue;
+      name.textContent=finished?p.name:p.clue;
       const desc=doc.createElement("small");desc.textContent=p.description;
       const focus=doc.createElement("span");focus.className="graph-card-maths";
       focus.textContent=p.focus;
       const go=doc.createElement("span");go.className="graph-card-go";
-      const pendingReview=mode()==="build"&&r.done<p.pieces.length&&
-        r.line===p.pieces[r.done].rules.length;
-      go.textContent=finished?"✓ Completed · View picture →":
-        pendingReview?"Continue picture · Review region →":
-        r.done||r.line?"Continue picture →":"Start picture →";
+      go.textContent=finished?"✓ Completed":r.done||r.line?
+        "Continue picture":"Ready to start";
       const progress=doc.createElement("span");progress.className="graph-card-progress";
       progress.setAttribute("aria-hidden","true");
       const filled=doc.createElement("span");
       filled.style.width=(100*r.done/p.pieces.length)+"%";
       progress.append(filled);
       info.append(stage,name,desc,focus,progress,go);card.append(svg,info);
-      card.addEventListener("click",()=>choosePicture(p.id));
+      card.addEventListener("click",()=>{
+        hubSelections[hubMode]=p.id;
+        highlightSelected();
+      });
       return card;
     }
     const cards=$("graphPictureCards");cards.replaceChildren();
     for(const p of gallery)cards.append(makeCard(p));
-    const extras=graphLegacyExtras(mode(),saved.records);
     $("graphMorePictures").hidden=extras.length===0;
     const extraCards=$("graphExtraCards");extraCards.replaceChildren();
     for(const p of extras)extraCards.append(makeCard(p,true));
+    highlightSelected();
   }
+
   function draw(){
     baseGraph(graph,doc);
     const p=picture(),r=record(),part=current();
@@ -585,6 +738,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     if(!p||!GRAPH_ART_MODES.some(item=>item.id===chosenMode))return;
     cancelBuildRevealTimer();
     saved.mode=chosenMode;saved.picture=p.id;
+    hubMode=chosenMode;hubSelections[chosenMode]=p.id;
     resetChoices();persist();
     const r=saved.records[key(chosenMode,p.id)];
     if(r?.done===p.pieces.length){
@@ -716,8 +870,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     playView();
   }
 
-  $("graphModeFill").addEventListener("click",()=>{saved.mode="fill";persist();pickerView();});
-  $("graphModeBuild").addEventListener("click",()=>{saved.mode="build";persist();pickerView();});
+  $("graphModeFill").addEventListener("click",()=>changeHubMode("fill"));
+  $("graphModeBuild").addEventListener("click",()=>changeHubMode("build"));
+  $("graphModeCurve").addEventListener("click",()=>changeHubMode("curve"));
+  $("graphModePlot").addEventListener("click",()=>changeHubMode("plot"));
+  $("graphStartPicture").addEventListener("click",startHubPicture);
   $("graphBack").addEventListener("click",()=>{
     // All answered inequalities are saved; revisit the completed region later.
     cancelBuildRevealTimer();
@@ -748,9 +905,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphRestartPlaying").addEventListener("click",restart);
   $("graphChooseAgain").addEventListener("click",()=>setScreen("picker"));
   $("graphNextPicture").addEventListener("click",()=>{
-    // Progression is suggested, never auto-started or locked.
+    // Return to the unified gallery with the next stage already selected.
     const next=graphModeGallery(mode())[picture().step];
     if(!next)return;
+    hubMode=mode();hubSelections[hubMode]=next.id;
     setScreen("picker");
   });
   $("graphReplayReveal").addEventListener("click",openReveal);

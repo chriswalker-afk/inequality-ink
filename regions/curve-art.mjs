@@ -50,6 +50,13 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   const graph=$("graphArtGraph"),reveal=$("curveReveal"),revealSvg=$("graphRevealSvg");
   const start=readCurveSave(storage);
   let saved={picture:start.picture,records:start.records};
+  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  const linkedPicture=curvePicture(requestedPicture)?.id||null;
+  function returnToHub(id=saved.picture){
+    if(!linkedPicture||typeof win.location?.assign!=="function")return false;
+    win.location.assign("./?mode=curve&picture="+encodeURIComponent(id));
+    return true;
+  }
   let screen="picker",selected=null,flash=null,cursor={x:0,y:0},
     message="",status="",hint="",hintStage=0,hintKey="",flashTimer=null,revealTimers=[];
 
@@ -489,15 +496,21 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   }
 
   $("curveBack").addEventListener("click",()=>{
-    stopFlash();stopReveal();selected=null;setScreen("picker");
+    stopFlash();stopReveal();selected=null;
+    if(!returnToHub())setScreen("picker");
   });
   $("graphUndoFill").addEventListener("click",clearSelection);
   $("graphCheckFill").addEventListener("click",checkFill);
   $("graphHint").addEventListener("click",showHint);
   $("curveRestart").addEventListener("click",restart);
   $("curveRestartPlaying").addEventListener("click",restart);
-  $("curveChooseAgain").addEventListener("click",()=>setScreen("picker"));
-  $("curveNextPicture").addEventListener("click",()=>setScreen("picker"));
+  $("curveChooseAgain").addEventListener("click",()=>{
+    if(!returnToHub())setScreen("picker");
+  });
+  $("curveNextPicture").addEventListener("click",()=>{
+    const next=CURVE_PICTURES[picture().step];
+    if(!returnToHub(next?.id||saved.picture))setScreen("picker");
+  });
   $("curveReplayReveal").addEventListener("click",openReveal);
   $("curveRevealClose").addEventListener("click",closeReveal);
   $("curveRevealSkip").addEventListener("click",showFinished);
@@ -528,6 +541,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     }
   });
   setScreen("picker");
+  if(linkedPicture)choosePicture(linkedPicture);
   return {pickAt,checkFill,readProgress:()=>({
       ...saved,records:{...saved.records},done:record().done,replays:record().replays
     }),render:()=>setScreen(screen),choose:choosePicture,
