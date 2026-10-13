@@ -7,6 +7,7 @@ import {
  pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
 } from "./picture-engine.mjs";
 import {makePaintQuestion,paintTarget,checkPaintRow} from "./paint-engine.mjs";
+import {initQuadraticQuest} from "./quadratic-quest-ui.mjs";
 import {initWorkingPad} from "./working-space.mjs";
 validatePictureLibrary();
 const $=id=>document.getElementById(id), SVG="http://www.w3.org/2000/svg";
@@ -122,7 +123,7 @@ function scheduleRowAdvance(){
 }
 const mk=(tag,attrs={},parent=null)=>{const el=document.createElementNS(SVG,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(parent)parent.append(el);return el;};
 const show=id=>{
- ["introScreen","playScreen","paintScreen","finishScreen"].forEach(
+ ["introScreen","playScreen","paintScreen","quadraticScreen","finishScreen"].forEach(
    name=>$(name).hidden=name!==id);
  document.body.classList.toggle("paint-session",id==="paintScreen");
  screen=id;
@@ -1420,3 +1421,13 @@ $("doneHelp").onclick=()=>$("helpDialog").close();
 $("helpDialog").addEventListener("click",e=>{if(e.target===$("helpDialog"))$("helpDialog").close();});
 updateLevelSelector();
 show("introScreen");
+// Quadratic Quest is isolated from the five familiar modes and their saved
+// picture progress. Returning from the extension restores this picker.
+initQuadraticQuest({
+  doc:document,
+  onShow:()=>{
+    cancelRowAdvance();cancelPaintTimers();cancelPreviewFlash();clearRevealTimers();
+    show("quadraticScreen");
+  },
+  onReturn:chooseLevel
+});
