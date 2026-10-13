@@ -420,60 +420,51 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     lastAddedArrow=rr.id;
     choiceSide=null;choiceStyle=null;
     if(record().line===current().rules.length){
-      notify("Every inequality is satisfied in the common overlap. Watch the arrows meet!","success");
-      draw();
-      const shape=polygon(graph,doc,intersectRegion(current().rules),{
-        fill:"#48b98c","fill-opacity":.35,
-        stroke:"#20976f","stroke-width":4,
-        "data-region-layer":"intersection-celebration",
-        "pointer-events":"none"});
-      shape?.classList?.add("graph-common-pulse");
-      lockDuringIntersection();
-      const delay=win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?
-        140:1600;
-      const id=win.setTimeout?.(()=>{
-        // A stale animation must never advance a different piece.
-        if(pendingPieceTimer!==id)return;
-        pendingPieceTimer=null;
-        finishPiece();
-      },delay);
-      pendingPieceTimer=id??null;
-      if(id==null)finishPiece();
+      // Pause on the ACTUAL solution rather than jumping to the next question.
+      // Arrows converge, green overlap pulses, then the picture's real colour
+      // appears. Only the student's Next piece action can advance the puzzle.
+      buildRevealPhase="converging";
+      notify("Every arrow points into the shared region. Watch the overlap appear!","success");
+      playView();
+      if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+        settleBuildReveal();
+      }else{
+        const id=win.setTimeout?.(()=>{
+          if(pendingPieceTimer!==id||screen!=="play"||mode()!=="build")return;
+          pendingPieceTimer=null;
+          settleBuildReveal();
+        },2600);
+        pendingPieceTimer=id??null;
+        if(id==null)settleBuildReveal();
+      }
     }else{
       notify("Correct! The new arrow shows one more valid half-plane.","success");
       playView();
     }
   }
-  function lockDuringIntersection(){
-    $("graphFeedback").textContent=message;
-    $("graphFeedback").className="graph-feedback success";
-    $("graphAddLine").disabled=true;
-    $("graphHint").disabled=true;
-    $("graphActiveEquation").textContent="All boundaries added ✓";
-    $("graphOverlapText").textContent="All "+current().rules.length+
-      " arrows agree only in the glowing region. This is where ALL inequalities are true.";
-    $("graphCanvasInstruction").textContent=
-      "The glowing region is the overlap: ALL the inequalities are true here.";
-    for(const id of ["graphSideA","graphSideB","graphSolid","graphDashed"])
-      $(id).disabled=true;
-    for(const row of $("graphRuleList").children){
-      row.disabled=true;
-      row.classList?.remove("selected");
-      row.classList?.add("done");
-      if(row.children[1])row.children[1].textContent="✓ Added";
-    }
-    $("graphRuleList").setAttribute("aria-label","All boundaries correctly added");
+  function settleBuildReveal(){
+    if(screen!=="play"||mode()!=="build"||!current()||
+      record().line!==current().rules.length)return;
+    buildRevealPhase="ready";
+    notify("That coloured region satisfies every inequality. Study the arrows, then choose Next piece.","success");
+    playView();
   }
-  function finishPiece({navigate=true}={}){
+  function cancelBuildRevealTimer(){
     if(pendingPieceTimer!==null){
-      win.clearTimeout?.(pendingPieceTimer);pendingPieceTimer=null;
+      win.clearTimeout?.(pendingPieceTimer);
+      pendingPieceTimer=null;
     }
-    const r=record();
-    if(r.done>=picture().pieces.length)return;
+    if(buildRevealPhase==="converging")buildRevealPhase="ready";
+  }
+  function finishPiece(){
+    const r=record(),part=current();
+    if(!part)return;
+    if(mode()==="build"&&
+      (r.line!==part.rules.length||buildRevealPhase==="converging"))return;
+    cancelBuildRevealTimer();
     r.done++;r.line=0;
     persist();resetChoices();flash=null;cursor={x:0,y:0};
-    // Students can leave during the success animation without losing the piece.
-    if(!navigate)return;
+    buildRevealPhase="idle";
     if(r.done===picture().pieces.length){
       setScreen("summary");
       openReveal();
@@ -491,6 +482,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       GRAPH_ART_MODES.find(m=>m.id===mode()).name;
   }
   function restart(){
+    cancelBuildRevealTimer();
     const r=record();
     saved.records[key(mode(),saved.picture)]={done:0,line:0,replays:r.replays+1};
     persist();resetChoices();notify("Start your picture again.");setScreen("play");
@@ -554,7 +546,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     image.src=url;
   }
   function showHint(){
-    if(screen!=="play"||pendingPieceTimer!==null)return;
+    if(screen!=="play"||pendingPieceTimer!==null||
+      (mode()==="build"&&current()&&record().line===current().rules.length))return;
     const part=current(),rr=mode()==="build"?rule():part.rules[0];
     hint=mode()==="build"?regionHint(rr):
       "Try a point in a candidate region. Check it against every inequality. "+regionHint(rr);
@@ -565,7 +558,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphModeFill").addEventListener("click",()=>{saved.mode="fill";persist();pickerView();});
   $("graphModeBuild").addEventListener("click",()=>{saved.mode="build";persist();pickerView();});
   $("graphBack").addEventListener("click",()=>{
-    if(pendingPieceTimer!==null)finishPiece({navigate:false});
+    // All answered inequalities are saved; revisit the completed region later.
+    cancelBuildRevealTimer();
     setScreen("picker");
   });
   $("graphUndoFill").addEventListener("click",()=>{selected=null;flash=null;notify("Fill cleared. Choose a region.");playView();});
@@ -583,6 +577,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     choiceStyle="dashed";notify("Ready to add the line.");playView();
   });
   $("graphAddLine").addEventListener("click",addLine);
+  $("graphNextPiece").addEventListener("click",()=>{
+    if(screen!=="play"||mode()!=="build"||
+       buildRevealPhase==="converging")return;
+    finishPiece();
+  });
   $("graphHint").addEventListener("click",showHint);
   $("graphRestart").addEventListener("click",restart);
   $("graphChooseAgain").addEventListener("click",()=>setScreen("picker"));
@@ -627,6 +626,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   pickerView();
   return {readProgress:()=>({...saved,records:{...saved.records}}),
     choose:(id,m)=>{if(graphPicture(id)&&GRAPH_ART_MODES.some(x=>x.id===m)){
+      cancelBuildRevealTimer();
       saved.picture=id;saved.mode=m;resetChoices();setScreen("play");}},
     pickAt,checkFill,addLine,finishPiece,showFinished,render:()=>setScreen(screen)};
 }
