@@ -8,8 +8,8 @@
   <title>Graph Art | Inequality Ink</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M9 32 32 8 55 32 32 56Z' fill='%237cc2af'/%3E%3Cpath d='M9 32 32 8 32 32Z' fill='%23f6a17e'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
-  <link rel="stylesheet" href="./regions.css?v=build-shade-review-v3" />
-  <script type="module" src="./regions-app.mjs?v=build-shade-review-v3"></script>
+  <link rel="stylesheet" href="./regions.css?v=five-stage-v4" />
+  <script type="module" src="./regions-app.mjs?v=five-stage-v4"></script>
 </head>
 <body class="regions-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -56,14 +56,24 @@
             <div><div class="eyebrow">A SMALL START. A BIG REVEAL.</div><h2 id="graphPictureHeading">Choose a picture</h2></div>
             <p id="graphModeDescription">Choose the right region to fill.</p>
           </div>
-          <div id="graphPictureCards" class="graph-picture-grid"></div>
+          <div class="graph-journey-status">
+            <strong id="graphGalleryProgress" aria-live="polite">0 of 5 pictures complete</strong>
+            <span>Choose any stage. Progress saves separately in each mode.</span>
+          </div>
+          <div id="graphStageTrack" class="graph-stage-track" role="group" aria-label="Five-step Graph Art progression"></div>
+          <div id="graphPictureCards" class="graph-picture-grid" role="group" aria-label="Five pictures in increasing difficulty"></div>
+          <details id="graphMorePictures" class="graph-more-pictures" hidden>
+            <summary>Earlier pictures with saved progress</summary>
+            <p>Your previous work is still available here.</p>
+            <div id="graphExtraCards" class="graph-picture-grid graph-extra-grid"></div>
+          </details>
         </section>
       </section>
 
       <section id="graphPlay" class="graph-play" hidden aria-label="Graph Art activity">
         <div class="graph-game-top">
           <button type="button" id="graphBack" class="graph-quiet-button">← Pictures</button>
-          <div class="graph-game-title"><span class="eyebrow" id="graphGameMode">FIND &amp; FILL</span><h1 id="graphPictureName">Little House</h1></div>
+          <div class="graph-game-title"><span class="eyebrow" id="graphGameMode">FIND &amp; FILL</span><h1 id="graphPictureName">Little House</h1><span class="graph-game-focus" id="graphGameFocus"></span></div>
           <span id="graphPieceCount" class="graph-piece-pill">Piece 1 of 3</span>
         </div>
         <div class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="graphProgress"><div id="graphProgressFill"></div></div>
@@ -135,6 +145,7 @@
         <div class="graph-summary-buttons">
           <button type="button" id="graphReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
           <button type="button" id="graphRestart" class="button button-light">Make this picture again ↻</button>
+          <button type="button" id="graphNextPicture" class="button button-primary">Explore the next picture →</button>
           <button type="button" id="graphChooseAgain" class="button button-light">Choose another picture</button>
         </div>
       </section>
