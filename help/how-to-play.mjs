@@ -7,7 +7,7 @@ const numberLineMaths = [
 const graphMaths = [
   ["One region, all the rules", "A point belongs to the coloured piece only when it satisfies <strong>every inequality</strong>. This shared solution is called the intersection."],
   ["Solid or dashed?", "Draw a <strong>solid</strong> boundary for ≤ or ≥, and a <strong>dashed</strong> one for &lt; or &gt;. The line itself belongs to the region only for solid boundaries."],
-  ["When unsure, test a point", "Try a simple point away from the boundaries, often (0, 0). Substitute its coordinates into each inequality to decide whether it belongs in the region."]
+  ["When unsure, test a point", "Try (0, 0) if it is not on a boundary, or choose another simple point. Substitute its coordinates into each inequality to check whether it belongs."]
 ];
 const guides = {
   mirror: {
@@ -209,14 +209,35 @@ function currentMode() {
     ||document.querySelector(".level-card.selected")?.dataset.level||"mirror";
 }
 function currentTip(mode){
-  if(mode!=="plot"||document.getElementById("plotPlay")?.hidden!==false)return "";
-  const step=document.querySelector("#plotPhaseTrack .plot-phase.is-current")?.dataset.step;
-  const tips={
-    plot:"Right now: place two points on the highlighted graph, then check your sketch.",
-    style:"Right now: decide whether the inequality includes equality, then check the line style.",
-    shade:"Right now: select the area that satisfies every rule shown for this piece."
-  };
-  return tips[step]||"";
+  const playing=id=>document.getElementById(id)?.hidden===false;
+  if(mode==="plot"&&playing("plotPlay")){
+    const step=document.querySelector("#plotPhaseTrack .plot-phase.is-current")?.dataset.step;
+    const tips={
+      plot:"Right now: place two points on the highlighted graph, then check your sketch.",
+      style:"Right now: decide whether equality is included and check the boundary style.",
+      shade:"Right now: select the region that satisfies every inequality for this piece."
+    };
+    return tips[step]||"";
+  }
+  if((mode==="find"||mode==="build")&&playing("graphPlay")){
+    if(mode==="find")return "Right now: select the shared region on the graph, then check your choice.";
+    return document.getElementById("graphNextPiece")?.hidden===false?
+      "Right now: the overlap is revealed. Review it, then continue to the next piece.":
+      "Right now: choose the correct side and boundary style for the highlighted inequality.";
+  }
+  if(mode==="curve"&&playing("curvePlay"))
+    return "Right now: find the area where every curved inequality is true, then check it.";
+  if(mode==="quadratic"&&playing("quadraticScreen"))
+    return "Right now: find the roots, choose between or outside, and set the endpoint circles.";
+  if(mode==="paint"&&playing("paintScreen"))
+    return "Right now: use the selected colour rule to paint only its matching integer squares.";
+  if(playing("playScreen")){
+    if(document.getElementById("readArea")?.hidden===false)
+      return "Right now: read the displayed number line and select the matching inequality.";
+    if(mode==="solve")return "Right now: solve the algebra first, then draw its solution.";
+    return "Right now: position the endpoints, choose the circle styles and check the shading.";
+  }
+  return "";
 }
 function entryMarkup(items,ordered=false) {
   return items.map((item,i)=>'<div class="howplay-entry"><span class="howplay-entry-mark" aria-hidden="true">'+
