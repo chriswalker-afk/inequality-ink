@@ -50,7 +50,7 @@ after all mathematical regions have been completed.
 | Stage | Find & Fill picture | Pieces | Build & Shade picture | Pieces | Mathematical step |
 | --- | --- | ---: | --- | ---: | --- |
 | Starter | Signal Flag | 2 | Wrapped Gift | 2 | Horizontal/vertical, solid |
-| Step Up | Little House | 3 | Mountain Morning | 3 | Rising/falling diagonals |
+| Step Up | Little House | 3 | Mountain Morning | 3 | Rising/falling diagonals; first dashed boundary in Build & Shade |
 | Building | Sailboat Sunset | 4 | Friendly Robot | 4 | Mixed gradients, strict/dashed |
 | Challenge | Origami Fox | 6 | Aurora Crystal | 5 | Standard forms/fractional gradients; strict crystal core |
 | Big Finish | Cosmic Rocket | 9 | Moonlit Castle | 8 | Longer multi-region pictures with mixed forms |
