@@ -212,7 +212,13 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
       "Represent this inequality on the number line.",
     equation:formatInterval(answer)};
   const preferred=picture.initial?.[row.y-1]?.transform;
-  const {a,b}=solveTransformation(stage,index,replay,preferred);
+  const transformation=solveTransformation(stage,index,replay,preferred);
+  // Original bonus questions keep their exact transformations. The new Mixed
+  // Big Finish deliberately includes two negative-coefficient inequalities
+  // requiring reversal when solving, on every replay (rows 4 and 12).
+  const a=level==="mixed"&&picture.progression?.mixed===5&&index%8===3?
+    -Math.abs(transformation.a):transformation.a;
+  const b=transformation.b;
   return {...basic,prompt:"Solve the inequality, then draw your solution.",
     equation:formatLinear(answer,a,b),transformed:{a,b}};
 }
