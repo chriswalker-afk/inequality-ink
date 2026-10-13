@@ -9,7 +9,9 @@ const make=({id,name,clue,description,rows,width,family,step,base,edge,
   bands=[],back,detailStages,details})=>({
   id,name,clue,description,family,
   levels:family==="half"?["mirror"]:["full","solve","mixed"],
-  progression:family==="half"?{mirror:step}:{full:step,solve:step,mixed:step},
+  // Shared Full/Solve starter art remains available as legacy Mixed extras,
+  // but no longer occupies any of Mixed Challenge's five ORIGINAL stages.
+  progression:family==="half"?{mirror:step}:{full:step,solve:step},
   window:{min:-Math.floor(width/2),max:Math.ceil(width/2)},
   // Mixed-mode rays may have an OPEN endpoint just outside the painted grid.
   // The visible number line must include it without clipping the mathematics.
