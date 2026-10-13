@@ -551,13 +551,15 @@ body.paint-session{overflow:hidden}
 @media(min-width:741px){
   .paint-studio-panel{
     grid-template-columns:minmax(210px,min(34vw,45dvh)) minmax(0,1fr);
-    grid-template-rows:minmax(0,1fr) auto auto auto auto;
+    grid-template-rows:minmax(0,1fr) minmax(0,auto) auto auto auto auto minmax(0,1fr);
     grid-template-areas:
+      "artwork ."
       "artwork palette"
       "artwork focus"
       "artwork actions"
       "artwork feedback"
-      "artwork guidance";
+      "artwork guidance"
+      "artwork .";
     column-gap:clamp(13px,2vw,27px);
     row-gap:clamp(5px,.75dvh,9px);
     align-items:stretch;
@@ -596,6 +598,7 @@ body.paint-session{overflow:hidden}
     grid-area:palette;
     overflow:hidden;
     align-self:stretch;
+    max-height:min(235px,31dvh);
   }
   .paint-rule-heading{min-height:19px}
   .paint-rule-heading strong{font-size:.75rem}
