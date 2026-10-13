@@ -6,6 +6,23 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Desktop homepage: start-first workspace
+
+On desktop, the home screen is organised around three immediate choices:
+**challenge → picture → canvas and Start picture**. The introduction is
+compact, while challenge cards, picture progression and the preview sit in
+parallel columns instead of a vertically centred landing page. On smaller
+laptops the two-column layout keeps the canvas and Start action beside the
+selectors, and **Pixel Art / Graph Art** appears as a centred, accessible
+two-option navigation control with matching SVG icons in both studios.
+
+The mobile page deliberately retains its original larger introductory text,
+three instructions, existing card design and vertical reading order
+(challenge, picture, buttons, optional extension, artwork). The mobile
+Paint by Inequalities one-screen workspace is unchanged. The layout
+reorganises markup and CSS only: student saves, questions, artwork,
+mathematical marking, Quadratic Quest and Graph Art remain independent.
+
 ## Two art studios: Pixel Art / Graph Art
 
 A compact, shared **Pixel Art / Graph Art** switch at the top of the site lets
