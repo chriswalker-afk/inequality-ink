@@ -16,7 +16,10 @@ const key=(mode,id)=>mode+":"+id;
 const clean=()=>({mode:"fill",picture:"little-house",records:{}});
 const number=n=>Number.isInteger(n)&&n>=0&&n<=10000;
 const validRecord=(r,p)=>r&&number(r.done)&&r.done<=p.pieces.length&&number(r.line)&&
-  (r.done===p.pieces.length?r.line===0:r.line<p.pieces[r.done].rules.length)&&number(r.replays);
+  // A refresh during the final green pulse used to save the completed last
+  // boundary before advancing to the next piece. Preserve that success.
+  (r.done===p.pieces.length?r.line===0:r.line<=p.pieces[r.done].rules.length)&&
+  number(r.replays);
 export function readGraphArtSave(storage){
   let raw;
   try{raw=JSON.parse(storage.getItem(GRAPH_ART_SAVE_KEY));}catch{return clean();}
@@ -26,8 +29,15 @@ export function readGraphArtSave(storage){
   if(graphPicture(raw.picture))output.picture=raw.picture;
   for(const mode of GRAPH_ART_MODES)for(const p of GRAPH_ART_PICTURES){
     const id=key(mode.id,p.id),record=raw.records?.[id];
-    if(validRecord(record,p))output.records[id]={
-      done:record.done,line:mode.id==="build"?record.line:0,replays:record.replays};
+    if(validRecord(record,p)){
+      const finishedBoundary=mode.id==="build"&&record.done<p.pieces.length&&
+        record.line===p.pieces[record.done].rules.length;
+      output.records[id]={
+        done:record.done+(finishedBoundary?1:0),
+        line:mode.id==="build"&&!finishedBoundary?record.line:0,
+        replays:record.replays
+      };
+    }
   }
   return output;
 }
@@ -46,10 +56,6 @@ function textSvg(doc,svg,x,y,content,attrs={}){
 }
 function baseGraph(svg,doc,{grid=true}={}){
   svg.replaceChildren();
-  const defs=el(doc,"defs",{},svg);
-  const marker=el(doc,"marker",{id:"graph-arrowhead",viewBox:"0 0 10 10",
-    refX:9,refY:5,markerWidth:5,markerHeight:5,orient:"auto-start-reverse"},defs);
-  el(doc,"path",{d:"M0 0 L10 5 L0 10 Z",fill:"#398b78"},marker);
   el(doc,"rect",{x:PAD,y:PAD,width:GRID,height:GRID,rx:9,
     fill:"#fffcf8",stroke:"#d8dfd9","stroke-width":2},svg);
   if(!grid)return;
@@ -74,6 +80,38 @@ function boundary(doc,svg,r,attrs={}){
     x2:px(points[1].x),y2:py(points[1].y),stroke:"#607d94",
     "stroke-width":2.2,"stroke-dasharray":r.inclusive?"":"8 7",
     "pointer-events":"none",...attrs},svg);
+}
+// A shaft plus a REAL triangular polygon, rather than an external SVG marker.
+// This remains a visible arrowhead in Chromium, Firefox, Safari and exported SVG.
+function directionArrow(doc,svg,ruleDef,region,{enter=false,agree=false}={}){
+  const a=graphArrow(ruleDef,region);
+  if(!a)return null;
+  const x1=px(a.x1),y1=py(a.y1),x2=px(a.x2),y2=py(a.y2);
+  const len=Math.hypot(x2-x1,y2-y1);
+  if(len<1)return null;
+  const ux=(x2-x1)/len,uy=(y2-y1)/len;
+  const headLength=12,headHalfWidth=7.5;
+  const baseX=x2-ux*headLength,baseY=y2-uy*headLength;
+  const points=[
+    [x2,y2],
+    [baseX-uy*headHalfWidth,baseY+ux*headHalfWidth],
+    [baseX+uy*headHalfWidth,baseY-ux*headHalfWidth]
+  ];
+  const group=el(doc,"g",{
+    "data-direction-arrow":ruleDef.id,
+    "data-arrow-tip-x":x2.toFixed(2),
+    "data-arrow-tip-y":y2.toFixed(2),
+    "class":agree?"graph-arrow-converge":enter?"graph-arrow-enter":"",
+    "style":"--graph-enter-x:"+(-ux*14).toFixed(1)+
+      "px;--graph-enter-y:"+(-uy*14).toFixed(1)+"px",
+    "aria-hidden":"true","pointer-events":"none"
+  },svg);
+  el(doc,"line",{x1,y1,x2:x2-ux*5,y2:y2-uy*5,stroke:"#187f67",
+    "stroke-width":4,"stroke-linecap":"round"},group);
+  el(doc,"polygon",{points:points.map(([x,y])=>x.toFixed(2)+
+    ","+y.toFixed(2)).join(" "),fill:"#147d64",stroke:"#fffef8",
+    "stroke-width":1.25,"stroke-linejoin":"round"},group);
+  return group;
 }
 function decorations(doc,svg,p){
   if(p.details==="house"){
@@ -102,7 +140,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   const graph=$("graphArtGraph"),reveal=$("graphReveal"),revealSvg=$("graphRevealSvg");
   let saved=readGraphArtSave(storage),screen="picker",choiceSide=null,
     choiceStyle=null,selected=null,flash=null,message="",status="",hint="",
-    revealTimers=[],cursor={x:0,y:0},activeReveal=false;
+    revealTimers=[],cursor={x:0,y:0},activeReveal=false,
+    pendingPieceTimer=null,lastAddedArrow=null;
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
   function mode(){return saved.mode;}
@@ -114,7 +153,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function current(){return picture().pieces[record().done]||null;}
   function rule(){return current()?.rules[record().line]||null;}
   function notify(s,type=""){message=s;status=type;}
-  function resetChoices(){choiceSide=null;choiceStyle=null;selected=null;hint="";}
+  function resetChoices(){
+    choiceSide=null;choiceStyle=null;selected=null;hint="";
+    lastAddedArrow=null;
+  }
   function setScreen(next){
     screen=next;
     $("graphPicker").hidden=next!=="picker";
@@ -173,6 +215,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function draw(){
     baseGraph(graph,doc);
     const p=picture(),r=record(),part=current();
+    // Preview the overlap of accepted half-planes BEHIND the already painted
+    // pieces, so it never tints or visually changes completed artwork.
+    if(part&&mode()==="build"&&r.line>0){
+      const candidate=intersectRegion(part.rules.slice(0,r.line));
+      polygon(graph,doc,candidate,{fill:"#72c5ac","fill-opacity":.11,
+        stroke:"#39a186","stroke-width":1.5,"stroke-opacity":.64,
+        "stroke-dasharray":"6 6","data-region-layer":"running-intersection",
+        "pointer-events":"none"});
+    }
     for(let i=0;i<r.done;i++){
       const f=p.pieces[i];
       polygon(graph,doc,intersectRegion(f.rules),{fill:f.color,
@@ -208,19 +259,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
         const rr=part.rules[i];
         boundary(doc,graph,rr,{stroke:"#3b8175","stroke-width":3.2,
           "stroke-opacity":1});
-        const arrow=graphArrow(rr,points);
-        if(arrow){
-          const line=el(doc,"line",{x1:px(arrow.x1),y1:py(arrow.y1),
-            x2:px(arrow.x2),y2:py(arrow.y2),
-            stroke:"#398b78","stroke-width":3.8,
-            "marker-end":"url(#graph-arrowhead)",
-            "pointer-events":"none","data-direction-arrow":rr.id},graph);
-          if(r.line===part.rules.length)line.classList?.add("graph-arrow-pulse");
-        }
+        directionArrow(doc,graph,rr,points,{
+          enter:r.line<part.rules.length&&lastAddedArrow===rr.id,
+          agree:r.line===part.rules.length
+        });
       }
       if(rule())boundary(doc,graph,rule(),{stroke:"#304f78",
         "stroke-width":4,"stroke-opacity":1});
     }
+    lastAddedArrow=null;
     graph.setAttribute("aria-label",mode()==="fill"?
       "Coordinate graph. "+r.done+" completed pieces. Move with arrow keys and press Enter to fill the region under the keyboard cursor.":
       "Coordinate graph. "+r.line+" of "+part.rules.length+" boundaries correctly added to this piece.");
@@ -243,7 +290,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       "For each inequality, choose the correct side and boundary style. All the arrows will point into the common region.";
     $("graphCanvasInstruction").textContent=mode()==="fill"?
       "Tap the correct region, then press Check. Keyboard: arrows + Enter.":
-      "Each correct line adds an arrow pointing into its solution half-plane.";
+      r.line===part.rules.length?
+        "The glowing region is the overlap: ALL the inequalities are true here.":
+        r.line>0?"The faint teal area is the overlap of your "+r.line+
+          " completed "+(r.line===1?"inequality":"inequalities")+".": 
+          "Each arrow points towards the half-plane satisfying that inequality.";
     $("graphRuleCount").textContent=part.rules.length+" inequalities";
     $("graphFillControls").hidden=mode()!=="fill";
     $("graphBuildControls").hidden=mode()!=="build";
@@ -257,22 +308,34 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       state.textContent=mode()==="fill"?"AND":i<r.line?"✓ Added":i===r.line?"● Now":"○ Next";
       item.append(eq,state);
       if(mode()==="build"){
-        item.type="button";item.disabled=i!==r.line;
+        item.type="button";item.disabled=i!==r.line||pendingPieceTimer!==null;
         item.addEventListener("click",()=>{notify("Choose a side and a line style.");playView();});
       }
       holder.append(item);
     });
     if(mode()==="build"){
       const rr=rule();
-      $("graphActiveEquation").textContent=rr.text;
+      $("graphActiveEquation").textContent=rr?.text||"All boundaries added ✓";
+      const sides=rr?regionSideOptions(rr):["above","below"];
       for(const [i,id] of ["graphSideA","graphSideB"].entries()){
-        const b=$(id),value=regionSideOptions(rr)[i];
+        const b=$(id),value=sides[i];
         b.textContent=value[0].toUpperCase()+value.slice(1);
         b.dataset.side=value;
+        b.disabled=pendingPieceTimer!==null||!rr;
         b.setAttribute("aria-pressed",String(choiceSide===value));
       }
-      $("graphSolid").setAttribute("aria-pressed",String(choiceStyle==="solid"));
-      $("graphDashed").setAttribute("aria-pressed",String(choiceStyle==="dashed"));
+      for(const [id,style] of [["graphSolid","solid"],["graphDashed","dashed"]]){
+        $(id).disabled=pendingPieceTimer!==null||!rr;
+        $(id).setAttribute("aria-pressed",String(choiceStyle===style));
+      }
+      $("graphAddLine").disabled=pendingPieceTimer!==null||!rr;
+      $("graphHint").disabled=pendingPieceTimer!==null;
+      $("graphOverlapText").textContent=r.line===part.rules.length?
+        "All "+part.rules.length+" arrows point to the same overlap. This is the region satisfying EVERY inequality.":
+        r.line===0?
+          "Each arrow shows one inequality's valid half-plane. Only their shared overlap will be shaded.":
+          r.line+" of "+part.rules.length+" lines added. The faint teal area satisfies the "+r.line+
+            " inequalities so far; the next one will narrow it.";
     }
     $("graphFeedback").textContent=message||
       (mode()==="fill"?"Tap the region where all inequalities are true.":
@@ -311,7 +374,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     finishPiece();
   }
   function addLine(){
-    if(screen!=="play"||mode()!=="build")return;
+    if(screen!=="play"||mode()!=="build"||pendingPieceTimer!==null)return;
     const rr=rule();if(!rr)return;
     if(!choiceSide||!choiceStyle){
       notify("Choose both the direction and whether the line is solid or dashed.","error");
@@ -326,34 +389,63 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     record().line++;
     persist();
+    lastAddedArrow=rr.id;
     choiceSide=null;choiceStyle=null;
     if(record().line===current().rules.length){
-      notify("All arrows point towards the common region! Watch it fill.","success");
+      notify("Every inequality is satisfied in the common overlap. Watch the arrows meet!","success");
       draw();
       const shape=polygon(graph,doc,intersectRegion(current().rules),{
-        fill:current().color,"fill-opacity":.48,"data-region-layer":"pulse"});
-      shape?.classList?.add("graph-good-flash");
-      const arrows=Array.from(graph.querySelectorAll?.("[data-direction-arrow]")||[]);
-      arrows.forEach(a=>a.classList?.add("graph-arrow-pulse"));
-      playViewNoReset();
-      pendingPieceTimer=win.setTimeout?.(()=>finishPiece(),1350);
+        fill:"#48b98c","fill-opacity":.35,
+        stroke:"#20976f","stroke-width":4,
+        "data-region-layer":"intersection-celebration",
+        "pointer-events":"none"});
+      shape?.classList?.add("graph-common-pulse");
+      lockDuringIntersection();
+      const delay=win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches?
+        140:1600;
+      const id=win.setTimeout?.(()=>{
+        // A stale animation must never advance a different piece.
+        if(pendingPieceTimer!==id)return;
+        pendingPieceTimer=null;
+        finishPiece();
+      },delay);
+      pendingPieceTimer=id??null;
+      if(id==null)finishPiece();
     }else{
-      notify("Correct! The line and arrow have been added.","success");
+      notify("Correct! The new arrow shows one more valid half-plane.","success");
       playView();
     }
   }
-  let pendingPieceTimer=null;
-  function playViewNoReset(){
+  function lockDuringIntersection(){
     $("graphFeedback").textContent=message;
     $("graphFeedback").className="graph-feedback success";
     $("graphAddLine").disabled=true;
+    $("graphHint").disabled=true;
+    $("graphActiveEquation").textContent="All boundaries added ✓";
+    $("graphOverlapText").textContent="All "+current().rules.length+
+      " arrows agree only in the glowing region. This is where ALL inequalities are true.";
+    $("graphCanvasInstruction").textContent=
+      "The glowing region is the overlap: ALL the inequalities are true here.";
+    for(const id of ["graphSideA","graphSideB","graphSolid","graphDashed"])
+      $(id).disabled=true;
+    for(const row of $("graphRuleList").children){
+      row.disabled=true;
+      row.classList?.remove("selected");
+      row.classList?.add("done");
+      if(row.children[1])row.children[1].textContent="✓ Added";
+    }
     $("graphRuleList").setAttribute("aria-label","All boundaries correctly added");
   }
-  function finishPiece(){
-    if(pendingPieceTimer){win.clearTimeout?.(pendingPieceTimer);pendingPieceTimer=null;}
+  function finishPiece({navigate=true}={}){
+    if(pendingPieceTimer!==null){
+      win.clearTimeout?.(pendingPieceTimer);pendingPieceTimer=null;
+    }
     const r=record();
+    if(r.done>=picture().pieces.length)return;
     r.done++;r.line=0;
     persist();resetChoices();flash=null;cursor={x:0,y:0};
+    // Students can leave during the success animation without losing the piece.
+    if(!navigate)return;
     if(r.done===picture().pieces.length){
       setScreen("summary");
       openReveal();
@@ -434,7 +526,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     image.src=url;
   }
   function showHint(){
-    if(screen!=="play")return;
+    if(screen!=="play"||pendingPieceTimer!==null)return;
     const part=current(),rr=mode()==="build"?rule():part.rules[0];
     hint=mode()==="build"?regionHint(rr):
       "Try a point in a candidate region. Check it against every inequality. "+regionHint(rr);
@@ -444,14 +536,24 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
 
   $("graphModeFill").addEventListener("click",()=>{saved.mode="fill";persist();pickerView();});
   $("graphModeBuild").addEventListener("click",()=>{saved.mode="build";persist();pickerView();});
-  $("graphBack").addEventListener("click",()=>{if(pendingPieceTimer)win.clearTimeout?.(pendingPieceTimer);setScreen("picker");});
+  $("graphBack").addEventListener("click",()=>{
+    if(pendingPieceTimer!==null)finishPiece({navigate:false});
+    setScreen("picker");
+  });
   $("graphUndoFill").addEventListener("click",()=>{selected=null;flash=null;notify("Fill cleared. Choose a region.");playView();});
   $("graphCheckFill").addEventListener("click",checkFill);
   for(const id of ["graphSideA","graphSideB"])$(id).addEventListener("click",()=>{
+    if(pendingPieceTimer!==null)return;
     choiceSide=$(id).dataset.side;notify("Now choose a boundary style.");playView();
   });
-  $("graphSolid").addEventListener("click",()=>{choiceStyle="solid";notify("Ready to add the line.");playView();});
-  $("graphDashed").addEventListener("click",()=>{choiceStyle="dashed";notify("Ready to add the line.");playView();});
+  $("graphSolid").addEventListener("click",()=>{
+    if(pendingPieceTimer!==null)return;
+    choiceStyle="solid";notify("Ready to add the line.");playView();
+  });
+  $("graphDashed").addEventListener("click",()=>{
+    if(pendingPieceTimer!==null)return;
+    choiceStyle="dashed";notify("Ready to add the line.");playView();
+  });
   $("graphAddLine").addEventListener("click",addLine);
   $("graphHint").addEventListener("click",showHint);
   $("graphRestart").addEventListener("click",restart);
