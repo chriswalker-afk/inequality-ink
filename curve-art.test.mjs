@@ -166,7 +166,20 @@ test("each five-picture path is playable, with an accurate finished reveal",()=>
   }
   assert.match(s.$("curveGalleryProgress").textContent,/All five stages complete/);
   card(s,4).click();
+  assert.equal(s.$("curveSummary").hidden,false);
+  assert.equal(s.$("curveReveal").getAttribute("open"),"");
+  assert.equal(readCurveSave(s.storage).records["cosmic-jellyfish"].done,
+    CURVE_PICTURES[4].pieces.length,"Opening a completed picture must not clear it");
+  assert.equal(readCurveSave(s.storage).records["parabola-butterfly"].done,2);
+  s.$("curveRevealClose").click();
+  s.win.confirm=()=>false;
+  s.$("curveRestart").click();
+  assert.equal(readCurveSave(s.storage).records["cosmic-jellyfish"].done,
+    CURVE_PICTURES[4].pieces.length,"Cancelling Restart must keep completion");
+  s.win.confirm=()=>true;
+  s.$("curveRestart").click();
   assert.equal(readCurveSave(s.storage).records["cosmic-jellyfish"].done,0);
+  assert.equal(s.$("curvePlay").hidden,false);
   assert.equal(readCurveSave(s.storage).records["parabola-butterfly"].done,2);
 });
 test("stage-specific decoration timing and reduced motion match the other modes",()=>{
