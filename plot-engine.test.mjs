@@ -10,7 +10,7 @@ import {satisfiesAll,curvedCellAt,regionPaths} from "./regions/curved-engine.mjs
 const [canopy,puddle]=PLOT_PICTURE.pieces;
 const rule=part=>plotRule(part);
 const check=(part,points)=>checkConstruction({
-  kind:part.plot.kind,rule:rule(part)
+  kind:part.plots[0].kind,rule:rule(part)
 },points);
 
 test("two-piece umbrella is real mathematical art and each plot target is valid",()=>{
