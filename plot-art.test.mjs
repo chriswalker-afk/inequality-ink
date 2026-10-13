@@ -288,8 +288,19 @@ test("complete five-picture journey includes 21 regions and unique big reveals",
   assert.match(s.$("plotGalleryProgress").textContent,/All five stages complete/);
   const saved=readPlotSave(s.storage);
   assert.equal(Object.keys(saved.records).length,5);
-  s.app.choose("rocket-launch");
+  cards(s)[4].click();
+  assert.equal(s.app.readProgress().done,PLOT_PICTURES[4].pieces.length);
+  assert.equal(s.$("plotSummary").hidden,false);
+  assert.equal(s.$("plotReveal").getAttribute("open"),"");
+  s.$("plotRevealClose").click();
+  s.win.confirm=()=>false;
+  s.$("plotRestart").click();
+  assert.equal(s.app.readProgress().done,PLOT_PICTURES[4].pieces.length,
+    "Cancelling Restart must not discard finished artwork");
+  s.win.confirm=()=>true;
+  s.$("plotRestart").click();
   assert.equal(s.app.readProgress().done,0);
+  assert.equal(s.$("plotPlay").hidden,false);
   assert.equal(s.app.readProgress().records["little-umbrella"].done,2);
 });
 test("staged final reveal animates details and supports replay, skip and reduced motion",()=>{

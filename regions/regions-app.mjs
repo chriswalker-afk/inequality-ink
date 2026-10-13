@@ -246,7 +246,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphModeDescription").textContent=mode()==="fill"?
       "Start with two simple regions; work towards nine with strict and mixed-form inequalities.":
       "Start with solid straight boundaries; finish with eight complex intersecting regions.";
-    $("graphGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+    $("graphGalleryProgress").textContent=completed+" of 5 completed · "+
       (completed===5?"All five stages complete!":"Next up: "+recommended.stage);
     const track=$("graphStageTrack");track.replaceChildren();
     for(const p of gallery){
@@ -265,10 +265,14 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     function makeCard(p,extra=false){
       const r=saved.records[key(mode(),p.id)]||blank();
       const card=doc.createElement("button");card.type="button";
+      const finished=r.done===p.pieces.length;
       card.className="graph-picture-card"+
+        (finished?" is-complete":"")+
         (!extra&&p.id===recommended.id?" is-recommended":"");
-      card.setAttribute("aria-label",p.clue+", "+p.stage+", "+
-        p.pieces.length+" mathematical pieces, "+r.done+" completed");
+      card.setAttribute("aria-label",finished?
+        "View completed picture: "+p.name+", "+p.stage:
+        (r.done||r.line?"Continue picture: ":"Start picture: ")+
+        p.clue+", "+p.stage+", "+r.done+" of "+p.pieces.length+" pieces completed");
       const svg=doc.createElementNS(NS,"svg");
       svg.setAttribute("viewBox","0 0 620 620");
       svg.setAttribute("aria-hidden","true");
@@ -285,24 +289,16 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       const go=doc.createElement("span");go.className="graph-card-go";
       const pendingReview=mode()==="build"&&r.done<p.pieces.length&&
         r.line===p.pieces[r.done].rules.length;
-      go.textContent=r.done===p.pieces.length?"✓ Finished · Play again":
-        pendingReview?"Review completed region →":
-        r.done||r.line?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":
-          "Start picture →";
+      go.textContent=finished?"✓ Completed · View picture →":
+        pendingReview?"Continue picture · Review region →":
+        r.done||r.line?"Continue picture →":"Start picture →";
       const progress=doc.createElement("span");progress.className="graph-card-progress";
       progress.setAttribute("aria-hidden","true");
       const filled=doc.createElement("span");
       filled.style.width=(100*r.done/p.pieces.length)+"%";
       progress.append(filled);
       info.append(stage,name,desc,focus,progress,go);card.append(svg,info);
-      card.addEventListener("click",()=>{
-        cancelBuildRevealTimer();
-        saved.picture=p.id;
-        if(r.done===p.pieces.length)saved.records[key(mode(),p.id)]={
-          done:0,line:0,replays:r.replays+1};
-        persist();resetChoices();notify("Find the common region.");
-        setScreen("play");
-      });
+      card.addEventListener("click",()=>choosePicture(p.id));
       return card;
     }
     const cards=$("graphPictureCards");cards.replaceChildren();
@@ -583,6 +579,22 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       playView();
     }
   }
+  // Selecting a finished picture is view-only; progress changes only on Restart.
+  function choosePicture(id,chosenMode=mode()){
+    const p=graphPicture(id);
+    if(!p||!GRAPH_ART_MODES.some(item=>item.id===chosenMode))return;
+    cancelBuildRevealTimer();
+    saved.mode=chosenMode;saved.picture=p.id;
+    resetChoices();persist();
+    const r=saved.records[key(chosenMode,p.id)];
+    if(r?.done===p.pieces.length){
+      setScreen("summary");openReveal();
+    }else{
+      notify(chosenMode==="build"?
+        "Choose the correct side and line style.":"Find the common region.");
+      setScreen("play");
+    }
+  }
   function summaryView(){
     const p=picture();
     $("graphSummaryTitle").textContent=p.name+" ✦";
@@ -592,11 +604,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       " inequalities · "+GRAPH_ART_MODES.find(m=>m.id===mode()).name;
     $("graphNextPicture").hidden=p.step===GRAPH_ART_STAGES.length||
       p.mode!==mode();
-    $("graphNextPicture").textContent="Explore "+(
-      graphModeGallery(mode())[p.step]?.stage||"the next")+
-      " →";
+    $("graphNextPicture").textContent="Next picture →";
   }
   function restart(){
+    if(typeof win.confirm==="function"&&!win.confirm(
+      "Restart this picture? Only this picture's progress will be reset."))return;
     cancelBuildRevealTimer();
     const r=record();
     saved.records[key(mode(),saved.picture)]={done:0,line:0,replays:r.replays+1};
@@ -733,6 +745,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   });
   $("graphHint").addEventListener("click",showHint);
   $("graphRestart").addEventListener("click",restart);
+  $("graphRestartPlaying").addEventListener("click",restart);
   $("graphChooseAgain").addEventListener("click",()=>setScreen("picker"));
   $("graphNextPicture").addEventListener("click",()=>{
     // Progression is suggested, never auto-started or locked.
@@ -780,9 +793,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   }catch{}
   pickerView();
   return {readProgress:()=>({...saved,records:{...saved.records}}),
-    choose:(id,m)=>{if(graphPicture(id)&&GRAPH_ART_MODES.some(x=>x.id===m)){
-      cancelBuildRevealTimer();
-      saved.picture=id;saved.mode=m;resetChoices();setScreen("play");}},
+    choose:(id,m)=>choosePicture(id,m),
     pickAt,checkFill,addLine,finishPiece,showFinished,render:()=>setScreen(screen)};
 }
 if(typeof document!=="undefined"&&document.getElementById("graphArtGraph"))initRegionsApp();

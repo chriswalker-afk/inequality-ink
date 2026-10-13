@@ -60,7 +60,7 @@
             <h1 id="plotGameTitle">Little Umbrella</h1>
             <span class="graph-game-focus" id="plotGameFocus">Construct the boundary · choose its style · shade</span>
           </div>
-          <span id="plotPieceCount" class="graph-piece-pill">Piece 1 of 2</span>
+          <div class="graph-game-actions"><span id="plotPieceCount" class="graph-piece-pill">Piece 1 of 2</span><button type="button" id="plotRestartPlaying" class="graph-quiet-button graph-restart-button" aria-label="Start this picture over">↺ Start over</button></div>
         </div>
         <div id="plotProgress" class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div id="plotProgressFill"></div>
@@ -160,8 +160,8 @@
         <div class="graph-summary-stats" id="plotSummaryStats">2 mathematical regions</div>
         <div class="graph-summary-buttons">
           <button type="button" id="plotReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
-          <button type="button" id="plotRestart" class="button button-light">Make this picture again ↻</button>
-          <button type="button" id="plotNextPicture" class="button button-primary">Explore next picture →</button>
+          <button type="button" id="plotRestart" class="button button-light">Play again ↻</button>
+          <button type="button" id="plotNextPicture" class="button button-primary">Next picture →</button>
           <button type="button" id="plotChooseAgain" class="button button-light">Choose a picture</button>
         </div>
       </section>
