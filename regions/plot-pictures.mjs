@@ -342,9 +342,62 @@ const rocket=picture(5,"rocket-launch","Rocket Launch",
   C("rocket-stardust-d",3,-3.2,-.8,.08,"#a87d91")
 ]);
 
+
+/* Phase 6: a separate, equivalent Step Up task with three constructed pieces.
+   The globe, stand and snowman are all exact shaded inequalities. */
+const snowGlobe=Object.freeze({...picture(2,"snow-globe","Snow Globe",
+  "Winter Wonderland","Circles · a horizontal line · centre and radius",
+  "Sketch two different circles and a horizontal line to build a snow globe.",[
+  piece("globe-glass","The glass globe","#a6d7df",[
+    O("globe-outer-circle","x² + (y − 1.5)² ≤ 4",0,1.5,2),
+    rule("globe-bottom-edge","y ≥ −0.5",[-.5],"above")
+  ],[
+    T("globe-outer-circle","circle",[0,1.5],[2,1.5],[
+      "A circle is fixed by its centre and radius.",
+      "Use centre (0, 1.5) and a point two units away."
+    ],"Place the centre then any point two units from it.")
+  ]),
+  piece("globe-stand","The wooden base","#d6ad87",[
+    rule("globe-stand-floor","y ≥ −2.5",[-2.5],"above"),
+    rule("globe-stand-top","y ≤ −1.25",[-1.25],"below"),
+    V("globe-stand-left","x ≥ −1.75",-1.75,"right"),
+    V("globe-stand-right","x ≤ 1.75",1.75,"left")
+  ],[
+    T("globe-stand-floor","line",[-2,-2.5],[2,-2.5],[
+      "Every point on this line has y = −2.5.",
+      "Try (−2, −2.5) and (2, −2.5)."
+    ],"Draw the horizontal bottom edge of the globe stand.")
+  ]),
+  piece("globe-snowman","Snowman's body","#eaf1df",[
+    O("globe-snowman-circle","x² + (y − 0.5)² < 1",0,.5,1,"inside",false)
+  ],[
+    T("globe-snowman-circle","circle",[0,.5],[1,.5],[
+      "A strict circle inequality still has a circular boundary.",
+      "The centre is (0, 0.5) and the radius is 1."
+    ],"Find the centre and a point one unit from it.")
+  ])
+],[
+  C("snow-head",1,0,1.75,.49,"#faf5e8","#688b91",.045),
+  C("snow-eye-left",1,-.16,1.84,.055,"#4b6570","#4b6570"),
+  C("snow-eye-right",1,.16,1.84,.055,"#4b6570","#4b6570"),
+  C("snow-button-one",1,0,.75,.075,"#5c7b82","#5c7b82"),
+  C("snow-button-two",1,0,.35,.075,"#5c7b82","#5c7b82"),
+  Q("snow-scarf",2,-.45,1.39,0,1.16,.45,1.42,"#bd6f79",.12),
+  Q("snow-arm-left",2,-.75,.7,-1.45,.95,-1.56,1.27,"#796e6d",.09),
+  Q("snow-arm-right",2,.75,.7,1.45,.95,1.56,1.27,"#796e6d",.09),
+  Q("base-engraving",2,-1.4,-1.85,0,-2.1,1.4,-1.85,"#8d755f",.07),
+  S("snowflake-left",3,-3,2.85,.25),
+  S("snowflake-right",3,3.1,3.25,.25),
+  S("snowflake-top",3,-1.15,4.05,.19),
+  C("snow-sparkle-left",3,-2.8,-2.2,.08,"#92aab4"),
+  C("snow-sparkle-right",3,2.8,-2.15,.08,"#a890ae")
+]),practice:true});
+
 export const PLOT_PICTURES=Object.freeze([umbrella,ice,rainbow,lantern,rocket]);
 export const PLOT_PICTURE=umbrella;
-export const plotPicture=id=>PLOT_PICTURES.find(p=>p.id===id)||null;
+export const PLOT_PRACTICE_PICTURES=Object.freeze([snowGlobe]);
+export const plotAllPictures=Object.freeze([...PLOT_PICTURES,...PLOT_PRACTICE_PICTURES]);
+export const plotPicture=id=>plotAllPictures.find(p=>p.id===id)||null;
 export const plotSteps=part=>part.plots||(part.plot?[part.plot]:[]);
 export const plotRule=(part,index=0)=>part.rules.find(r=>r.id===plotSteps(part)[index]?.ruleId)||null;
 export function ruleSignature(rule){
@@ -403,6 +456,10 @@ export function validatePlotGallery(){
       throw Error("Incorrect Plot & Shade progression");
     ids.add(p.id);validatePlotPicture(p);
   });
+  if(PLOT_PRACTICE_PICTURES.length!==1||snowGlobe.pieces.length!==3||
+    !snowGlobe.practice||snowGlobe.step!==2||ids.has(snowGlobe.id))
+    throw Error("Plot practice must be a separate three-piece Step Up picture");
+  validatePlotPicture(snowGlobe);
   if(PLOT_PICTURES[0].id!=="little-umbrella"||
      plotRule(PLOT_PICTURES[0].pieces[0]).text!=="y ≤ 4 − 0.5x²")
     throw Error("Prototype umbrella must be preserved");
