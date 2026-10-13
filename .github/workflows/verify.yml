@@ -27,3 +27,5 @@ jobs:
           node --check paint-starters.mjs
           node --check regions/regions-app.mjs
           node --check regions/regions-engine.mjs
+          node --check regions/curved-engine.mjs
+          node --check regions/curve-art.mjs
