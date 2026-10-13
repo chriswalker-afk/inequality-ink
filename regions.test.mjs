@@ -615,11 +615,11 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify({
     mode:"fill",picture:"cosmic-rocket",records
   })}),{$}=s;
-  assert.match($("graphGalleryProgress").textContent,/5 of 5 pictures finished/);
+  assert.match($("graphGalleryProgress").textContent,/5 of 5 completed/);
   assert.equal($("graphStageTrack").children.length,5);
   assert.ok($("graphStageTrack").children.every(x=>
     x.className.includes("is-complete")));
   $("graphModeBuild").click();
-  assert.match($("graphGalleryProgress").textContent,/0 of 5 pictures finished/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 5 completed/);
   assert.equal($("graphPictureCards").children.length,5);
 });
