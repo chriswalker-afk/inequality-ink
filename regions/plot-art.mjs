@@ -253,27 +253,31 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function drawCanvas(){
     baseGraph(svg);
-    for(const [i,part] of PLOT_PICTURE.pieces.entries()){
-      if(i>=save.done)break;
-      drawPiece(svg,part,{fill:part.color,stroke:"#fff9ed","stroke-width":3,
-        "data-region-layer":"finished-"+part.id});
-    }
-    const part=current();
+    const p=picture(),part=current();
+    for(let i=0;i<save.done;i++)
+      drawPiece(svg,p.pieces[i],{fill:p.pieces[i].color,
+        stroke:"#fff9ed","stroke-width":3,
+        "data-region-layer":"finished-"+p.pieces[i].id});
     if(!part)return;
-    for(const rule of part.rules)
-      if(rule.id!==part.plot.ruleId)drawBoundary(svg,rule,{
-        "data-plot-boundary":"given"});
-    if(save.points.length===2){
+    const future=new Set(plotSteps(part).slice(save.plotIndex).map(t=>t.ruleId));
+    for(const rule of part.rules){
+      if(future.has(rule.id))continue;
+      const verified=save.verified.find(v=>v.ruleId===rule.id);
+      drawBoundary(svg,rule,{
+        stroke:verified?"#388d80":"#5b7890",
+        "stroke-width":verified?3.25:2.6,
+        "data-plot-boundary":verified?"constructed":"given"
+      });
+    }
+    if(save.points.length===2&&(save.phase==="plot"||save.phase==="style")){
       const made=currentConstruction();
-      if(made.valid){
-        const dash=save.phase==="plot"?"7 7":
-          save.styleChoice==="solid"?"":"8 7";
-        drawBoundary(svg,made.rule,{
-          stroke:save.phase==="plot"?"#d18b72":"#388d80",
-          "stroke-width":save.phase==="plot"?3:3.3,
-          "stroke-dasharray":dash,
-          "data-plot-boundary":"constructed"});
-      }
+      if(made.valid)drawBoundary(svg,made.rule,{
+        stroke:save.phase==="plot"?"#d18b72":"#388d80",
+        "stroke-width":save.phase==="plot"?3:3.3,
+        "stroke-dasharray":save.phase==="plot"?"7 7":
+          save.styleChoice==="solid"?"":"8 7",
+        "data-plot-boundary":"constructed"
+      });
     }
     if(save.phase==="shade"){
       if(selected)drawPolygons(svg,selected.paths,{
@@ -285,30 +289,30 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
         "data-region-layer":"wrong"},"graph-wrong-flash");
     }
     if(save.phase==="plot"){
-      for(const [index,p]of save.points.entries()){
+      for(const [index,pt]of save.points.entries()){
         const active=index===activePoint;
-        const circle=el(svg,"circle",{cx:px(p.x),cy:py(p.y),
+        const circle=el(svg,"circle",{cx:px(pt.x),cy:py(pt.y),
           r:active?9:7,fill:active?"#dc8b69":"#3f988c",
           stroke:"#fffcf8","stroke-width":3,
           "data-plot-point":index,"pointer-events":"none"});
         circle.classList?.add("plot-preview-point");
-        const lx=Math.min(SIZE-PAD-8,px(p.x)+13);
-        const ly=Math.max(PAD+17,py(p.y)-11);
-        label(svg,lx,ly,(index+1)+": ("+nice(p.x)+", "+nice(p.y)+")",{
+        const lx=Math.min(SIZE-PAD-8,px(pt.x)+13);
+        const ly=Math.max(PAD+17,py(pt.y)-11);
+        label(svg,lx,ly,(index+1)+": ("+nice(pt.x)+", "+nice(pt.y)+")",{
           fill:"#516a73","font-size":14,"font-weight":800,
           "paint-order":"stroke",stroke:"#fffcf8","stroke-width":4,
           "pointer-events":"none"});
       }
     }
-    if(save.phase==="plot"||save.phase==="shade"){
+    if(save.phase==="plot"||save.phase==="shade")
       el(svg,"circle",{cx:px(cursor.x),cy:py(cursor.y),r:7,
         stroke:"#3f8f7d",fill:"none","stroke-width":2,
         "stroke-dasharray":"3 3","pointer-events":"none"});
-    }
     svg.setAttribute("aria-label",save.phase==="plot"?
-      "Place two points on the boundary. Arrow keys move a cursor; Enter places a point. Drag an existing point to edit.":
+      "Plot boundary "+(save.plotIndex+1)+" of "+plotSteps(part).length+
+      ". Arrow keys move a cursor, Enter places a point. Drag to edit.":
       save.phase==="style"?"Choose solid or dashed in the controls.":
-      "Tap a region satisfying all inequalities, or use arrow keys and Enter.");
+      "Tap the region satisfying all inequalities, or use arrow keys and Enter.");
     svg.style.touchAction=save.phase==="plot"?"none":"manipulation";
   }
   function pointText(p){return p?"("+nice(p.x)+", "+nice(p.y)+")":"not placed";}
