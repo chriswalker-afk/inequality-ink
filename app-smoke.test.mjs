@@ -1547,6 +1547,10 @@ test("Five Mixed-only stages complete with all three skills and independent prog
    const picture=pictureById(ids[stage-1]);
    const total=questionCount(picture);
    assert.equal(total,4+2*stage);
+   // The 12-row butterfly already passed an end-to-end test earlier in this
+   // file. Preserve that completed journey rather than implicitly replaying.
+   if(JSON.parse(localStorage.getItem("inequality-ink-v5")).
+     progress["mixed:"+picture.id]?.completed)continue;
    assert.ok($("pictureJourneyHelp").textContent.includes("Mirror Mode"));
    assert.ok($("pictureSummary").textContent.includes("3 skills"));
    $("startButton").click();
