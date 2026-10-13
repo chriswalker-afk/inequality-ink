@@ -209,7 +209,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     // The highlighted rays reach the edges of the visible WINDOW, but remain
     // unbounded mathematically; arrowheads explicitly communicate infinity.
     mk(doc,"line",{x1:50,y1:y,x2:590,y2:y,stroke:"#8290a2","stroke-width":2},svg);
-    for(let value=QUEST_AXIS.min;value<=QUEST_AXIS.max;value++){
+    for(let value=axis().min;value<=axis().max;value++){
       const x=xFor(value);
       mk(doc,"line",{x1:x,y1:51,x2:x,y2:65,stroke:"#8492a5","stroke-width":1.4},svg);
       const tick=mk(doc,"text",{x,y:83,"text-anchor":"middle",
@@ -255,8 +255,8 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
   function updateDraft(changes={}){
     if(locked)return;
     const next={...draft,...changes};
-    next.lower=clamp(next.lower,QUEST_AXIS.min,QUEST_AXIS.max-1);
-    next.upper=clamp(next.upper,QUEST_AXIS.min+1,QUEST_AXIS.max);
+    next.lower=clamp(next.lower,axis().min,axis().max-1);
+    next.upper=clamp(next.upper,axis().min+1,axis().max);
     if(next.lower>=next.upper){
       if(Object.hasOwn(changes,"lower"))next.lower=next.upper-1;
       else next.upper=next.lower+1;
@@ -314,11 +314,11 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
   }
   function drawGraph(q){
     const svg=$("questGraph");svg.replaceChildren();
-    const xScale=x=>45+(x-QUEST_AXIS.min)*55;
+    const xScale=x=>45+(x-axis().min)*550/(axis().max-axis().min);
     const axisY=116;
     const sampled=[];
     for(let i=0;i<=200;i++){
-      const x=QUEST_AXIS.min+i*(QUEST_AXIS.max-QUEST_AXIS.min)/200;
+      const x=axis().min+i*(axis().max-axis().min)/200;
       sampled.push({x,y:quadraticValue(q,x)});
     }
     // Scale around the turning point rather than extreme window values.
@@ -355,12 +355,13 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
   }
   function loadQuestion(){
     cancelTimer();
-    if(progress.done>=QUEST_TOTAL){finish(false);return;}
-    question=QUEST_QUESTIONS[progress.done];
+    const total=picture.questions.length;
+    if(progress.done>=total){finish(false);return;}
+    question=picture.questions[progress.done];
     draft={region:"between",lower:0,upper:1,
       lowerIncluded:false,upperIncluded:false};
     locked=false;attempts=0;hintsShown=0;
-    $("questQuestionStep").textContent="QUESTION "+(progress.done+1)+" OF "+QUEST_TOTAL;
+    $("questQuestionStep").textContent="QUESTION "+(progress.done+1)+" OF "+total;
     $("questEquationText").textContent=question.expression;
     $("questFeedback").textContent="";
     $("questFeedback").className="feedback";
@@ -405,7 +406,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     feedback("Correct! "+quadraticSolutionText(expected)+
       ". Another picture row is revealed.",true);
     $("questCheck").disabled=true;
-    $("questCheck").textContent=progress.done===QUEST_TOTAL?
+    $("questCheck").textContent=progress.done===picture.questions.length?
       "✓ Quest complete — revealing…":"✓ Correct — next quadratic…";
     for(const id of ["questBetween","questOutside","questLowerOpen","questLowerClosed",
       "questUpperOpen","questUpperClosed","questLowerMinus","questLowerPlus",
@@ -414,7 +415,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     }
     timer=setTimeout(()=>{
       timer=null;
-      if(progress.done===QUEST_TOTAL){finish(true);}
+      if(progress.done===picture.questions.length){finish(true);}
       else{
         loadQuestion();
         if(win.matchMedia?.("(max-width:740px)")?.matches)
@@ -441,55 +442,100 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     if(showing)drawGraph(question);
   }
   function renderFinishContent(){
-    $("questPlaying").hidden=true;$("questFinished").hidden=false;
-    renderArt("questFinishedArt",QUEST_TOTAL,{final:true});
-    renderArt("questRevealArt",QUEST_TOTAL,{final:true});
-    $("questFinalStats").textContent=progress.firstTry+"/"+QUEST_TOTAL+
+    $("questPlaying").hidden=true;$("questSelect").hidden=true;
+    $("questFinished").hidden=false;$("questProgress").hidden=true;
+    $("questRestart").hidden=false;
+    $("questBack").textContent="↶ Quest pictures";
+    renderArt("questFinishedArt",picture.questions.length,{final:true});
+    renderArt("questRevealArt",picture.questions.length,{final:true});
+    $("questFinishTitle").textContent=picture.name+"!";
+    $("questRevealTitle").textContent=picture.name+"!";
+    $("questFinishMessage").textContent="You solved "+picture.questions.length+
+      " quadratic inequalities and revealed your "+picture.stageLabel+" picture.";
+    $("questRevealCaption").textContent=picture.questions.length+
+      " quadratic inequalities. One bright discovery.";
+    $("questFinalStats").textContent=progress.firstTry+"/"+picture.questions.length+
       " questions correct first time without hints · "+progress.hints+" hints used";
+    $("questNextPicture").hidden=picture.stage===5;
     const list=$("questSolutions");list.replaceChildren();
-    for(const q of QUEST_QUESTIONS){
+    for(const q of picture.questions){
       const li=doc.createElement("li");
       li.textContent=q.expression+"  →  "+quadraticSolutionText(quadraticAnswer(q))+
         "  ("+q.factor+")";
       list.append(li);
     }
+    renderPicker();
   }
   function reveal(){
     const dialog=$("questReveal");
     if(!dialog.open)dialog.showModal();
   }
   function finish(withReveal){
-    cancelTimer();renderFinishContent();renderProgress();
+    cancelTimer();renderFinishContent();
+    updateEntry();
     if(withReveal)reveal();
   }
-  function open(){
-    cancelTimer();onShow();
-    $("questPlaying").hidden=progress.done===QUEST_TOTAL;
-    $("questFinished").hidden=progress.done!==QUEST_TOTAL;
-    if(progress.done===QUEST_TOTAL)finish(false);
+  function showPicker(){
+    cancelTimer();closeReveal();
+    view="picker";
+    $("questSelect").hidden=false;
+    $("questPlaying").hidden=true;
+    $("questFinished").hidden=true;
+    $("questProgress").hidden=true;
+    $("questRestart").hidden=true;
+    $("questBack").textContent="↶ Main challenges";
+    renderPicker();
+    win.scrollTo?.({top:0,behavior:"instant"});
+  }
+  function beginPicture(){
+    cancelTimer();closeReveal();
+    view="playing";
+    $("questSelect").hidden=true;
+    $("questPlaying").hidden=false;
+    $("questFinished").hidden=true;
+    $("questProgress").hidden=false;
+    $("questRestart").hidden=false;
+    $("questBack").textContent="↶ Quest pictures";
+    // All five picture stages have their own visible endpoint ranges.
+    $("questLower").setAttribute("min",axis().min);
+    $("questLower").setAttribute("max",axis().max-1);
+    $("questUpper").setAttribute("min",axis().min+1);
+    $("questUpper").setAttribute("max",axis().max);
+    if(progress.done===picture.questions.length)finish(false);
     else loadQuestion();
     win.scrollTo?.({top:0,behavior:"instant"});
+  }
+  function open(){
+    cancelTimer();onShow();showPicker();
   }
   function closeReveal(){
     if($("questReveal").open)$("questReveal").close();
   }
   function back(){
-    cancelTimer();closeReveal();onReturn();updateEntry();
+    if(view==="picker"){cancelTimer();closeReveal();onReturn();updateEntry();}
+    else showPicker();
   }
   function restart({confirmFirst=true}={}){
     if(confirmFirst&&!(win.confirm||globalThis.confirm)(
-      "Restart Quadratic Quest? Its bonus picture progress will reset; other pictures are safe."
+      "Restart "+picture.name+"? Only this picture's progress will reset."
     ))return;
     cancelTimer();closeReveal();
-    progress={...fresh(),replay:progress.replay+1};store();
-    $("questFinished").hidden=true;$("questPlaying").hidden=false;
-    loadQuestion();
-    win.scrollTo?.({top:0,behavior:"instant"});
+    state.progress[picture.id]={...fresh(),replay:progress.replay+1};
+    progress=state.progress[picture.id];
+    store();
+    beginPicture();
+  }
+  function nextPicture(){
+    const next=questPictureForStep(picture.stage+1);
+    if(!next)return;
+    setPicture(next.id);beginPicture();
   }
   $("questEnter").addEventListener("click",open);
   $("questBack").addEventListener("click",back);
+  $("questStart").addEventListener("click",beginPicture);
+  $("questNextPicture").addEventListener("click",nextPicture);
   $("questRestart").addEventListener("click",()=>restart());
-  $("questFinishBack").addEventListener("click",back);
+  $("questFinishBack").addEventListener("click",showPicker);
   $("questReplay").addEventListener("click",()=>restart({confirmFirst:false}));
   $("questRevealClose").addEventListener("click",closeReveal);
   $("questRevealAgain").addEventListener("click",reveal);
@@ -499,6 +545,6 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
   $("questCheck").addEventListener("click",check);
   $("questHint").addEventListener("click",hint);
   $("questGraphToggle").addEventListener("click",graph);
-  updateEntry();
+  store();renderPicker();showPicker();
   return {open,back,restart,updateEntry};
 }
