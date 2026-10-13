@@ -13,8 +13,8 @@ import {
 import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES} from "./curve-pictures.mjs?v=phase6-v1";
 import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=phase6-v1";
 import {regionPaths} from "./curved-engine.mjs";
-import {readCurveSave} from "./curve-art.mjs";
-import {readPlotSave} from "./plot-art.mjs";
+import {readCurveSave} from "./curve-art.mjs?v=phase6-v1";
+import {readPlotSave} from "./plot-art.mjs?v=phase6-v1";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-REGION_WORLD.xmin)*GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
@@ -560,6 +560,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     lastAddedArrow=null;
     graph.setAttribute("aria-label",mode()==="fill"?
       "Coordinate graph. "+r.done+" completed pieces. Move with arrow keys and press Enter to fill the region under the keyboard cursor.":
+      isReverse()&&rule()?
+        "Coordinate graph. "+(rule().inclusive?"Solid":"Dashed")+
+        " highlighted boundary, with the "+regionSide(rule())+
+        " half-plane shaded. Choose its matching inequality.":
       "Coordinate graph. "+r.line+" of "+part.rules.length+" boundaries correctly added to this piece.");
   }
   function playView(){
