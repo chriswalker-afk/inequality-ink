@@ -74,6 +74,13 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
   const restored=readPlotSave(storage);
   let saved={picture:restored.picture,records:restored.records};
+  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  const linkedPicture=plotPicture(requestedPicture)?.id||null;
+  function returnToHub(id=saved.picture){
+    if(!linkedPicture||typeof win.location?.assign!=="function")return false;
+    win.location.assign("./?mode=plot&picture="+encodeURIComponent(id));
+    return true;
+  }
   let save=saved.records[saved.picture]||fresh();
   let screen="picker",selected=null,wrong=null,
     cursor={x:0,y:0},activePoint=save.points.length-1,drag=null,
@@ -755,7 +762,8 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }
   });
   $("plotBack").addEventListener("click",()=>{
-    clearFlash();drag=null;selected=null;setScreen("picker");
+    clearFlash();drag=null;selected=null;
+    if(!returnToHub())setScreen("picker");
   });
   $("plotUndoPoint").addEventListener("click",undoPoint);
   $("plotCheckGraph").addEventListener("click",checkPlot);
@@ -783,16 +791,20 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   $("plotReplayReveal").addEventListener("click",openReveal);
   $("plotRestart").addEventListener("click",restart);
   $("plotRestartPlaying").addEventListener("click",restart);
-  $("plotChooseAgain").addEventListener("click",()=>setScreen("picker"));
-  // Like Pixel Art and the other Graph Art modes, Next returns to the
-  // gallery with the recommended unfinished picture highlighted.
-  $("plotNextPicture").addEventListener("click",()=>setScreen("picker"));
+  $("plotChooseAgain").addEventListener("click",()=>{
+    if(!returnToHub())setScreen("picker");
+  });
+  $("plotNextPicture").addEventListener("click",()=>{
+    const next=PLOT_PICTURES[picture().step];
+    if(!returnToHub(next?.id||saved.picture))setScreen("picker");
+  });
   $("plotRevealClose").addEventListener("click",closeReveal);
   $("plotRevealSkip").addEventListener("click",showFinished);
   $("plotRevealAgain").addEventListener("click",playReveal);
   $("plotDownload").addEventListener("click",savePNG);
   reveal.addEventListener("cancel",ev=>{ev.preventDefault?.();closeReveal();});
   setScreen("picker");
+  if(linkedPicture)choosePicture(linkedPicture);
   return {
     addPoint,movePoint,checkPlot,checkStyle,checkRegion,pickAt,undoPoint,
     chooseStyle,giveHint,choose:choosePicture,readProgress:()=>({
