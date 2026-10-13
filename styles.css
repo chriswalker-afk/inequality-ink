@@ -1007,3 +1007,7 @@ body.paint-session{overflow:hidden}
   .quest-picker-heading strong{font-size:.71rem}
   .quest-picture-actions .button{width:100%}
 }
+
+/* Explicit hidden rules beat grid/flex display declarations in author CSS. */
+.quest-layout[hidden],.quest-progress[hidden],.quest-picker-shell[hidden],
+.quest-finish[hidden],.quest-screen[hidden]{display:none!important}
