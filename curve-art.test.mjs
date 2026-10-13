@@ -1,20 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {initCurveArt,CURVE_SAVE_KEY,readCurveSave} from "./regions/curve-art.mjs";
+import {initCurveArt,CURVE_SAVE_KEY,CURVE_SAVE_KEY_V2,readCurveSave} from "./regions/curve-art.mjs";
+import {CURVE_PICTURES} from "./regions/curve-pictures.mjs";
+import {satisfiesAll,curvedCellAt} from "./regions/curved-engine.mjs";
 
-class Element {
+class Element{
   constructor(tag="div"){
     this.tagName=tag;this.attrs={};this.children=[];
-    this.textContent="";this.className="";this.hidden=false;
-    this.disabled=false;this.style={};this.listeners=new Map();
-    const names=new Set();
-    this.classList={add:name=>names.add(name),contains:name=>names.has(name)};
+    this.textContent="";this.className="";this.hidden=false;this.disabled=false;
+    this.style={};this.listeners=new Map();this.names=new Set();
+    this.classList={add:x=>this.names.add(x),contains:x=>this.names.has(x)};
   }
-  setAttribute(name,value){this.attrs[name]=String(value);}
-  getAttribute(name){return this.attrs[name]??null;}
-  removeAttribute(name){delete this.attrs[name];}
-  append(...nodes){this.children.push(...nodes);}
+  setAttribute(k,v){this.attrs[k]=String(v);}
+  getAttribute(k){return this.attrs[k]??null;}
+  removeAttribute(k){delete this.attrs[k];}
+  append(...nodes){this.children.push(...nodes.filter(Boolean));}
   replaceChildren(...nodes){this.children=[];this.append(...nodes);}
   addEventListener(name,fn){
     if(!this.listeners.has(name))this.listeners.set(name,[]);
@@ -30,170 +31,193 @@ class Element {
   showModal(){this.setAttribute("open","");}
   close(){this.removeAttribute("open");}
 }
-function session(initial={}){
+function session(initial={},reduced=false){
   const html=readFileSync(new URL("./regions/curve.html",import.meta.url),"utf8");
   const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   const elements=new Map(ids.map(id=>[id,new Element(id)]));
   const doc={
-    getElementById:id=>{if(!elements.has(id))throw Error("Missing "+id);return elements.get(id);},
+    getElementById:id=>{
+      if(!elements.has(id))throw Error("Missing "+id);
+      return elements.get(id);
+    },
     createElement:tag=>new Element(tag),
     createElementNS:(_ns,tag)=>new Element(tag)
   };
-  const store=new Map([["inequality-ink-graph-art-v2","keep existing progress"],...Object.entries(initial)]);
-  const callbacks=new Map();let nextId=0;
+  const store=new Map([
+    ["inequality-ink-graph-art-v2","keep existing progress"],
+    ["inequality-ink-v5","keep pixel progress"],...Object.entries(initial)
+  ]);
+  const callbacks=new Map();let next=0;
   const win={
-    setTimeout:(fn,ms)=>{const id=++nextId;callbacks.set(id,{fn,ms});return id;},
+    setTimeout:(fn,ms)=>{const id=++next;callbacks.set(id,{fn,ms});return id;},
     clearTimeout:id=>callbacks.delete(id),
-    matchMedia:()=>({matches:false})
+    matchMedia:()=>({matches:reduced})
   };
   const storage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
-  const app=initCurveArt({doc,win,storage});
-  return {$:doc.getElementById,store,storage,app,callbacks,win};
+  const app=initCurveArt({doc,storage,win});
+  return {doc,store,storage,callbacks,win,app,$:doc.getElementById};
 }
-const layers=(s,name)=>s.$("graphArtGraph").children.filter(e=>e.getAttribute("data-region-layer")===name);
-test("Curve & Fill shares Graph Art's markup, CSS, instructions and reveal",()=>{
-  const page=readFileSync(new URL("./regions/curve.html",import.meta.url),"utf8");
-  const css=readFileSync(new URL("./regions/curve-art.css",import.meta.url),"utf8");
-  assert.match(page,/regions\.css/);
-  assert.match(page,/class="topbar"/);
-  assert.match(page,/class="region-workspace graph-workspace"/);
-  assert.match(page,/class="graph-feedback"/);
-  assert.match(page,/graph-good-flash|graph-wrong-flash|wrong region flashes red/);
-  assert.match(page,/id="curveReveal"/);
-  assert.doesNotMatch(css,/(^|\n)\s*\.graph-feedback\s*\{/);
-  assert.ok(!page.includes("class=\"hero\""));
-});
-test("wrong curved cell flashes RED, clears, and can be retried",()=>{
-  const s=session();s.$("curvePictureCard").click();
-  assert.equal(s.$("curvePlay").hidden,false);
-  s.app.pickAt(1,0);
-  assert.ok(layers(s,"wrong").length>0);
-  assert.ok(layers(s,"wrong")[0].classList.contains("graph-wrong-flash"));
-  assert.ok(s.$("graphFeedback").className.includes("error"));
-  assert.equal(layers(s,"selection").length,0);
-  const expiry=[...s.callbacks.values()].find(x=>x.ms===950);
-  assert.ok(expiry);
-  expiry.fn();
-  assert.equal(layers(s,"wrong").length,0);
-  assert.equal(s.$("graphFeedback").textContent,
-    "Not quite. That region fails at least one of the inequalities. Try another.");
-});
-test("correct curved cell stays filled until Check; Undo and toggle match Find & Fill",()=>{
-  const s=session();s.$("curvePictureCard").click();
-  s.app.pickAt(-1,0);
-  assert.ok(layers(s,"selection").length>0);
-  assert.ok(layers(s,"selection")[0].classList.contains("graph-good-flash"));
-  assert.match(s.$("graphFeedback").textContent,/Region filled.*Check/);
-  assert.equal(readCurveSave(s.storage).done,0);
-  s.app.pickAt(-1,0);
-  assert.equal(layers(s,"selection").length,0);
-  s.$("graphCheckFill").click();
-  assert.ok(s.$("graphFeedback").className.includes("error"));
-  s.app.pickAt(-1,0);
-  s.$("graphUndoFill").click();
-  assert.equal(layers(s,"selection").length,0);
-  s.app.pickAt(-1,0);
-  s.$("graphCheckFill").click();
-  assert.equal(readCurveSave(s.storage).done,1);
-  assert.ok(layers(s,"finished-left-wing").length>0);
-  assert.equal(s.store.get("inequality-ink-graph-art-v2"),"keep existing progress");
-});
-test("full butterfly, summary, reveal and replay work with previous saves",()=>{
-  const s=session({[CURVE_SAVE_KEY]:JSON.stringify({done:1})});
-  assert.match(s.$("curveCardAction").textContent,/Continue/);
-  s.$("curvePictureCard").click();
-  s.app.pickAt(1,0);s.$("graphCheckFill").click();
-  assert.equal(readCurveSave(s.storage).done,2);
+const layer=(s,name)=>s.$("graphArtGraph").children.filter(n=>n.getAttribute("data-region-layer")===name);
+const details=svg=>svg.children.filter(n=>n.getAttribute("data-curve-detail")!==null);
+const card=(s,i)=>s.$("curvePictureCards").children[i];
+function interior(part){
+  for(let x=-4.5;x<=4.5;x+=.25)for(let y=-4.5;y<=4.5;y+=.25){
+    if(!satisfiesAll(part.rules,x,y))continue;
+    if(curvedCellAt(part.rules,x,y,.08)?.correct)return {x,y};
+  }
+  throw Error("No tappable interior point for "+part.id);
+}
+function finish(s,p){
+  for(const part of p.pieces){
+    const {x,y}=interior(part);
+    s.app.pickAt(x,y);
+    assert.ok(layer(s,"selection").length,part.id+" should show a correct green selection");
+    s.$("graphCheckFill").click();
+  }
   assert.equal(s.$("curveSummary").hidden,false);
   assert.equal(s.$("curveReveal").getAttribute("open"),"");
   s.$("curveRevealSkip").click();
+  assert.ok(details(s.$("graphRevealSvg")).length>=8);
   assert.equal(s.$("curveDownload").hidden,false);
   s.$("curveRevealClose").click();
-  assert.equal(s.$("curveReveal").getAttribute("open"),null);
-  s.$("curveChooseAgain").click();
-  assert.match(s.$("curveCardAction").textContent,/Finished/);
-  s.$("curvePictureCard").click();
-  assert.equal(readCurveSave(s.storage).done,0);
+}
+test("full Curve & Fill page shares Find & Fill interface, steps and reveal",()=>{
+  const page=readFileSync(new URL("./regions/curve.html",import.meta.url),"utf8");
+  const css=readFileSync(new URL("./regions/curve-art.css",import.meta.url),"utf8");
+  for(const marker of [
+    'class="topbar"','class="region-workspace graph-workspace"',
+    'class="graph-feedback"','id="curveStageTrack"','id="curvePictureCards"',
+    'id="curveReveal"','id="curveNextPicture"'
+  ])assert.ok(page.includes(marker),marker);
+  assert.match(page,/regions\.css/);
+  assert.ok(!page.includes("prototype"));
+  assert.doesNotMatch(css,/(^|\n)\s*\.graph-feedback\s*\{/);
 });
-test("keyboard can choose a region and hints appear separately from feedback",()=>{
-  const s=session();s.$("curvePictureCard").click();
-  const svg=s.$("graphArtGraph");
-  svg.fire("keydown",{key:"ArrowLeft"});svg.fire("keydown",{key:"ArrowLeft"});
-  svg.fire("keydown",{key:"Enter"});
-  assert.ok(layers(s,"selection").length>0);
-  s.$("graphHint").click();
-  assert.equal(s.$("graphHintText").hidden,false);
-  assert.match(s.$("graphFeedback").textContent,/hint has appeared/);
-  s.$("curveBack").click();
-  assert.equal(s.$("curvePicker").hidden,false);
-  assert.equal(s.$("curvePlay").hidden,true);
-});
-
-const decorations=svg=>svg.children.filter(e=>e.getAttribute("data-curve-detail")!==null);
-test("butterfly decorations are a completion reward, not shown during play",()=>{
+test("five unique staged picture cards show individual progress and clues",()=>{
   const s=session();
-  assert.equal(decorations(s.$("curvePreviewGraph")).length,0);
-  s.$("curvePictureCard").click();
+  assert.equal(s.$("curvePictureCards").children.length,5);
+  assert.equal(s.$("curveStageTrack").children.length,5);
+  assert.match(s.$("curveGalleryProgress").textContent,/0 of 5/);
+  assert.equal(card(s,4).getAttribute("data-curve-picture"),"cosmic-jellyfish");
+  card(s,0).click();
+  assert.equal(s.$("curvePlay").hidden,false);
+  assert.equal(s.$("curveGameTitle").textContent,"Parabola Butterfly");
+  assert.equal(s.$("graphTaskTitle").textContent,"Left wing");
   s.app.pickAt(-1,0);s.$("graphCheckFill").click();
-  assert.equal(decorations(s.$("graphArtGraph")).length,0);
   s.$("curveBack").click();
-  assert.equal(decorations(s.$("curvePreviewGraph")).length,0);
-  const completed=session({[CURVE_SAVE_KEY]:JSON.stringify({done:2})});
-  assert.ok(decorations(completed.$("curvePreviewGraph")).length>=25);
-  assert.ok(decorations(completed.$("curvePreviewGraph")).some(
-    e=>e.getAttribute("data-curve-detail")==="head"));
+  assert.match(card(s,0).children[1].children.at(-1).textContent,/Continue/);
+  card(s,1).click();
+  assert.equal(s.$("curveGameTitle").textContent,"Rolling Hills");
+  assert.equal(s.$("graphTaskTitle").textContent,"Emerald hill");
+  assert.match(s.$("graphRuleCount").textContent,/3 inequalities/);
+  s.$("curveBack").click();
+  assert.match(card(s,0).children[1].children.at(-1).textContent,/Continue/);
 });
-test("big reveal adds both wings, patterns, body and sparkles in ordered stages",()=>{
-  const s=session({[CURVE_SAVE_KEY]:JSON.stringify({done:1})});
-  s.$("curvePictureCard").click();
+test("wrong curved region flashes red then clears, correct region toggles and persists",()=>{
+  const s=session();card(s,0).click();
+  s.app.pickAt(1,0);
+  assert.ok(layer(s,"wrong").length);
+  assert.ok(layer(s,"wrong")[0].classList.contains("graph-wrong-flash"));
+  assert.match(s.$("graphFeedback").className,/error/);
+  const timeout=[...s.callbacks.values()].find(t=>t.ms===950);
+  assert.ok(timeout);timeout.fn();
+  assert.equal(layer(s,"wrong").length,0);
+  s.app.pickAt(-1,0);
+  assert.ok(layer(s,"selection")[0].classList.contains("graph-good-flash"));
+  assert.equal(readCurveSave(s.storage).done,0);
+  s.app.pickAt(-1,0);
+  assert.equal(layer(s,"selection").length,0);
+  s.app.pickAt(-1,0);s.$("graphUndoFill").click();
+  assert.equal(layer(s,"selection").length,0);
+  s.app.pickAt(-1,0);s.$("graphCheckFill").click();
+  assert.equal(readCurveSave(s.storage).done,1);
+  assert.ok(layer(s,"finished-left-wing").length);
+});
+test("v1 butterfly save migrates into independent per-picture records without deletion",()=>{
+  const old=JSON.stringify({done:1,replays:3});
+  const s=session({[CURVE_SAVE_KEY]:old});
+  assert.equal(readCurveSave(s.storage).done,1);
+  assert.equal(readCurveSave(s.storage).replays,3);
+  card(s,1).click();
+  const p=CURVE_PICTURES[1];
+  const point=interior(p.pieces[0]);
+  s.app.pickAt(point.x,point.y);s.$("graphCheckFill").click();
+  assert.equal(s.store.get(CURVE_SAVE_KEY),old);
+  const v2=JSON.parse(s.store.get(CURVE_SAVE_KEY_V2));
+  assert.equal(v2.records["parabola-butterfly"].done,1);
+  assert.equal(v2.records["rolling-hills"].done,1);
+  assert.equal(s.store.get("inequality-ink-v5"),"keep pixel progress");
+  assert.equal(s.store.get("inequality-ink-graph-art-v2"),"keep existing progress");
+});
+test("each five-picture path is playable, with an accurate finished reveal",()=>{
+  const s=session();
+  for(let i=0;i<CURVE_PICTURES.length;i++){
+    card(s,i).click();
+    const p=CURVE_PICTURES[i];
+    assert.equal(s.$("curveGameTitle").textContent,p.name);
+    assert.match(s.$("curveGameMode").textContent,new RegExp(p.stage.toUpperCase()));
+    finish(s,p);
+    if(i<4)assert.equal(s.$("curveNextPicture").hidden,false);
+    else assert.equal(s.$("curveNextPicture").hidden,true);
+    s.$("curveChooseAgain").click();
+    const thumb=card(s,i).children[0];
+    assert.ok(details(thumb).length>=8,"Completed thumbnail should include details");
+    assert.match(s.$("curveGalleryProgress").textContent,new RegExp((i+1)+" of 5"));
+  }
+  assert.match(s.$("curveGalleryProgress").textContent,/All five stages complete/);
+  card(s,4).click();
+  assert.equal(readCurveSave(s.storage).records["cosmic-jellyfish"].done,0);
+  assert.equal(readCurveSave(s.storage).records["parabola-butterfly"].done,2);
+});
+test("stage-specific decoration timing and reduced motion match the other modes",()=>{
+  const s=session({[CURVE_SAVE_KEY_V2]:JSON.stringify({
+    picture:"parabola-butterfly",
+    records:{"parabola-butterfly":{done:1,replays:0}}
+  })});
+  card(s,0).click();
   s.app.pickAt(1,0);s.$("graphCheckFill").click();
   const board=s.$("graphRevealSvg");
-  assert.equal(decorations(board).length,0);
-  const ordered=[...s.callbacks.values()].sort((a,b)=>a.ms-b.ms);
-  assert.equal(ordered.length,6);
-  ordered[0].fn();
-  assert.equal(board.children.filter(e=>e.getAttribute("data-reveal-wing")).length,1);
-  ordered[1].fn();
-  assert.equal(board.children.filter(e=>e.getAttribute("data-reveal-wing")).length,2);
-  assert.equal(decorations(board).length,0);
-  ordered[2].fn();
-  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="upper-left-spot"));
-  assert.equal(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="head"),false);
-  assert.ok(decorations(board).some(e=>e.classList.contains("curve-detail-enter")));
-  ordered[3].fn();
-  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="head"));
-  assert.equal(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="star-upper-left"),false);
-  ordered[4].fn();
-  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="star-upper-left"));
-  ordered[5].fn();
-  assert.equal(s.$("curveDownload").hidden,false);
-  assert.match(s.$("graphRevealTitle").textContent,/Parabola Butterfly/);
-});
-test("skipping, replaying and closing reveal cancel pending decorations",()=>{
-  const s=session({[CURVE_SAVE_KEY]:JSON.stringify({done:1})});
-  s.$("curvePictureCard").click();
-  s.app.pickAt(1,0);s.$("graphCheckFill").click();
-  const board=s.$("graphRevealSvg");
+  assert.equal(details(board).length,0);
+  const events=[...s.callbacks.values()].sort((a,b)=>a.ms-b.ms);
+  assert.equal(events.length,6);
+  events[0].fn();events[1].fn();
+  assert.equal(details(board).length,0);
+  events[2].fn();
+  assert.ok(details(board).some(d=>d.getAttribute("data-curve-detail")==="upper-left-spot"));
+  assert.ok(!details(board).some(d=>d.getAttribute("data-curve-detail")==="head"));
+  events[3].fn();
+  assert.ok(details(board).some(d=>d.getAttribute("data-curve-detail")==="head"));
+  events[4].fn();
+  assert.ok(details(board).some(d=>d.getAttribute("data-curve-detail")==="star-upper-left"));
   s.$("curveRevealSkip").click();
   assert.equal(s.callbacks.size,0);
-  assert.ok(decorations(board).some(e=>e.getAttribute("data-curve-detail")==="star-upper-left"));
   s.$("curveRevealAgain").click();
-  assert.equal(decorations(board).length,0);
-  assert.equal(s.callbacks.size,6);
+  assert.equal(details(board).length,0);
   s.$("curveRevealClose").click();
   assert.equal(s.callbacks.size,0);
-  assert.equal(s.$("curveSummary").hidden,false);
+
+  const reduce=session({[CURVE_SAVE_KEY_V2]:JSON.stringify({
+    picture:"rolling-hills",records:{"rolling-hills":{done:2,replays:0}}
+  })},true);
+  card(reduce,1).click();
+  const p=CURVE_PICTURES[1].pieces.at(-1);
+  const pt=interior(p);
+  reduce.app.pickAt(pt.x,pt.y);
+  reduce.$("graphCheckFill").click();
+  assert.equal(reduce.$("curveDownload").hidden,false);
+  assert.ok(details(reduce.$("graphRevealSvg")).length>=8);
 });
-test("reveal decorations remain clear on an ivory background",async()=>{
-  const {PICTURE,CURVE_DETAIL_STAGES}=await import("./regions/curved-engine.mjs");
-  assert.equal(CURVE_DETAIL_STAGES.length,3);
-  const ids=new Set(PICTURE.details.map(d=>d.id));
-  assert.equal(ids.size,PICTURE.details.length);
-  const outside=PICTURE.details.filter(d=>d.type==="star");
-  assert.ok(outside.length>=4);
-  assert.ok(outside.every(d=>d.stroke&&d.stroke!=="#ffffff"&&d.fill!=="#ffffff"));
-  assert.ok(PICTURE.details.some(d=>d.id==="left-wing-vein"));
-  assert.ok(PICTURE.details.some(d=>d.id==="right-wing-vein"));
-  assert.ok(PICTURE.details.some(d=>d.id==="left-antenna"));
-  assert.ok(PICTURE.details.some(d=>d.id==="right-antenna"));
+test("keyboard selection, hints and retry remain usable on all modes",()=>{
+  const s=session();card(s,0).click();
+  const graph=s.$("graphArtGraph");
+  graph.fire("keydown",{key:"ArrowLeft"});graph.fire("keydown",{key:"ArrowLeft"});
+  graph.fire("keydown",{key:"Enter"});
+  assert.ok(layer(s,"selection").length);
+  s.$("graphHint").click();
+  assert.equal(s.$("graphHintText").hidden,false);
+  s.$("curveBack").click();
+  card(s,3).click();
+  assert.equal(s.$("curveGameTitle").textContent,"Orbit Flower");
+  s.$("graphHint").click();
+  assert.equal(s.$("graphHintText").hidden,false);
 });
