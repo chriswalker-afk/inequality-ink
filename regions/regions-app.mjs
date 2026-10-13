@@ -243,18 +243,19 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(next==="summary")summaryView();
   }
-  function miniature(svg,p,completed=false){
+  function miniature(svg,p,progress=0){
     baseGraph(svg,doc,{grid:false});
     p.pieces.forEach((f,i)=>{
-      const visible=completed||i<Math.min(2,p.pieces.length);
+      const painted=i<progress;
+      const visible=painted||i<Math.min(2,p.pieces.length);
       polygon(svg,doc,intersectRegion(f.rules),{
-        fill:visible?f.color:"#bfcac7",
-        "fill-opacity":visible?1:.22,
-        stroke:visible?"#fff9ee":"#bfcac7",
-        "stroke-dasharray":visible?"":"9 7","stroke-width":3
+        fill:painted?f.color:"#bfcac7",
+        "fill-opacity":painted?1:visible?.22:.075,
+        stroke:painted?"#fff9ee":"#bfcac7",
+        "stroke-dasharray":painted?"":"9 7","stroke-width":3
       });
     });
-    if(completed)decorations(doc,svg,p);
+    if(progress===p.pieces.length)decorations(doc,svg,p);
   }
   // The hub lets all four modes share a single three-decision starting screen.
   // Each activity still owns its own independent save data and mathematical code.
@@ -268,7 +269,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     return saved.records[key(m,p.id)]||blank();
   }
   function hubMiniature(svg,p,done,m){
-    if(m==="fill"||m==="build"){miniature(svg,p,done===p.pieces.length);return;}
+    if(m==="fill"||m==="build"){miniature(svg,p,done);return;}
     baseGraph(svg,doc,{grid:false});
     p.pieces.forEach((part,i)=>{
       const painted=i<done;
