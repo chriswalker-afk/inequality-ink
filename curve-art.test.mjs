@@ -192,6 +192,8 @@ test("reveal decorations remain clear on an ivory background",async()=>{
   const outside=PICTURE.details.filter(d=>d.type==="star");
   assert.ok(outside.length>=4);
   assert.ok(outside.every(d=>d.stroke&&d.stroke!=="#ffffff"&&d.fill!=="#ffffff"));
+  assert.ok(PICTURE.details.some(d=>d.id==="left-wing-vein"));
+  assert.ok(PICTURE.details.some(d=>d.id==="right-wing-vein"));
   assert.ok(PICTURE.details.some(d=>d.id==="left-antenna"));
   assert.ok(PICTURE.details.some(d=>d.id==="right-antenna"));
 });

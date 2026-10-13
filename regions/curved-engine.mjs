@@ -115,6 +115,8 @@ const butterflyDetails=Object.freeze([
   ellipse("lower-right-spot",1,.94,-1.58,.38,.44,DC.cream,DC.berry),
   circle("left-wing-tip",1,-1.57,.05,.18,DC.plum,DC.paleCream,.035),
   circle("right-wing-tip",1,1.57,.05,.18,DC.plum,DC.paleCream,.035),
+  curve("left-wing-vein",1,-.28,.22,-1.02,-.12,-1.87,0,DC.berry,.055),
+  curve("right-wing-vein",1,.28,.22,1.02,-.12,1.87,0,DC.berry,.055),
   ellipse("upper-left-glint",1,-.98,1.81,.13,.17,DC.paleCream,DC.goldOutline,.025),
   ellipse("upper-right-glint",1,.98,1.81,.13,.17,DC.paleCream,DC.goldOutline,.025),
   ellipse("lower-left-glint",1,-1.01,-1.47,.12,.14,DC.paleCream,DC.goldOutline,.025),
