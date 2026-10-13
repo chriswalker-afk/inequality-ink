@@ -371,18 +371,21 @@ function fakeDoc(){
     createElementNS:(_ns,tag)=>new Element(tag)
   };
 }
-function session(initial={}){
+function session(initial={},query=""){
   const doc=fakeDoc(),store=new Map([
     ["inequality-ink-v5","keep-pixel-save"],
     ["inequality-ink-quadratic-quest-v2","keep-quadratic-save"],
     ...Object.entries(initial)
   ]);
   const timers=[];
+  const redirects=[];
   const win={setTimeout:fn=>{timers.push(fn);return timers.length;},
-    clearTimeout:()=>{},matchMedia:()=>({matches:false})};
+    clearTimeout:()=>{},matchMedia:()=>({matches:false}),
+    location:{search:query,href:"https://example.com/regions/"+query,
+      assign:url=>redirects.push(url)}};
   const storage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
   const app=initRegionsApp({doc,storage,win});
-  return {doc,store,storage,timers,win,app,$:doc.getElementById};
+  return {doc,store,storage,timers,redirects,win,app,$:doc.getElementById};
 }
 // Gallery cards choose a picture; the preview's primary button starts it.
 function selectAndStart(s,index){
@@ -741,4 +744,17 @@ test("The hub needs a separate, visible Start action to open linear pictures",()
   $("graphBack").click();
   assert.equal($("graphPicker").hidden,false);
   assert.equal($("graphPictureCards").children[2].getAttribute("aria-pressed"),"true");
+});
+
+test("Hub query links restore the selected mode and picture",()=>{
+  const s=session({},"?mode=curve&picture=rolling-hills"),{$}=s;
+  assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
+  assert.equal($("graphPreviewStage").textContent,"2 · Step Up");
+  assert.equal($("graphPreviewName").textContent,"Rolling Hills");
+  assert.equal($("graphPictureCards").children[1].getAttribute("aria-pressed"),"true");
+  $("graphStartPicture").click();
+  assert.equal(s.redirects.at(-1),"./curve.html?picture=rolling-hills");
+  const plot=session({},"?mode=plot&picture=rocket-launch");
+  assert.equal(plot.$("graphModePlot").getAttribute("aria-pressed"),"true");
+  assert.equal(plot.$("graphPreviewStage").textContent,"5 · Big Finish");
 });
