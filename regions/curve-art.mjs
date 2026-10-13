@@ -168,7 +168,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       saved.records[p.id]?.done===p.pieces.length).length;
     const recommended=CURVE_PICTURES.find(p=>
       saved.records[p.id]?.done!==p.pieces.length)||CURVE_PICTURES[4];
-    $("curveGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+    $("curveGalleryProgress").textContent=completed+" of 5 completed · "+
       (completed===5?"All five stages complete!":"Next up: "+recommended.stage);
     const stages=$("curveStageTrack");stages.replaceChildren();
     for(const p of CURVE_PICTURES){
