@@ -350,7 +350,7 @@ const snowGlobe=Object.freeze({...picture(2,"snow-globe","Snow Globe",
   "Sketch two different circles and a horizontal line to build a snow globe.",[
   piece("globe-glass","The glass globe","#a6d7df",[
     O("globe-outer-circle","x² + (y − 1.5)² ≤ 4",0,1.5,2),
-    rule("globe-bottom-edge","y ≥ −0.5",[-.5],"above")
+    rule("globe-bottom-edge","y ≥ 0",[0],"above")
   ],[
     T("globe-outer-circle","circle",[0,1.5],[2,1.5],[
       "A circle is fixed by its centre and radius.",
@@ -358,18 +358,19 @@ const snowGlobe=Object.freeze({...picture(2,"snow-globe","Snow Globe",
     ],"Place the centre then any point two units from it.")
   ]),
   piece("globe-stand","The wooden base","#d6ad87",[
-    rule("globe-stand-floor","y ≥ −2.5",[-2.5],"above"),
-    rule("globe-stand-top","y ≤ −1.25",[-1.25],"below"),
+    rule("globe-stand-floor","y ≥ −1.5",[-1.5],"above"),
+    rule("globe-stand-top","y ≤ 0",[0],"below"),
     V("globe-stand-left","x ≥ −1.75",-1.75,"right"),
     V("globe-stand-right","x ≤ 1.75",1.75,"left")
   ],[
-    T("globe-stand-floor","line",[-2,-2.5],[2,-2.5],[
-      "Every point on this line has y = −2.5.",
-      "Try (−2, −2.5) and (2, −2.5)."
+    T("globe-stand-floor","line",[-2,-1.5],[2,-1.5],[
+      "Every point on this line has y = −1.5.",
+      "Try (−2, −1.5) and (2, −1.5)."
     ],"Draw the horizontal bottom edge of the globe stand.")
   ]),
   piece("globe-snowman","Snowman's body","#eaf1df",[
-    O("globe-snowman-circle","x² + (y − 0.5)² < 1",0,.5,1,"inside",false)
+    O("globe-snowman-circle","x² + (y − 0.5)² < 1",0,.5,1,"inside",false),
+    rule("globe-snowman-floor","y ≥ 0.1",[.1],"above")
   ],[
     T("globe-snowman-circle","circle",[0,.5],[1,.5],[
       "A strict circle inequality still has a circular boundary.",
@@ -385,7 +386,7 @@ const snowGlobe=Object.freeze({...picture(2,"snow-globe","Snow Globe",
   Q("snow-scarf",2,-.45,1.39,0,1.16,.45,1.42,"#bd6f79",.12),
   Q("snow-arm-left",2,-.75,.7,-1.45,.95,-1.56,1.27,"#796e6d",.09),
   Q("snow-arm-right",2,.75,.7,1.45,.95,1.56,1.27,"#796e6d",.09),
-  Q("base-engraving",2,-1.4,-1.85,0,-2.1,1.4,-1.85,"#8d755f",.07),
+  Q("base-engraving",2,-1.4,-1.19,0,-1.35,1.4,-1.19,"#8d755f",.07),
   S("snowflake-left",3,-3,2.85,.25),
   S("snowflake-right",3,3.1,3.25,.25),
   S("snowflake-top",3,-1.15,4.05,.19),
