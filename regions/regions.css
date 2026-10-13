@@ -338,6 +338,21 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
 }
 
 
+/* Phase 4: learning help stays collapsed and subordinate to the game actions. */
+.graph-learning-route {margin:7px 0 0;color:#617c81;font-size:.73rem;line-height:1.45}
+.graph-learning-route summary {cursor:pointer;width:fit-content;text-decoration:underline;text-underline-offset:3px}
+.graph-learning-route p {margin:6px 0 0;color:#667c83}
+.graph-learning-route strong {color:#3e786b}
+.graph-skill-note {font-size:.72rem;color:#5f887f;line-height:1.4}
+.graph-why {margin:0 0 9px;border-radius:9px;border:1px solid #dce5df;background:#f8faf6;padding:8px 11px;color:#45645b;font-size:.76rem;line-height:1.5}
+.graph-why[hidden] {display:none}
+.graph-why summary {cursor:pointer;font-weight:750;width:fit-content}
+.graph-why p {margin:6px 0 0}
+.graph-why summary:focus-visible,.graph-learning-route summary:focus-visible,.graph-overlap-note summary:focus-visible {outline:2px solid #428e78;outline-offset:3px}
+.graph-overlap-note {display:block}
+.graph-overlap-note summary {display:flex;align-items:center;gap:9px;cursor:pointer;font-size:.75rem}
+.graph-overlap-note p {margin:6px 0 0 28px}
+.graph-overlap-note:not([open]) {background:#f6faf6;border-color:#e1ebe4}
 /* Design alignment pass 1: familiar picture statuses and non-destructive replay.
    Controls remain alongside the picture title on desktop and mobile. */
 .graph-picture-card.is-complete{

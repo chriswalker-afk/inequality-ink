@@ -1,4 +1,5 @@
 import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
+import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,
   signedDifference,satisfiesAll
@@ -58,7 +59,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     win.location.assign("./?mode=curve&picture="+encodeURIComponent(id));
     return true;
   }
-  let screen="picker",selected=null,flash=null,cursor={x:0,y:0},
+  let screen="picker",selected=null,flash=null,why=null,cursor={x:0,y:0},
     message="",status="",hint="",hintStage=0,hintKey="",flashTimer=null,revealTimers=[];
 
   function picture(){return curvePicture(saved.picture);}
@@ -71,6 +72,10 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     try{storage.setItem(CURVE_SAVE_KEY_V2,JSON.stringify(saved));}catch{}
   }
   function notify(text,type=""){message=text;status=type;}
+  function setWhy(value){
+    why=value;
+    $("graphWhy").open=false;
+  }
   function el(svg,tag,attrs={}){
     const node=doc.createElementNS(NS,tag);
     for(const [k,v]of Object.entries(attrs))node.setAttribute(k,String(v));
@@ -220,7 +225,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       const description=doc.createElement("small");
       description.textContent=p.description;
       const focus=doc.createElement("span");
-      focus.className="graph-card-maths";focus.textContent=p.focus;
+      focus.className="graph-card-maths";focus.textContent=pictureSkills(p,"curve").slice(0,3).join(" · ");
       const progress=doc.createElement("span");progress.className="graph-card-progress";
       const bar=doc.createElement("span");
       bar.style.width=(100*r.done/p.pieces.length)+"%";
@@ -239,7 +244,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     stopFlash();stopReveal();
     saved.picture=p.id;
     const finished=record().done===p.pieces.length;
-    persist();selected=null;hint="";hintStage=0;hintKey="";cursor={x:0,y:0};
+    persist();selected=null;setWhy(null);hint="";hintStage=0;hintKey="";cursor={x:0,y:0};
     if(finished){setScreen("summary");openReveal();}
     else{notify("Find the common region.");setScreen("play");}
   }
@@ -293,6 +298,8 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     $("graphFeedback").textContent=message||
       "Tap the region where all inequalities are true.";
     $("graphFeedback").className="graph-feedback"+(status?" "+status:"");
+    $("graphWhy").hidden=!why;
+    $("graphWhyText").textContent=why?.text||"";
     $("graphHintText").textContent=hint;
     $("graphHintText").hidden=!hint;
     const scope=saved.picture+":"+r.done;
@@ -350,6 +357,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     stopFlash();
     if(!candidate.correct){
       flash=candidate;selected=null;
+      setWhy(explainRegionChoice(current().rules,{x,y}));
       notify("Not quite. That region fails at least one of the inequalities. Try another.","error");
       playView();
       const id=win.setTimeout?.(()=>{
@@ -361,12 +369,13 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       return;
     }
     selected=selected?null:candidate;
+    setWhy(selected?explainRegionChoice(current().rules,{x,y}):null);
     notify(selected?"Region filled. Press Check when you are ready.":
       "Fill removed. Choose a region again.");
     playView();
   }
   function clearSelection(){
-    stopFlash();selected=null;
+    stopFlash();selected=null;setWhy(null);
     notify("Fill cleared. Choose a region.");
     if(screen==="play")playView();
   }
@@ -381,7 +390,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       playView();return;
     }
     record().done++;
-    persist();selected=null;stopFlash();cursor={x:0,y:0};hint="";
+    persist();selected=null;setWhy(null);stopFlash();cursor={x:0,y:0};hint="";
     if(!current()){
       setScreen("summary");openReveal();
     }else{
@@ -394,7 +403,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       "Restart this picture? Only this picture's progress will be reset."))return;
     stopFlash();stopReveal();
     record().done=0;record().replays++;
-    persist();selected=null;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
+    persist();selected=null;setWhy(null);cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
     notify("Find the common region.");setScreen("play");
   }
   function stopReveal(){

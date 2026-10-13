@@ -1,4 +1,5 @@
 import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
+import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
@@ -83,7 +84,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     return true;
   }
   let save=saved.records[saved.picture]||fresh();
-  let screen="picker",selected=null,wrong=null,
+  let screen="picker",selected=null,wrong=null,why=null,
     cursor={x:0,y:0},activePoint=save.points.length-1,drag=null,
     message="",status="",hint="",hintStage=0,hintKey="",flashTimer=null,revealTimers=[];
   function picture(){return plotPicture(saved.picture);}
@@ -95,6 +96,10 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   function step(){return current()?plotSteps(current())[save.plotIndex]||null:null;}
   function targetRule(){return step()?plotRule(current(),save.plotIndex):null;}
   function notify(text,type=""){message=text;status=type;}
+  function setWhy(value){
+    why=value;
+    $("plotWhy").open=false;
+  }
   function el(root,tag,attrs={}){
     const node=doc.createElementNS(NS,tag);
     for(const [k,v]of Object.entries(attrs))node.setAttribute(k,String(v));
@@ -234,7 +239,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       name.textContent=finished?p.name:p.clue;
       const description=doc.createElement("small");description.textContent=p.description;
       const focus=doc.createElement("span");
-      focus.className="graph-card-maths";focus.textContent=p.focus;
+      focus.className="graph-card-maths";focus.textContent=pictureSkills(p,"plot").slice(0,3).join(" · ");
       const progress=doc.createElement("span");progress.className="graph-card-progress";
       const bar=doc.createElement("span");
       bar.style.width=(100*r.done/p.pieces.length)+"%";progress.append(bar);
@@ -249,7 +254,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function choosePicture(id){
     const p=plotPicture(id);if(!p)return;
-    clearFlash();stopReveal();selected=null;drag=null;hint="";hintStage=0;hintKey="";
+    clearFlash();stopReveal();selected=null;setWhy(null);drag=null;hint="";hintStage=0;hintKey="";
     saved.picture=p.id;
     save=saved.records[p.id]||fresh();
     const finished=save.done===p.pieces.length;
@@ -397,6 +402,8 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("plotDashed").setAttribute("aria-pressed",String(save.styleChoice==="dashed"));
     $("plotFeedback").className="graph-feedback"+(status?" "+status:"");
     $("plotFeedback").textContent=message||"Place two points to construct the boundary.";
+    $("plotWhy").hidden=!why||save.phase!=="shade";
+    $("plotWhyText").textContent=why?.text||"";
     $("plotHintText").hidden=!hint;
     $("plotHintText").textContent=hint;
     const currentHintKey=saved.picture+":"+save.done+":"+save.phase+":"+save.plotIndex;
@@ -536,6 +543,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     clearFlash();
     if(!candidate.correct){
       selected=null;wrong=candidate;
+      setWhy(explainRegionChoice(current().rules,{x,y}));
       notify("Not quite. That region fails at least one of the inequalities. Try another.","error");
       playView();
       const id=win.setTimeout?.(()=>{
@@ -547,13 +555,14 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       return;
     }
     selected=selected?null:candidate;
+    setWhy(selected?explainRegionChoice(current().rules,{x,y}):null);
     notify(selected?"Region filled. Press Check when you are ready.":
       "Fill removed. Choose a region again.");
     playView();
   }
   function undoFill(){
     if(save.phase!=="shade")return;
-    clearFlash();selected=null;notify("Fill cleared. Choose a region.");
+    clearFlash();selected=null;setWhy(null);notify("Fill cleared. Choose a region.");
     playView();
   }
   function checkRegion(){
@@ -567,7 +576,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }
     save.done++;save.phase="plot";save.points=[];
     save.styleChoice=null;save.plotIndex=0;save.verified=[];
-    persist();selected=null;clearFlash();drag=null;
+    persist();selected=null;setWhy(null);clearFlash();drag=null;
     activePoint=-1;cursor={x:0,y:0};hint="";
     if(!current()){setScreen("summary");openReveal();}
     else{
@@ -581,7 +590,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     clearFlash();stopReveal();drag=null;
     const replays=save.replays;
     save=fresh();save.replays=replays+1;
-    selected=null;activePoint=-1;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
+    selected=null;setWhy(null);activePoint=-1;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
     persist();notify("Begin by plotting the missing graph.");setScreen("play");
   }
   function begin(){choosePicture(saved.picture);}
