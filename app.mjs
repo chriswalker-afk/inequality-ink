@@ -61,6 +61,20 @@ try{
    }
  }
 }catch{}
+// On the first visit after the new Mixed-only gallery is introduced, an old
+// unstarted shared-stage selection should lead into the new Starter instead.
+// Completed/partly painted old pictures and ALL their save keys remain intact;
+// those familiar pictures are still available through More pictures.
+const PREVIOUS_MIXED_PATH=new Set([
+  "full-star-starter","full-gift-step","full-ball-building",
+  "full-flower-challenge","enchanted-potion"
+]);
+const previousMixedSelection=state.selectedPictures.mixed;
+const previousMixedRecord=state.progress[progressKey("mixed",previousMixedSelection)];
+if(PREVIOUS_MIXED_PATH.has(previousMixedSelection)&&
+   !previousMixedRecord?.done&&!previousMixedRecord?.completed){
+  state.selectedPictures.mixed=defaultPictureForLevel("mixed").id;
+}
 const activePicture=()=>pictureById(state.selectedPictures[state.activeLevel]);
 const activeKey=()=>progressKey(state.activeLevel,activePicture().id);
 let save=state.progress[activeKey()]||(state.progress[activeKey()]=blank());
