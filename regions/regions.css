@@ -8,8 +8,11 @@
 .graph-landing-intro p{color:#718191;font-size:.94rem;line-height:1.6}
 .graph-picker-modes,.graph-picture-picker{padding:20px 23px;border:1px solid #e5e0d9;border-radius:19px;background:#fffcf8;margin-top:14px}
 .graph-picker h2{font-size:1.24rem;letter-spacing:-.035em;margin:0 0 14px;color:#304760}
-.graph-mode-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.graph-mode-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .graph-mode-card{display:flex;align-items:center;text-align:left;gap:15px;padding:18px;border-radius:15px;border:2px solid #e4e7e2;background:#fdfcf8;color:#384d63;cursor:pointer;font:inherit}
+.graph-mode-card[href]{text-decoration:none;color:inherit}
+.graph-mode-card:hover,.graph-mode-card:focus-visible{border-color:#56a698;background:#f0f9f4}
+.graph-mode-go{margin-left:auto;color:#358d78;font-size:1.15rem;font-weight:900}
 .graph-mode-card[aria-pressed=true]{border-color:#56a698;background:#eaf7f1;box-shadow:0 4px 17px #47988316}
 .graph-mode-card strong,.graph-mode-card small{display:block}
 .graph-mode-card strong{font-size:1.06rem;margin-bottom:5px}
