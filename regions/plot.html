@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
   <link rel="stylesheet" href="./regions.css?v=five-stage-v4" />
   <link rel="stylesheet" href="./plot-art.css?v=plot-full-v2" />
+  <link rel="stylesheet" href="../studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="../help/how-to-play.css?v=guide-v1" />
   <script type="module" src="../help/how-to-play.mjs?v=guide-v1"></script>
   <script type="module" src="./plot-art.mjs?v=plot-full-v2"></script>
@@ -65,6 +66,7 @@
         <div id="plotProgress" class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
           <div id="plotProgressFill"></div>
         </div>
+        <div id="plotPieceMarkers" class="graph-piece-markers" aria-hidden="true"></div>
         <div class="region-workspace graph-workspace plot-workspace">
           <section class="panel graph-canvas-panel plot-canvas-panel" aria-labelledby="plotCanvasTitle">
             <div class="graph-panel-top">
@@ -154,12 +156,15 @@
       </section>
 
       <section id="plotSummary" class="graph-summary" hidden aria-labelledby="plotSummaryTitle">
-        <div class="eyebrow">YOUR MATHEMATICAL ART IS COMPLETE ✦</div>
+        <div class="eyebrow">MASTERPIECE COMPLETE ✦</div>
         <h1 id="plotSummaryTitle">Little Umbrella</h1>
         <p id="plotSummaryText">You constructed the graph boundaries and found their common regions.</p>
-        <div class="graph-summary-stats" id="plotSummaryStats">2 mathematical regions</div>
+                <div class="graph-summary-art-shell"><svg id="plotSummaryArt" viewBox="0 0 620 620" role="img" aria-label="Your completed mathematical artwork"></svg></div>
+        <div id="plotSummaryMetrics" class="graph-summary-metrics" aria-label="Picture completion statistics"></div>
+<div class="graph-summary-stats" id="plotSummaryStats">2 mathematical regions</div>
         <div class="graph-summary-buttons">
-          <button type="button" id="plotReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
+          <button type="button" id="plotReplayReveal" class="button button-light">Watch reveal ✦</button>
+          <button type="button" id="plotSavePicture" class="button button-light">Save picture ↓</button>
           <button type="button" id="plotRestart" class="button button-light">Play again ↻</button>
           <button type="button" id="plotNextPicture" class="button button-primary">Next picture →</button>
           <button type="button" id="plotChooseAgain" class="button button-light">Choose a picture</button>
