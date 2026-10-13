@@ -229,10 +229,10 @@ test("Keyboard can navigate the fill canvas and saved partial build resumes",()=
   $("graphBack").click();
   $("graphModeBuild").click();
   $("graphPictureCards").children[0].click();
-  $("graphSideB").click();$("graphSolid").click();$("graphAddLine").click();
-  // If incorrect there is no false progress.
+  $("graphSideA").click();$("graphSolid").click();$("graphAddLine").click();
+  // Wrong direction must not advance the line counter.
   assert.equal(app.readProgress().records["build:little-house"].line,0);
-  $("graphSideA").click();$("graphAddLine").click();
+  $("graphSideB").click();$("graphAddLine").click();
   assert.equal(app.readProgress().records["build:little-house"].line,1);
   assert.equal(JSON.parse(store.get(GRAPH_ART_SAVE_KEY)).records["build:little-house"].line,1);
 });
