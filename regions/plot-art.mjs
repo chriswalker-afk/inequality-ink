@@ -317,52 +317,68 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function pointText(p){return p?"("+nice(p.x)+", "+nice(p.y)+")":"not placed";}
   function playView(){
-    const part=current();if(!part){setScreen("summary");return;}
-    $("plotPieceCount").textContent="Piece "+(save.done+1)+" of 2";
-    $("plotCanvasCount").textContent=save.done+" / 2";
-    $("plotProgressFill").style.width=(save.done*50)+"%";
-    $("plotProgress").setAttribute("aria-valuenow",String(save.done*50));
-    $("plotTaskKicker").textContent="PIECE "+(save.done+1)+" OF 2";
+    const p=picture(),part=current();
+    if(!part){setScreen("summary");return;}
+    const task=step(),total=plotSteps(part).length;
+    $("plotGameMode").textContent="PLOT & SHADE · STEP "+p.step+" · "+p.stage.toUpperCase();
+    $("plotGameTitle").textContent=p.name;
+    $("plotGameFocus").textContent=p.focus;
+    $("plotPieceCount").textContent="Piece "+(save.done+1)+" of "+p.pieces.length;
+    $("plotCanvasCount").textContent=save.done+" / "+p.pieces.length;
+    $("plotProgressFill").style.width=(100*save.done/p.pieces.length)+"%";
+    $("plotProgress").setAttribute("aria-valuenow",
+      String(Math.round(100*save.done/p.pieces.length)));
+    $("plotTaskKicker").textContent="PIECE "+(save.done+1)+" OF "+p.pieces.length;
     $("plotTaskTitle").textContent=part.name;
     $("plotPieceSwatch").style.background=part.color;
-    $("plotMobileEquation").textContent=
-      (save.phase==="plot"?"Plot: ":"Find the region: ")+targetRule().text;
+    $("plotBoundaryCount").textContent=save.phase==="shade"?
+      "All "+total+" plotted":"Boundary "+(save.plotIndex+1)+" of "+total;
+    $("plotMobileEquation").textContent=save.phase==="shade"?
+      "Fill the common region":(save.phase==="plot"?"Plot: ":"Boundary: ")+targetRule().text;
     $("plotCanvasTitle").textContent=save.phase==="plot"?"Plot the boundary":
       save.phase==="style"?"Choose its style":"Find the overlap";
     $("plotCanvasInstruction").textContent=save.phase==="plot"?
       "Tap or drag points. Coordinates snap to 0.5. Arrow keys + Enter work too.":
       save.phase==="style"?"Study your graph, then decide solid or dashed.":
       "Tap the common region. Correct fills stay until you check.";
+    const tasks=plotSteps(part),built=new Set(save.verified.map(t=>t.ruleId));
+    const reused=previousBoundaries(p,save.done);
     const rules=$("plotRuleList");rules.replaceChildren();
     for(const r of part.rules){
-      const plotted=r.id===part.plot.ruleId;
+      const taskIndex=tasks.findIndex(t=>t.ruleId===r.id);
+      const isTarget=taskIndex>=0,done=built.has(r.id);
+      const active=isTarget&&taskIndex===save.plotIndex&&save.phase!=="shade";
       const item=doc.createElement("div");
-      item.className="graph-rule-item "+(plotted?"plot-rule-plot":"plot-rule-given");
+      item.className="graph-rule-item "+(active?"plot-rule-plot":"plot-rule-given");
       const txt=doc.createElement("span");txt.textContent=r.text;
       const flag=doc.createElement("span");flag.className="rule-state";
-      flag.textContent=plotted?(save.phase==="plot"?"PLOT":"SKETCHED"):"GIVEN";
+      flag.textContent=done?"BUILT":active?"PLOT":
+        isTarget?"NEXT":reused.has(ruleSignature(r))?"REUSED":"GIVEN";
       item.append(txt,flag);rules.append(item);
     }
     for(const name of ["plot","style","shade"]){
-      const node=$("plotPhaseTrack").children.find?.(n=>n.getAttribute("data-step")===name)
-        ||[...$("plotPhaseTrack").children].find(n=>n.getAttribute("data-step")===name);
-      if(node){
-        const index={plot:0,style:1,shade:2};
-        node.className="plot-phase"+(name===save.phase?" is-current":
-          index[name]<index[save.phase]?" is-done":"");
-      }
+      const node=[...$("plotPhaseTrack").children].find(
+        child=>child.getAttribute("data-step")===name);
+      if(!node)continue;
+      const index={plot:0,style:1,shade:2};
+      node.className="plot-phase"+(name===save.phase?" is-current":
+        index[name]<index[save.phase]?" is-done":"");
     }
     $("plotPlotControls").hidden=save.phase!=="plot";
     $("plotStyleControls").hidden=save.phase!=="style";
     $("plotShadeControls").hidden=save.phase!=="shade";
-    const count=save.points.length;
-    $("plotInstruction").textContent=count===0?
-      (part.plot.kind==="parabola"?"Place the turning point first.":"Place your first point on the line."):
+    const count=save.points.length,kind=task?.kind;
+    const first={parabola:"Place the turning point first.",
+      absolute:"Place the V's vertex first.",
+      circle:"Place the circle's centre first.",
+      line:"Place your first point on the line."};
+    $("plotInstruction").textContent=count===0?(first[kind]||"Place the first point."):
       count===1?"Now place a second point on the boundary.":"Both points placed. Check your sketch.";
-    $("plotGuidance").textContent=part.plot.guidance;
+    $("plotGuidance").textContent=task?.guidance||"All boundaries built. Now shade.";
     $("plotPointReadout").textContent=
-      (part.plot.kind==="parabola"?"Vertex: ":"Point 1: ")+pointText(save.points[0])+
-      " · Point 2: "+pointText(save.points[1]);
+      (kind==="parabola"||kind==="absolute"?"Vertex: ":
+       kind==="circle"?"Centre: ":"Point 1: ")+pointText(save.points[0])+
+      " · "+(kind==="circle"?"Edge point: ":"Point 2: ")+pointText(save.points[1]);
     $("plotNudgeControls").hidden=count===0;
     $("plotNudgeLabel").textContent=activePoint<0?"Select a point to adjust":
       "Adjust point "+(activePoint+1)+" by 0.5";
@@ -380,6 +396,17 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       save.phase==="style"?"Check boundary →":"Check region →";
     drawCanvas();
   }
+  function summaryView(){
+    const p=picture();
+    $("plotSummaryTitle").textContent=p.name;
+    $("plotSummaryText").textContent=
+      "You constructed mathematical boundaries and found "+p.pieces.length+
+      " real regions. Watch the artwork come to life!";
+    $("plotSummaryStats").textContent=p.pieces.length+" regions · "+
+      p.pieces.reduce((n,part)=>n+plotSteps(part).length,0)+
+      " graph constructions · "+p.stage;
+    $("plotNextPicture").hidden=p.step===PLOT_PICTURES.length;
+  }
   function setScreen(next){
     screen=next;
     $("plotPicker").hidden=next!=="picker";
@@ -388,6 +415,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("how-plot-works").hidden=next==="play";
     if(next==="picker")renderPreview();
     if(next==="play")playView();
+    if(next==="summary")summaryView();
   }
   function clearFlash(){
     if(flashTimer!=null){win.clearTimeout?.(flashTimer);flashTimer=null;}
