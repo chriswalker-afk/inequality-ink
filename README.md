@@ -6,17 +6,25 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
-## Optional extension: Quadratic Quest
+## Optional extension: Quadratic Quest — full five-picture journey
 
-**Quadratic Quest** appears in its own understated section beneath the five original challenge modes. It is entirely optional, and its progress uses a separate save key, so students not studying quadratics can ignore it without missing any normal picture progression.
+**Quadratic Quest** is an optional, independent mathematical extension beneath the site's five familiar modes. It has its own **Choose a picture** screen, five-step progression, saved results, reveals and replay controls. Students who have not studied quadratic inequalities can continue the complete main game without entering it.
 
-The initial six-question picture builds from already-factorised inequalities (inside and outside the roots) through inclusive endpoints, expanded quadratics, and a negative leading coefficient. This is a prototype, not a sixth stage of the existing five modes.
+| Picture | Questions | Mathematical progression |
+| --- | ---: | --- |
+| **Prism of Possibilities** | 6 | Already-factorised monic quadratics, roots, strict/inclusive, between/outside, then one expanded and negative-leading example |
+| **Petal Parabola** | 8 | Expanded monic quadratics, simple factorisation, mixed endpoint inclusivity |
+| **Skyline Arc** | 10 | Rearrange an inequality to zero before factorising, including an introductory negative-leading and common-factor example |
+| **Crystal Path** | 12 | Scaled factors and expanded non-monic quadratics; combine the multiplier's sign with the direction of the parabola |
+| **Nova Finale** | 14 | Full mixed review: factorised/expanded/scaled/rearranged forms and upward/downward parabolas |
 
-The number line adds **Between roots / Outside roots**, two adjustable integer root positions, open/closed endpoint circles, touch/mouse dragging and keyboard controls. Answers are checked over the real numbers, including which roots are included. Correct answers **unlock** decorative picture rows; these pixels are a reward, not an inaccurate integer-sampling representation of the (potentially disconnected) quadratic solution set.
+That is **50 fully authored inequalities**, each with **two distinct, visible integer roots** and exactly two root controls. Repeated roots, no-real-root cases and all-real/no-solution cases remain excluded until dedicated number-line controls are available.
 
-Students can request three progressive hints or reveal a sketch of the real parabola with its roots, and can use the same optional typed-MathML or handwritten working as Solve & Paint. Completion triggers a full-screen colour reveal and a review of all six solutions. Restart/replay and progress are isolated from the other modes.
+**Gameplay:** Choose any picture (later stages are never locked), press Start picture or Continue picture and solve one real quadratic inequality per artwork row. The interface supports **Between roots / Outside roots** (two unbounded rays), independent open/closed roots, draggable circles, keyboard-adjustable endpoints, three staged hints, a collapsible parabola and an optional typed-MathML/handwritten working space. Correctly solving an inequality **unlocks a decorative row**; the artwork is not presented as a graph of its solution. Every picture has its own full-screen reveal, question-by-question review and Next picture action. The number-line window expands as appropriate for each stage.
 
-The pure maths, six authored questions, solution marking and picture data live in quadratic-quest.mjs. Independent gameplay, hints, graph drawing and save handling live in quadratic-quest-ui.mjs. A simulated full play-through plus exact-solution tests protect these features without modifying existing generators.
+**Compatibility and preservation:** The six Prism prototype questions, artwork and its established answer behaviour are unchanged. On first load, a completed or partly completed `inequality-ink-quadratic-quest-v1` save is **copied** into Prism's slot in `inequality-ink-quadratic-quest-v2`; the original v1 save remains untouched. Later progress is saved by picture ID, including hints, replay count and first-try statistics. Restart affects **only the selected quadratic picture**. Original `inequality-ink-v5` game saves remain separate and unchanged.
+
+The pure question data, generated algebra notation and strict real-domain validation live in `quadratic-quest.mjs`. The five-stage selector, scoped progress migration, number-line UI and per-picture reveals live in `quadratic-quest-ui.mjs`. Automated tests solve all fifty questions, verify two-ended interval semantics and simulate leaving, returning, completing and replaying independent pictures.
 
 ## Choose a challenge and a picture
 
