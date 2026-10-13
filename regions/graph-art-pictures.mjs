@@ -95,7 +95,8 @@ function polygonPiece(id,name,color,points,{strict=[],standard=[],flip=[]}={}){
     if(Math.abs(dx/4-(next[0]-v[0]))>1e-8||
        Math.abs(dy/4-(next[1]-v[1]))>1e-8)
       throw Error("Vertices must sit on quarter-unit grid "+id);
-    let a=dy,b=-dx,c=a*v[0]+b*v[1];
+    // Coefficients and edge constants must remain exact on the quarter grid.
+    let a=dy*4,b=-dx*4,c=dy*4*v[0]-dx*4*v[1];
     if(!Number.isInteger(c))throw Error("Nonintegral edge constant "+id);
     const divisor=gcd(gcd(a,b),c);
     a/=divisor;b/=divisor;c/=divisor;
