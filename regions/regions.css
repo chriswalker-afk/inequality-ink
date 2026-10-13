@@ -336,3 +336,52 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
  .graph-common-pulse{fill-opacity:.45}
  #graphProgressFill{transition:none}
 }
+
+
+/* Design alignment pass 1: familiar picture statuses and non-destructive replay.
+   Controls remain alongside the picture title on desktop and mobile. */
+.graph-picture-card.is-complete{
+  border-color:#b2d3c2;
+  background:#f4faf5;
+}
+.graph-picture-card.is-complete .graph-card-go{
+  color:#307e69;
+  font-weight:850;
+}
+.graph-game-actions{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  justify-content:center;
+  gap:5px;
+  flex:0 0 auto;
+}
+.graph-restart-button{
+  border:1px solid #d8dfd9;
+  border-radius:9px;
+  background:#fffdf9;
+  padding:6px 10px;
+  font-size:.72rem;
+  color:#5f7280;
+  white-space:nowrap;
+  line-height:1.35;
+}
+.graph-restart-button:hover{
+  background:#f1f7f2;
+  border-color:#9cbdad;
+  color:#357967;
+}
+.graph-restart-button:focus-visible{
+  outline:3px solid #5c9d94;
+  outline-offset:2px;
+}
+@media(max-width:540px){
+  .graph-game-top{gap:7px}
+  .graph-game-actions{gap:4px}
+  .graph-game-actions .graph-piece-pill{
+    font-size:.64rem;
+    padding:7px 8px;
+  }
+  .graph-restart-button{padding:5px 7px;font-size:.67rem}
+  .graph-game-title h1{font-size:clamp(1.17rem,5vw,1.5rem)}
+}
