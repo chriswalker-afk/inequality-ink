@@ -1357,6 +1357,9 @@ function finish({animate=false}={}){
    "Brilliant! Your next picture, "+next.clue+", is ready.":
    "You've completed "+picture.name+". Revisit your artwork whenever you like!";
  $("nextPictureButton").hidden=!next;
+ // Keep one clear primary action on the completion screen: next stage
+ // where available, or replay when the student finishes the final stage.
+ $("playAgain").className=next?"button button-light":"button button-primary";
  if(next)$("nextPictureButton").textContent="Next: "+next.clue+" →";
   renderFinishedArt();
   $("firstTryStat").textContent=save.firstTry+"/"+questionCount(picture);
