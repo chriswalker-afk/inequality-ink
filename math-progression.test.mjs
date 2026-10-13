@@ -9,9 +9,40 @@ test("Five math stages in all modes; bonus pictures retain advanced generators",
   for(const level of ["mirror","full","solve","mixed","paint"]){
     assert.deepEqual(progressionForLevel(level).map(p=>mathematicalStage(p,level)),
       [1,2,3,4,5]);
-    assert.ok(extraPicturesForLevel(level).every(p=>mathematicalStage(p,level)===5));
+    assert.ok(extraPicturesForLevel(level).every(p=>
+      level==="mixed"&&p.legacyMathStage?.mixed?
+        mathematicalStage(p,level)===p.legacyMathStage.mixed:
+        mathematicalStage(p,level)===5),
+      "Historical Mixed quick-win questions retain their original maths");
   }
 });
+
+test("Previous Mixed starter bonuses keep their original 1–4 stage maths",()=>{
+ const ids=["full-star-starter","full-gift-step",
+   "full-ball-building","full-flower-challenge"];
+ const bonuses=extraPicturesForLevel("mixed");
+ for(const [i,id] of ids.entries()){
+   const picture=bonuses.find(p=>p.id===id);
+   assert.ok(picture,id+" must stay accessible as a Mixed bonus");
+   assert.equal(picture.progression?.mixed,undefined);
+   assert.equal(picture.legacyMathStage.mixed,i+1);
+   assert.equal(mathematicalStage(picture,"mixed"),i+1);
+   assert.deepEqual(picture.levels,["full","solve","mixed"]);
+   for(let replay=0;replay<8;replay++){
+     const q=makePictureQuestion(picture,0,replay,"mixed");
+     if(i<3)assert.equal(q.answer.included,true,
+       id+" should retain its gentle first mirrored inequality");
+     assert.equal(q.mode,"read");
+     assert.equal(q.artMode,"mirror");
+   }
+ }
+ const p=bonuses.find(x=>x.id==="full-star-starter");
+ assert.deepEqual(makePictureQuestion(p,3,0,"mixed").transformed,{a:1,b:-2});
+ // The legacy finale remains Stage 5 without becoming a main-path image.
+ const potion=bonuses.find(p=>p.id==="enchanted-potion");
+ assert.equal(mathematicalStage(potion,"mixed"),5);
+});
+
 test("Mirror and Full starters introduce strict endpoints late",()=>{
   for(let replay=0;replay<12;replay++){
     for(const level of ["mirror","full"]){
