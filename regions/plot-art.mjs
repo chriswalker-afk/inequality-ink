@@ -3,7 +3,7 @@ import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
-import {PLOT_PICTURES,PLOT_PICTURE,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs";
+import {PLOT_PICTURES,PLOT_PICTURE,PLOT_PRACTICE_PICTURES,plotAllPictures,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs?v=phase6-v1";
 import {
   POINT_STEP,snapPoint,samePoint,constructBoundary,checkConstruction,
   checkBoundaryStyle,previewPaths,validSavedPoints
@@ -59,7 +59,7 @@ function cleanRecord(raw,p,legacy=false){
 }
 export function readPlotSave(storage){
   const raw=safeJson(storage,PLOT_SAVE_KEY_V2),records={};
-  for(const p of PLOT_PICTURES)if(raw?.records?.[p.id])
+  for(const p of plotAllPictures)if(raw?.records?.[p.id])
     records[p.id]=cleanRecord(raw.records[p.id],p);
   if(!records["little-umbrella"]){
     const legacy=safeJson(storage,PLOT_SAVE_KEY);
@@ -216,13 +216,14 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       stage.append(dot,caption);stages.append(stage);
     }
     const cards=$("plotPictureCards");cards.replaceChildren();
-    for(const p of PLOT_PICTURES){
+    const practiceCards=$("plotPracticeCards");practiceCards.replaceChildren();
+    for(const p of plotAllPictures){
       const r=saved.records[p.id]||fresh();
       const finished=r.done===p.pieces.length;
       const card=doc.createElement("button");
       card.type="button";
       card.className="graph-picture-card"+(finished?" is-complete":"")+
-        (p.id===recommended.id?" is-recommended":"");
+        (!p.practice&&p.id===recommended.id?" is-recommended":"");
       card.setAttribute("data-plot-picture",p.id);
       card.setAttribute("aria-label",finished?
         "View completed picture: "+p.name:
@@ -234,7 +235,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       miniature(svgPreview,p,r.done);
       const info=doc.createElement("span");info.className="graph-picture-info";
       const badge=doc.createElement("span");badge.className="graph-stage";
-      badge.textContent=p.step+" · "+p.stage.toUpperCase()+" · "+p.pieces.length+" PIECES";
+      badge.textContent=(p.practice?"PRACTISE · ":p.step+" · ")+p.stage.toUpperCase()+" · "+p.pieces.length+" PIECES";
       const name=doc.createElement("strong");
       name.textContent=finished?p.name:p.clue;
       const description=doc.createElement("small");description.textContent=p.description;
@@ -249,7 +250,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       info.append(badge,name,description,focus,progress,go);
       card.append(svgPreview,info);
       card.addEventListener("click",()=>choosePicture(p.id));
-      cards.append(card);
+      (p.practice?practiceCards:cards).append(card);
     }
   }
   function choosePicture(id){
@@ -440,7 +441,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       {value:p.pieces.reduce((n,part)=>n+plotSteps(part).length,0),label:"Graphs plotted"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("plotNextPicture").hidden=p.step===PLOT_PICTURES.length;
+    $("plotNextPicture").hidden=!!p.practice||p.step===PLOT_PICTURES.length;
   }
   function setScreen(next){
     screen=next;

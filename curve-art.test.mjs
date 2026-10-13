@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {initCurveArt,CURVE_SAVE_KEY,CURVE_SAVE_KEY_V2,readCurveSave} from "./regions/curve-art.mjs";
-import {CURVE_PICTURES} from "./regions/curve-pictures.mjs";
+import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES,validateCurveGallery} from "./regions/curve-pictures.mjs";
 import {satisfiesAll,curvedCellAt} from "./regions/curved-engine.mjs";
 
 class Element{
@@ -249,4 +249,35 @@ test("Curve picture deep links launch directly and return to unified Graph Art",
   assert.equal(s.redirects.at(-1),"./?mode=curve&picture=rolling-hills");
   const direct=session({},false,"?picture=invalid-picture");
   assert.equal(direct.$("curvePicker").hidden,false);
+});
+
+
+test("Optional Balloon Parade gives same-level curved practice without changing the five core stages",()=>{
+  assert.equal(validateCurveGallery(),true);
+  assert.equal(CURVE_PRACTICE_PICTURES.length,1);
+  const bonus=CURVE_PRACTICE_PICTURES[0];
+  assert.equal(bonus.step,2);
+  assert.equal(bonus.pieces.length,3);
+  const s=session(),{$}=s;
+  assert.equal($("curvePictureCards").children.length,5);
+  assert.equal($("curvePracticeCards").children.length,1);
+  $("curvePracticeCards").children[0].click();
+  assert.equal($("curveGameTitle").textContent,"Balloon Parade");
+  let first=interior(bonus.pieces[0]);
+  s.app.pickAt(first.x,first.y);
+  $("graphCheckFill").click();
+  assert.equal(s.app.readProgress().records[bonus.id].done,1);
+  const restored=session(Object.fromEntries(s.store));
+  restored.app.choose(bonus.id);
+  assert.equal(restored.$("graphPieceCount").textContent,"Piece 2 of 3");
+  for(const part of bonus.pieces.slice(1)){
+    const at=interior(part);
+    restored.app.pickAt(at.x,at.y);
+    restored.$("graphCheckFill").click();
+  }
+  assert.equal(restored.$("curveSummary").hidden,false);
+  assert.equal(restored.$("curveNextPicture").hidden,true);
+  assert.equal(restored.$("curveReveal").getAttribute("open"),"");
+  assert.equal(restored.app.readProgress().records[bonus.id].done,3);
+  assert.equal(restored.$("curvePictureCards").children.length,5);
 });

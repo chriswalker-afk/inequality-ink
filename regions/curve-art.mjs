@@ -5,8 +5,8 @@ import {
   signedDifference,satisfiesAll
 } from "./curved-engine.mjs";
 import {
-  CURVE_PICTURES,CURVE_STAGES,curvePicture,validateCurveGallery
-} from "./curve-pictures.mjs?v=full-mode-v5";
+  CURVE_PICTURES,CURVE_PRACTICE_PICTURES,curveAllPictures,CURVE_STAGES,curvePicture,validateCurveGallery
+} from "./curve-pictures.mjs?v=phase6-v1";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-WORLD.xmin)*GRID/(WORLD.xmax-WORLD.xmin);
@@ -25,7 +25,7 @@ export function readCurveSave(storage){
   const raw=parseSave(storage,CURVE_SAVE_KEY_V2);
   const picture=curvePicture(raw?.picture)?.id||CURVE_PICTURES[0].id;
   const records={};
-  for(const p of CURVE_PICTURES){
+  for(const p of curveAllPictures){
     const r=raw?.records?.[p.id];
     if(r&&Number.isInteger(r.done)&&r.done>=0&&r.done<=p.pieces.length&&
         Number.isInteger(r.replays)&&r.replays>=0&&r.replays<=100000)
@@ -200,13 +200,14 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       item.append(dot,caption);stages.append(item);
     }
     const cards=$("curvePictureCards");cards.replaceChildren();
-    for(const p of CURVE_PICTURES){
+    const practiceCards=$("curvePracticeCards");practiceCards.replaceChildren();
+    for(const p of curveAllPictures){
       const r=saved.records[p.id]||defaultRecord();
       const finished=r.done===p.pieces.length;
       const card=doc.createElement("button");
       card.type="button";card.className="graph-picture-card"+
         (finished?" is-complete":"")+
-        (p.id===recommended.id?" is-recommended":"");
+        (!p.practice&&p.id===recommended.id?" is-recommended":"");
       card.setAttribute("aria-label",finished?
         "View completed picture: "+p.name+", "+p.stage:
         (r.done?"Continue picture: ":"Start picture: ")+p.clue+", "+p.stage+
@@ -219,7 +220,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       const info=doc.createElement("span");info.className="graph-picture-info";
       const stage=doc.createElement("span");
       stage.className="graph-stage";
-      stage.textContent=p.step+" · "+p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
+      stage.textContent=(p.practice?"PRACTISE · ":p.step+" · ")+p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
       const name=doc.createElement("strong");
       name.textContent=finished?p.name:p.clue;
       const description=doc.createElement("small");
@@ -236,7 +237,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       info.append(stage,name,description,focus,progress,go);
       card.append(svg,info);
       card.addEventListener("click",()=>choosePicture(p.id));
-      cards.append(card);
+      (p.practice?practiceCards:cards).append(card);
     }
   }
   function choosePicture(id){
@@ -329,7 +330,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       {value:boundaries,label:"Inequalities"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("curveNextPicture").hidden=p.step===CURVE_PICTURES.length;
+    $("curveNextPicture").hidden=!!p.practice||p.step===CURVE_PICTURES.length;
   }
   function setScreen(next){
     screen=next;

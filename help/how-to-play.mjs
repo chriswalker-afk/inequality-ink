@@ -153,6 +153,25 @@ const guides = {
     ],
     example:"curve"
   },
+  reverse: {
+    title:"Build & Shade · Reverse Challenge",
+    subtitle:"Read a shaded graph and identify the inequality that describes it.",
+    steps:[
+      ["Read the graph", "Look at the highlighted boundary and the pale green half-plane on one side."],
+      ["Choose the inequality", "Decide which direction describes the shading and whether equality is included. Select the matching inequality from four choices."],
+      ["Build the picture", "Each correct answer adds a boundary. When all have been identified, review the shared region and select Next piece."]
+    ],
+    maths:graphMaths.concat([
+      ["Reverse the direction", "For a region right of a vertical line x = 1, the solution is x &gt; 1 or x ≥ 1. The graph's boundary style tells you which."],
+      ["Strict versus inclusive", "Solid means the boundary is included: ≤ or ≥. Dashed means it is excluded: &lt; or &gt;."]
+    ]),
+    controls:[
+      ["Select one answer", "Tap one of the four inequality choices. Correct answers are added immediately, without an extra Check button."],
+      ["Try another choice", "If an answer is wrong, the current graph remains unchanged. You can open Why this choice? or request a hint, but neither is required."],
+      ["See your artwork", "Once the shared region appears, select Next piece to continue and see your picture form."]
+    ],
+    example:"reverse"
+  },
   plot: {
     title:"Plot & Shade", subtitle:"Construct the boundaries yourself, then shade the picture.",
     steps:[
@@ -185,6 +204,8 @@ const overlapExample = '<svg viewBox="0 0 320 170" role="img" aria-label="The sh
   +grid+'<rect x="160" y="38" width="120" height="110" fill="#b3e8d3" fill-opacity=".85"/><path d="M160 16V148M40 82H280" stroke="#678391" stroke-width="1.8"/><path d="M40 38H280" stroke="#5087a2" stroke-width="3.5"/><path d="M160 16V148" stroke="#4b8a92" stroke-width="3.5"/><text x="188" y="104" font-size="12" fill="#286e5d">Both true</text><text x="44" y="30" font-size="11" fill="#456a7c">y ≤ 2</text><text x="169" y="159" font-size="11" fill="#456a7c">x ≥ 0</text></svg>';
 const curveExample = '<svg viewBox="0 0 320 170" role="img" aria-label="The green curved region lies between a parabola and a horizontal boundary"><rect x="40" y="16" width="240" height="132" rx="3" fill="#fffdf8"/>'
   +grid+'<path d="M102 45H218Q160 205 102 45Z" fill="#b3e8d3" fill-opacity=".86"/><path d="M40 82H280M160 16V148" stroke="#678391" stroke-width="1.6"/><path d="M40 45H280" stroke="#4b8a92" stroke-width="3"/><path d="M92 16Q160 234 228 16" fill="none" stroke="#387d8a" stroke-width="3.5"/><text x="165" y="68" font-size="11" fill="#256c61">Shared curved</text><text x="178" y="82" font-size="11" fill="#256c61">region</text></svg>';
+const reverseExample = '<svg viewBox="0 0 320 170" role="img" aria-label="Solid vertical line x equals 1, with the half-plane to its right shaded, representing x greater than or equal to 1"><rect x="40" y="16" width="240" height="132" rx="3" fill="#fffdf8"/>'
+  +grid+'<rect x="200" y="16" width="80" height="132" fill="#b3e8d3" fill-opacity=".78"/><path d="M160 16V148M40 82H280" stroke="#678391" stroke-width="1.6"/><path d="M200 16V148" stroke="#367e76" stroke-width="3.5"/><text x="204" y="35" font-size="12" fill="#2c6c60">x = 1</text></svg>';
 const pixelsExample = '<svg viewBox="0 0 320 108" role="img" aria-label="Squares labelled one to six; those labelled three to six are painted because x is greater than two">'
   +[1,2,3,4,5,6].map((n,i)=>'<rect x="'+(24+i*46)+'" y="28" width="39" height="40" rx="6" fill="'+(n>2?"#9ed6ba":"#f3f1e9")+'" stroke="#b7d2c9"/><text x="'+(43.5+i*46)+'" y="53" text-anchor="middle" font-size="15" font-weight="700" fill="#324d5c">'+n+'</text>').join('')
   +'<text x="24" y="20" font-size="12" fill="#456f71">x &gt; 2</text></svg>';
@@ -195,13 +216,16 @@ const examples = {
   pixels:["x > 2 · colour the integer squares 3, 4, 5, 6",pixelsExample],
   overlap:["x ≥ 0 and y ≤ 2 · only the green area satisfies both",overlapExample],
   curve:["The shaded intersection follows curved boundaries",curveExample],
-  plot:["Plot, dash, then shade below y < 2x + 1",plotExample]
+  plot:["Plot, dash, then shade below y < 2x + 1",plotExample],
+  reverse:["Solid line x = 1, shade right: x ≥ 1",reverseExample]
 };
 function currentMode() {
   const body=document.body;
   if(body.classList.contains("plot-page"))return "plot";
   if(body.classList.contains("curve-page"))return "curve";
   if(body.classList.contains("regions-page")){
+    if(document.getElementById("graphPlay")?.hidden===false&&
+       document.getElementById("graphReverseControls")?.hidden===false)return "reverse";
     if(document.getElementById("graphModePlot")?.getAttribute("aria-pressed")==="true")return "plot";
     if(document.getElementById("graphModeCurve")?.getAttribute("aria-pressed")==="true")return "curve";
     return document.getElementById("graphModeBuild")?.getAttribute("aria-pressed")==="true"?"build":"find";
@@ -222,6 +246,10 @@ function currentTip(mode){
     };
     return tips[step]||"";
   }
+  if(mode==="reverse"&&playing("graphPlay"))
+    return document.getElementById("graphReverseNext")?.hidden===false?
+      "Right now: review the completed intersection, then continue to the next piece.":
+      "Right now: identify the inequality from the highlighted boundary and shaded half-plane.";
   if((mode==="find"||mode==="build")&&playing("graphPlay")){
     if(mode==="find")return "Right now: select the shared region on the graph, then check your choice.";
     return document.getElementById("graphNextPiece")?.hidden===false?

@@ -582,3 +582,27 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
   .graph-hub-modes .graph-mode-tick{display:none}
   .graph-hub-picture-heading span{font-size:.58rem}
 }
+
+
+/* Phase 6: optional mastery remains outside the uncluttered five-stage cards. */
+.graph-practice-section {margin-top:15px}
+.graph-practice-cards {display:grid;grid-template-columns:minmax(0,245px);gap:11px;margin-top:12px}
+.graph-practice-cards .graph-picture-card {min-width:0}
+.graph-reverse-controls[hidden] {display:none}
+.graph-reverse-controls .graph-tool-hint {margin-bottom:11px}
+.graph-reverse-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.graph-reverse-options button {
+  min-width:0;min-height:45px;border:1.5px solid #d4e1db;
+  border-radius:11px;background:#fffdfa;color:#365468;
+  padding:11px 9px;font:inherit;font-size:.98rem;font-weight:750;
+  text-align:center;cursor:pointer;overflow-wrap:anywhere;
+}
+.graph-reverse-options button:hover,.graph-reverse-options button:focus-visible {
+  background:#e9f5ee;border-color:#5aa794;outline-offset:2px
+}
+.graph-reverse-options button:disabled {opacity:.55;cursor:default}
+.graph-reverse-controls .graph-next-piece {margin-top:10px}
+@media(max-width:780px){
+  .graph-practice-cards {grid-template-columns:minmax(0,1fr)}
+  .graph-reverse-options button {min-height:48px}
+}

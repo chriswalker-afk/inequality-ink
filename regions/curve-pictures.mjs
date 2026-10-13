@@ -196,7 +196,45 @@ export const CURVE_PICTURES=Object.freeze([
     focus:"Two parabolas · common regions · solid and dashed boundaries"}),
   hills,rainbow,flower,jellies
 ]);
-export const curvePicture=id=>CURVE_PICTURES.find(p=>p.id===id)||null;
+
+/* Phase 6: one independent Step Up practice option, not an extra stage.
+   The three differently shaped balloon pieces are *real* intersections. */
+const balloonPractice=Object.freeze({...picture(2,"balloon-parade","Balloon Parade",
+  "Up, Up, Away","Three balloons assembled from two circles and a parabolic band.",
+  "Circles · translated parabola · intersecting inequalities",[
+    piece("balloon-left","Rose balloon","#e99ca7",[
+      circleRule("balloon-left-circle","(x + 2.5)² + (y − 1)² ≤ 1", -2.5,1,1),
+      q("balloon-left-floor","y ≥ 0.3",[.3],"above")
+    ]),
+    piece("balloon-centre","Golden balloon","#efc47b",[
+      parabola("balloon-upper-curve","y ≤ 3.4 − 0.5x²",-.5,0,3.4,"below"),
+      parabola("balloon-lower-curve","y ≥ 0.1 + 0.35x²",.35,0,.1,"above"),
+      vertical("balloon-middle-left","x ≥ −1", -1,"right"),
+      vertical("balloon-middle-right","x ≤ 1",1,"left")
+    ]),
+    piece("balloon-right","Teal balloon","#83c3b9",[
+      circleRule("balloon-right-circle","(x − 2.5)² + (y − 1)² < 1",2.5,1,1,"inside",false),
+      q("balloon-right-floor","y ≥ 0.3",[.3],"above")
+    ])
+  ],[
+    Q("balloon-string-left",1,-2.5,.2,-2.65,-2.0,-2.1,-3.85,"#5a827d",.075),
+    Q("balloon-string-centre",1,0,.1,.2,-1.7,0,-4,"#5a827d",.075),
+    Q("balloon-string-right",1,2.5,.2,2.7,-2.15,2.35,-3.9,"#5a827d",.075),
+    E("balloon-glint-left",1,-2.85,1.35,.16,.28,"#ffe6d4","#aa7180"),
+    E("balloon-glint-right",1,2.15,1.35,.16,.28,"#d6f1e4","#5e958a"),
+    C("balloon-knot-left",2,-2.5,.2,.14,"#ba6e7b","#986477"),
+    C("balloon-knot-right",2,2.5,.2,.14,"#5f9f92","#537f7b"),
+    E("balloon-glint-centre",2,-.36,2.4,.16,.3,"#fff4d5","#ae936e"),
+    S("balloon-star-left",3,-4,3.55,.28),
+    S("balloon-star-right",3,3.85,3.7,.3),
+    S("balloon-star-bottom",3,-3.75,-2.5,.21),
+    C("balloon-confetti-one",3,1.9,-2.75,.1,"#a28ab2"),
+    C("balloon-confetti-two",3,-1.55,-3.3,.1,"#ac7e9e")
+  ]),practice:true});
+export const CURVE_PRACTICE_PICTURES=Object.freeze([balloonPractice]);
+export const curveAllPictures=Object.freeze([...CURVE_PICTURES,...CURVE_PRACTICE_PICTURES]);
+
+export const curvePicture=id=>curveAllPictures.find(p=>p.id===id)||null;
 export const curveStagePicture=step=>CURVE_PICTURES[step-1]||null;
 
 export function validateCurveGallery(){
@@ -231,6 +269,21 @@ export function validateCurveGallery(){
     }
     if(!(p.details?.length>=8)||!p.details.some(d=>d.stage===3))
       throw Error("Missing staged artwork details for "+p.id);
+  }
+  const bonus=CURVE_PRACTICE_PICTURES;
+  if(bonus.length!==1||bonus[0].pieces.length!==3||bonus[0].step!==2)
+    throw Error("Curve Step Up practice must have three pieces");
+  for(const p of bonus){
+    if(ids.has(p.id)||!p.practice||p.mode!=="curve"||
+      !p.details.some(d=>d.stage===3))throw Error("Invalid Curve practice metadata");
+    ids.add(p.id);validatePicture(p);
+    for(const part of p.pieces){
+      if(!part.rules.some(r=>["function","absolute","circle"].includes(r.kind))||
+        !Array.from({length:33},(_,i)=>-4.8+i*.3).some(x=>
+          Array.from({length:33},(_,i)=>-4.8+i*.3).some(y=>
+            satisfiesAll(part.rules,x,y))))
+        throw Error("Curve practice piece is not selectable "+part.id);
+    }
   }
   if(CURVE_PICTURES[0].id!=="parabola-butterfly"||
      CURVE_PICTURES[0].pieces[0].rules[0].text!=="y ≥ x² − 4")

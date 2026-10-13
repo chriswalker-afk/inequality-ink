@@ -6,6 +6,38 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Phase 6 — optional same-level practice and reverse reading
+
+The five-stage routes remain exactly as before. Each Graph Art mode now offers
+one extra **Step Up** picture under a collapsed **More practice at the same
+level** section. Each new picture has three real mathematical regions, staged
+finishing details, its own save record and the same full reveal. No prerequisite,
+unlocking, new mode or compulsory explanation interrupts picture play.
+
+| Mode | Optional Step Up picture | New mathematical practice |
+| --- | --- | --- |
+| Find & Fill | **Mountain Tent** | Identify a three-piece intersection of straight-line inequalities |
+| Build & Shade | **Diamond Kite** | Reverse-read highlighted shaded half-planes as inequalities |
+| Curve & Fill | **Balloon Parade** | Work with circles, translated parabolas and intersections |
+| Plot & Shade | **Snow Globe** | Plot circles using centres/radii and a horizontal boundary |
+
+**Diamond Kite's reverse-reading questions** are an optional Build & Shade
+variation, not a fifth mode: a dark boundary and pale shaded side appear on
+the graph, and students select the matching inequality from four signs
+(<, ≤, >, ≥). Correct answers immediately add the boundary; incorrect
+answers allow immediate retry. The separate three-level Hint, optional
+Why-this-choice explanation and mode-aware How to play are available only
+on request. The ordinary Build & Shade controls and journeys are unchanged.
+
+The primary **0 of 5** gallery count still measures just the main five stages.
+Each practice picture has independent progress in the existing mode-specific
+browser save, and replay affects only that picture. Five-stage progress, older
+saves, core questions and touch controls are not modified.
+
+Tests additionally cover all optional mathematical regions, independent save
+restoration, the reverse-reading workflow and full original-mode regression
+behaviour.
+
 ## Desktop homepage: start-first workspace
 
 On desktop, the home screen is organised around three immediate choices:
@@ -54,8 +86,8 @@ The historical [Phase 3 prototype](PLOT_SHADE_PROTOTYPE.md) remains available.
 
 A shared **Pixel Art / Graph Art** selector switches between independent
 maths experiences. Pixel Art keeps its number-line modes and saved progress.
-Graph Art at [regions/](regions/) has **three modes, each with five unique
-pictures** and independently saved journeys:
+Graph Art at [regions/](regions/) has **four modes, each with five unique
+primary pictures**, optional Step Up practice art, and independently saved journeys:
 
 - **Find & Fill:** all inequalities for one mathematical shape are shown
   together. Students identify and paint their **common solution region**.
@@ -71,8 +103,11 @@ pictures** and independently saved journeys:
   quadratic curves, absolute-value graphs, circles and straight lines.
   Five unique pictures progress from two to seven coloured pieces. Correct
   selections persist until Check; incorrect curved regions flash red and clear.
+- **Plot & Shade:** students construct missing boundaries with exact points,
+  choose solid or dashed, then fill the common region. Lines, circles,
+  parabolas and V-shaped graphs build five pictures from two to seven pieces.
 
-All three modes follow the Pixel Art progression labels **Starter → Step Up →
+All four modes follow the Pixel Art progression labels **Starter → Step Up →
 Building → Challenge → Big Finish**. No stage is locked, and partial
 progress saves by picture and mode. The picture itself is always formed from
 real simultaneous inequalities; decorative finishing touches are added only

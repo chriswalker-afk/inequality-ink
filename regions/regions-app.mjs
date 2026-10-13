@@ -5,16 +5,16 @@ import {
   regionBoundaryStyle,regionCorrect,regionHint,pointSatisfiesAll
 } from "./regions-engine.mjs";
 import {
-  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
+  GRAPH_ART_PICTURES,GRAPH_PRACTICE_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
   GRAPH_ART_DETAIL_COLORS,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
-  graphPicture,graphModeGallery,graphLegacyExtras,graphTotalBoundaries,
+  graphPicture,graphModeGallery,graphPracticeGallery,graphLegacyExtras,graphTotalBoundaries,reverseInequalityOptions,
   graphCellAt,graphArrow,validateGraphPictureLibrary
-} from "./graph-art-pictures.mjs?v=decorative-contrast-v5";
-import {CURVE_PICTURES} from "./curve-pictures.mjs?v=full-mode-v5";
-import {PLOT_PICTURES} from "./plot-pictures.mjs";
+} from "./graph-art-pictures.mjs?v=phase6-v1";
+import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES} from "./curve-pictures.mjs?v=phase6-v1";
+import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=phase6-v1";
 import {regionPaths} from "./curved-engine.mjs";
-import {readCurveSave} from "./curve-art.mjs";
-import {readPlotSave} from "./plot-art.mjs";
+import {readCurveSave} from "./curve-art.mjs?v=phase6-v1";
+import {readPlotSave} from "./plot-art.mjs?v=phase6-v1";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-REGION_WORLD.xmin)*GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
@@ -36,7 +36,7 @@ export function readGraphArtSave(storage){
   const output=clean();
   if(GRAPH_ART_MODES.some(m=>m.id===raw.mode))output.mode=raw.mode;
   if(graphPicture(raw.picture))output.picture=raw.picture;
-  for(const mode of GRAPH_ART_MODES)for(const p of GRAPH_ART_PICTURES){
+  for(const mode of GRAPH_ART_MODES)for(const p of [...GRAPH_ART_PICTURES,...GRAPH_PRACTICE_PICTURES]){
     const id=key(mode.id,p.id),record=raw.records?.[id];
     if(validRecord(record,p)){
       output.records[id]={
@@ -207,14 +207,17 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   if(requestedPicture&&hubGalleryAvailable(hubMode,requestedPicture))
     hubSelections[hubMode]=requestedPicture;
   function hubGalleryAvailable(m,id){
-    return (m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
-      graphModeGallery(m)).some(p=>p.id===id)||
+    return [...(m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
+      graphModeGallery(m)),
+      ...(m==="curve"?CURVE_PRACTICE_PICTURES:m==="plot"?PLOT_PRACTICE_PICTURES:
+        graphPracticeGallery(m))].some(p=>p.id===id)||
       ((m==="fill"||m==="build")&&
         graphLegacyExtras(m,saved.records).some(p=>p.id===id));
   }
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
   function mode(){return saved.mode;}
+  function isReverse(){return mode()==="build"&&picture()?.practiceType==="reverse";}
   function record(){
     const k=key(mode(),saved.picture);
     if(!saved.records[k])saved.records[k]=blank();
@@ -269,6 +272,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function hubGallery(m){
     return m==="curve"?CURVE_PICTURES:
       m==="plot"?PLOT_PICTURES:graphModeGallery(m);
+  }
+  function hubPracticeGallery(m){
+    return m==="curve"?CURVE_PRACTICE_PICTURES:
+      m==="plot"?PLOT_PRACTICE_PICTURES:graphPracticeGallery(m);
   }
   function hubRecord(m,p,curve,plot){
     if(m==="curve")return curve.records[p.id]||{done:0,replays:0};
@@ -336,7 +343,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     hubMiniature($("graphPreviewSvg"),p,done,m);
   }
   function startHubPicture(){
-    const p=[...hubGallery(hubMode),...
+    const p=[...hubGallery(hubMode),...hubPracticeGallery(hubMode),...
       ((hubMode==="fill"||hubMode==="build")?
         graphLegacyExtras(hubMode,saved.records):[])].find(
           item=>item.id===hubSelections[hubMode]);
@@ -379,9 +386,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphGalleryProgress").textContent=completed+" of 5 completed";
     const extras=hubMode==="fill"||hubMode==="build"?
       graphLegacyExtras(hubMode,saved.records):[];
-    if(![...gallery,...extras].some(p=>p.id===hubSelections[hubMode]))
+    const practice=hubPracticeGallery(hubMode);
+    if(![...gallery,...practice,...extras].some(p=>p.id===hubSelections[hubMode]))
       hubSelections[hubMode]=recommended.id;
-    const selectedPicture=[...gallery,...extras].find(
+    const selectedPicture=[...gallery,...practice,...extras].find(
       p=>p.id===hubSelections[hubMode])||recommended;
     const track=$("graphStageTrack");
     track.replaceChildren();
@@ -409,16 +417,16 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
         }
       }catch{}
       for(const card of [...$("graphPictureCards").children,
-        ...$("graphExtraCards").children]){
+        ...$("graphPracticeCards").children,...$("graphExtraCards").children]){
         const active=card.getAttribute("data-hub-picture")===hubSelections[hubMode];
         card.setAttribute("aria-pressed",String(active));
         card.classList.toggle("is-selected",active);
       }
-      const p=[...gallery,...extras].find(p=>
+      const p=[...gallery,...practice,...extras].find(p=>
         p.id===hubSelections[hubMode]);
       if(p)updateHubPreview(p,hubMode,getRecord(p));
     }
-    function makeCard(p,extra=false){
+    function makeCard(p,extra=false,practise=false){
       const r=getRecord(p),finished=r.done===p.pieces.length;
       const selected=p.id===hubSelections[hubMode];
       const card=doc.createElement("button");
@@ -439,7 +447,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       hubMiniature(svg,p,r.done,hubMode);
       const info=doc.createElement("span");info.className="graph-picture-info";
       const stage=doc.createElement("span");stage.className="graph-stage";
-      stage.textContent=(extra?"BONUS · ":p.step+" · ")+
+      stage.textContent=(practise?"PRACTISE · ":extra?"BONUS · ":p.step+" · ")+
         p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
       const name=doc.createElement("strong");
       name.textContent=finished?p.name:p.clue;
@@ -463,6 +471,9 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     const cards=$("graphPictureCards");cards.replaceChildren();
     for(const p of gallery)cards.append(makeCard(p));
+    $("graphPracticeSection").hidden=practice.length===0;
+    const practiceCards=$("graphPracticeCards");practiceCards.replaceChildren();
+    for(const p of practice)practiceCards.append(makeCard(p,false,true));
     $("graphMorePictures").hidden=extras.length===0;
     const extraCards=$("graphExtraCards");extraCards.replaceChildren();
     for(const p of extras)extraCards.append(makeCard(p,true));
@@ -474,6 +485,15 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const p=picture(),r=record(),part=current();
     // Preview the overlap of accepted half-planes BEHIND the already painted
     // pieces, so it never tints or visually changes completed artwork.
+    if(part&&isReverse()&&rule()){
+      // The highlighted half-plane is the question; never print its rule
+      // until the player selects a matching inequality.
+      polygon(graph,doc,intersectRegion([rule()]),{
+        fill:"#61c2a7","fill-opacity":.2,
+        stroke:"#459c82","stroke-width":1.5,"stroke-opacity":.72,
+        "data-region-layer":"reverse-target","pointer-events":"none"
+      });
+    }
     if(part&&mode()==="build"&&r.line>0){
       const candidate=intersectRegion(part.rules.slice(0,r.line));
       polygon(graph,doc,candidate,{fill:"#72c5ac","fill-opacity":.11,
@@ -540,6 +560,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     lastAddedArrow=null;
     graph.setAttribute("aria-label",mode()==="fill"?
       "Coordinate graph. "+r.done+" completed pieces. Move with arrow keys and press Enter to fill the region under the keyboard cursor.":
+      isReverse()&&rule()?
+        "Coordinate graph. "+(rule().inclusive?"Solid":"Dashed")+
+        " highlighted boundary, with the "+regionSide(rule())+
+        " half-plane shaded. Choose its matching inequality.":
       "Coordinate graph. "+r.line+" of "+part.rules.length+" boundaries correctly added to this piece.");
   }
   function playView(){
@@ -561,12 +585,16 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphTaskKicker").textContent="PIECE "+(r.done+1)+" OF "+p.pieces.length;
     $("graphTaskTitle").textContent=part.name;
     $("graphPieceSwatch").style.background=part.color;
-    $("graphCanvasHeading").textContent=mode()==="fill"?"Find the overlap":"Build the region";
+    $("graphCanvasHeading").textContent=mode()==="fill"?"Find the overlap":
+      isReverse()?"Read the shaded region":"Build the region";
     $("graphTaskLead").textContent=mode()==="fill"?
       "All these inequalities must be true together. Fill their common region.":
+      isReverse()?"Read each highlighted line and shaded half-plane. Choose the matching inequality.":
       "For each inequality, choose the correct side and boundary style. All the arrows will point into the common region.";
     $("graphCanvasInstruction").textContent=mode()==="fill"?
       "Tap the correct region, then press Check. Keyboard: arrows + Enter.":
+      isReverse()&&!allBuilt?
+        "The dark boundary and pale green shading form the question. Choose its inequality.":
       allBuilt?
         (converging?
           "Watch the arrows meet: the green overlap satisfies ALL the inequalities.":
@@ -576,22 +604,44 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
           "Each arrow points towards the half-plane satisfying that inequality.";
     $("graphRuleCount").textContent=part.rules.length+" inequalities";
     $("graphFillControls").hidden=mode()!=="fill";
-    $("graphBuildControls").hidden=mode()!=="build";
+    $("graphBuildControls").hidden=mode()!=="build"||isReverse();
+    $("graphReverseControls").hidden=!isReverse();
     const holder=$("graphRuleList");holder.replaceChildren();
     part.rules.forEach((rr,i)=>{
       const item=doc.createElement(mode()==="build"?"button":"div");
       item.className="graph-rule-item"+(mode()==="build"&&i===r.line?" selected":"")+
         (mode()==="build"&&i<r.line?" done":"");
-      const eq=doc.createElement("span");eq.textContent=rr.text;
+      const eq=doc.createElement("span");
+      eq.textContent=isReverse()&&i>=r.line?
+        (i===r.line?"Read the highlighted graph":"Upcoming graph"):rr.text;
       const state=doc.createElement("span");state.className="rule-state";
       state.textContent=mode()==="fill"?"AND":i<r.line?"✓ Added":i===r.line?"● Now":"○ Next";
       item.append(eq,state);
       if(mode()==="build"){
         item.type="button";item.disabled=i!==r.line||pendingPieceTimer!==null;
-        item.addEventListener("click",()=>{notify("Choose a side and a line style.");playView();});
+        item.addEventListener("click",()=>{
+          notify(isReverse()?"Choose the inequality matching the shaded side.":
+            "Choose a side and a line style.");playView();
+        });
       }
       holder.append(item);
     });
+    if(isReverse()){
+      const options=$("graphReverseChoices");options.replaceChildren();
+      if(rule()&&!allBuilt){
+        for(const option of reverseInequalityOptions(rule())){
+          const button=doc.createElement("button");
+          button.type="button";button.textContent=option;
+          button.addEventListener("click",()=>chooseReverseOption(option));
+          options.append(button);
+        }
+      }
+      $("graphReverseWaiting").hidden=!converging;
+      $("graphReverseNext").hidden=!awaitingNext;
+      $("graphReverseNext").disabled=!awaitingNext;
+      $("graphReverseNext").textContent=r.done===p.pieces.length-1?
+        "Finish picture ✦":"Next piece →";
+    }
     if(mode()==="build"){
       $("graphBuildControls").classList.toggle("is-solved",allBuilt);
       $("graphAddLine").hidden=allBuilt;
@@ -673,7 +723,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     finishPiece();
   }
   function addLine(){
-    if(screen!=="play"||mode()!=="build"||
+    if(screen!=="play"||mode()!=="build"||isReverse()||
       pendingPieceTimer!==null||buildRevealPhase==="ready")return;
     const rr=rule();if(!rr)return;
     if(!choiceSide||!choiceStyle){
@@ -693,6 +743,23 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
           "Strict inequalities need a dashed boundary.","error");
       playView();return;
     }
+    acceptBuildBoundary();
+  }
+  function chooseReverseOption(option){
+    if(screen!=="play"||!isReverse()||pendingPieceTimer!==null||
+      buildRevealPhase==="ready"||!rule())return;
+    const rr=rule();
+    if(option!==rr.text){
+      setWhy({text:"The dark line has a "+regionBoundaryStyle(rr)+
+        " boundary. The green side is "+regionSide(rr)+
+        ". The inequality represented is "+rr.text+"."});
+      notify("Not quite. Compare the shaded side and the boundary style.","error");
+      playView();return;
+    }
+    acceptBuildBoundary();
+  }
+  function acceptBuildBoundary(){
+    const rr=rule();if(!rr)return;
     setWhy(null);
     record().line++;
     persist();
@@ -790,7 +857,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       {value:graphTotalBoundaries(p),label:"Inequalities"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("graphNextPicture").hidden=p.step===GRAPH_ART_STAGES.length||
+    $("graphNextPicture").hidden=!!p.practice||p.step===GRAPH_ART_STAGES.length||
       p.mode!==mode();
     $("graphNextPicture").textContent="Next picture →";
   }
@@ -880,7 +947,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const key=mode()+":"+saved.picture+":"+r.done+":"+(mode()==="build"?r.line:0);
     if(key!==hintKey){hintKey=key;hintStage=0;}
     hintStage=Math.min(3,hintStage+1);
-    if(mode()==="build"){
+    if(isReverse()){
+      hint=hintStage===1?"Check which side of the highlighted boundary is shaded.":
+        hintStage===2?"Use < or > for dashed lines and ≤ or ≥ for solid lines. Combine this with the shaded direction.":
+          "The displayed graph represents "+rr.text+".";
+    }else if(mode()==="build"){
       hint=hintStage===1?"First find the direction of the solution from the inequality. Then decide if equality is included.":
         hintStage===2?regionHint(rr):
           "For "+rr.text+", choose "+regionSide(rr)+" and a "+regionBoundaryStyle(rr)+" boundary.";
@@ -932,6 +1003,11 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphNextPiece").addEventListener("click",()=>{
     if(screen!=="play"||mode()!=="build"||
        buildRevealPhase==="converging")return;
+    finishPiece();
+  });
+  $("graphReverseNext").addEventListener("click",()=>{
+    if(screen!=="play"||!isReverse()||
+      buildRevealPhase==="converging")return;
     finishPiece();
   });
   $("graphHint").addEventListener("click",showHint);

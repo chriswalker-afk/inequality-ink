@@ -7,9 +7,10 @@ import {
   regionBoundaryStyle,regionCorrect,lineOnRegionGraph,evaluateRegionRule
 } from "./regions/regions-engine.mjs";
 import {
-  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,GRAPH_ART_DETAIL_COLORS,
+  GRAPH_ART_PICTURES,GRAPH_PRACTICE_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,GRAPH_ART_DETAIL_COLORS,
   GRAPH_ART_SAVE_KEY,graphPicture,graphModeGallery,graphLegacyExtras,
-  graphTotalBoundaries,graphCellAt,graphArrow,validateGraphPictureLibrary
+  graphTotalBoundaries,graphCellAt,graphArrow,validateGraphPictureLibrary,
+  graphPracticeGallery,reverseInequalityOptions
 } from "./regions/graph-art-pictures.mjs";
 import {initRegionsApp,readGraphArtSave} from "./regions/regions-app.mjs";
 
@@ -766,4 +767,85 @@ test("Hub query links restore the selected mode and picture",()=>{
   const plot=session({},"?mode=plot&picture=rocket-launch");
   assert.equal(plot.$("graphModePlot").getAttribute("aria-pressed"),"true");
   assert.equal(plot.$("graphPreviewStage").textContent,"5 · Big Finish");
+});
+
+
+test("Phase 6 leaves all five original stages untouched, with one fresh practice card per linear mode",()=>{
+  assert.equal(validateGraphPictureLibrary(),true);
+  assert.equal(GRAPH_ART_PICTURES.length,10,"Original gallery must stay at ten");
+  assert.equal(GRAPH_PRACTICE_PICTURES.length,2);
+  for(const mode of ["fill","build"]){
+    const bonus=graphPracticeGallery(mode);
+    assert.equal(bonus.length,1);
+    assert.equal(bonus[0].step,2);
+    assert.equal(bonus[0].pieces.length,3);
+    assert.ok(bonus[0].practice);
+    assert.ok(!GRAPH_ART_PICTURES.some(p=>p.id===bonus[0].id));
+  }
+  const s=session(),{$}=s;
+  assert.equal($("graphPictureCards").children.length,5);
+  assert.equal($("graphPracticeCards").children.length,1);
+  assert.equal($("graphStageTrack").children.length,5);
+  const tent=graphPracticeGallery("fill")[0];
+  $("graphPracticeCards").children[0].click();
+  assert.equal($("graphPreviewName").textContent,tent.clue);
+  $("graphStartPicture").click();
+  for(const part of tent.pieces){
+    const pos=centroid(intersectRegion(part.rules));
+    assert.equal(graphCellAt(part,pos.x,pos.y)?.correct,true,part.id);
+    s.app.pickAt(pos.x,pos.y);
+    $("graphCheckFill").click();
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal($("graphNextPicture").hidden,true,
+    "Practice must not silently advance the five-stage journey");
+  assert.equal(s.app.readProgress().records["fill:"+tent.id].done,3);
+  assert.ok(s.store.get(GRAPH_ART_SAVE_KEY));
+  const after=session(Object.fromEntries(s.store));
+  assert.equal(after.app.readProgress().records["fill:"+tent.id].done,3);
+  assert.equal(after.$("graphPictureCards").children.length,5);
+});
+
+test("Optional reverse Build & Shade reads the shaded graph rather than showing the answer",()=>{
+  const picture=graphPracticeGallery("build")[0];
+  const s=session({}, "?mode=build"),{$}=s;
+  assert.equal($("graphPracticeCards").children.length,1);
+  $("graphPracticeCards").children[0].click();
+  $("graphStartPicture").click();
+  assert.equal($("graphPlay").hidden,false);
+  assert.equal($("graphBuildControls").hidden,true);
+  assert.equal($("graphReverseControls").hidden,false);
+  assert.equal($("graphRuleList").children[0].children[0].textContent,
+    "Read the highlighted graph");
+  const first=picture.pieces[0].rules[0];
+  const options=reverseInequalityOptions(first);
+  assert.equal(options.length,4);
+  assert.equal(new Set(options).size,4);
+  assert.ok(options.includes(first.text));
+  assert.equal($("graphReverseChoices").children.length,4);
+  const wrong=$("graphReverseChoices").children.find(b=>b.textContent!==first.text);
+  wrong.click();
+  assert.equal(s.app.readProgress().records["build:"+picture.id].line,0);
+  assert.equal($("graphWhy").hidden,false);
+  assert.equal($("graphWhy").open,false,"Explanation should not auto-open");
+  for(const part of picture.pieces){
+    for(const rule of part.rules){
+      const choices=$("graphReverseChoices").children;
+      assert.equal(choices.length,4,"Each line asks a genuinely new reverse question");
+      const answer=choices.find(b=>b.textContent===rule.text);
+      assert.ok(answer,"Correct mathematical relation must appear");
+      answer.click();
+    }
+    assert.equal($("graphReverseNext").hidden,true,
+      "Wait for the existing converge animation");
+    s.timers.at(-1)();
+    assert.equal($("graphReverseNext").hidden,false);
+    $("graphReverseNext").click();
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal(s.app.readProgress().records["build:"+picture.id].done,3);
+  assert.equal($("graphReveal").getAttribute("open"),"");
+  const restored=session(Object.fromEntries(s.store),"?mode=build");
+  assert.equal(restored.app.readProgress().records["build:"+picture.id].done,3);
+  assert.equal(restored.$("graphPictureCards").children.length,5);
 });

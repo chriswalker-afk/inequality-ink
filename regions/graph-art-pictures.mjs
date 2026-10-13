@@ -362,6 +362,68 @@ const castle=picture({
     S(2,-.5,4.2,.2,DETAIL.gold)
   ]
 });
+
+/* Phase 6: optional same-level practice, separate from the five-stage path.
+   These pictures are independent mathematical polygons, not copies of art
+   whose answers have already been seen. */
+const campTent=Object.freeze({...picture({
+  id:"camping-tent",name:"Mountain Tent",mode:"fill",step:2,
+  clue:"Under the Stars",description:"Build a tent, doorway and glowing campfire.",
+  focus:"Three genuine intersections · straight lines · changing gradients",
+  pieces:[
+    polygonPiece("camp-canvas","Turquoise tent","#7dbbb3",
+      [[-3,-3],[0,2.5],[3,-3]]),
+    polygonPiece("camp-entrance","Tent doorway","#597f9f",
+      [[-.75,-3],[0,-1.5],[.75,-3]]),
+    polygonPiece("camp-fire","Firelight","#efad70",
+      diamond(3.75,-2.25,.75,.75))
+  ],
+  details:[
+    L(0,0,2.55,0,3.5,DETAIL.brown,.085),
+    S(1,-3.9,3.5,.3,DETAIL.gold),
+    S(1,3.65,3.75,.22,DETAIL.terracotta),
+    L(1,3.2,-3.45,4.3,-3.45,DETAIL.brown,.13),
+    C(2,3.75,-2.2,.2,"#e6d18b"),
+    S(2,-4,-.5,.22,DETAIL.amber),
+    L(2,-3.8,-3.3,-2.9,-3.3,DETAIL.mintInk,.08)
+  ]
+}),practice:true});
+const diamondKite=Object.freeze({...picture({
+  id:"diamond-kite",name:"Diamond Kite",mode:"build",step:2,
+  clue:"Catch the Wind",description:"Read the shaded sides to assemble a kite and bows.",
+  focus:"Reverse-reading inequalities · gradients · solid and dashed lines",
+  pieces:[
+    polygonPiece("kite-sail","The diamond sail","#83b7cc",
+      diamond(0,1.5,2,2.25),{strict:[1]}),
+    polygonPiece("kite-bow-left","Left ribbon","#efa0ac",
+      diamond(-1,-2.25,.75,.5)),
+    polygonPiece("kite-bow-right","Right ribbon","#eabf79",
+      diamond(1,-2.25,.75,.5),{strict:[2]})
+  ],
+  details:[
+    L(0,0,-.75,0,-4.2,DETAIL.mintInk,.09),
+    L(0,-1.1,1.5,1.1,1.5,"#e2f0e9",.06,DETAIL.deepTeal),
+    L(0,0,-.25,0,3.3,"#e2f0e9",.06,DETAIL.deepTeal),
+    C(1,0,-2.35,.2,DETAIL.brown),
+    S(1,3.6,3.4,.27,DETAIL.gold),
+    S(2,-3.65,2.9,.2,DETAIL.amber),
+    L(2,-.4,-3.8,.35,-3.5,DETAIL.mintInk,.065)
+  ]
+}),practice:true,practiceType:"reverse"});
+export const GRAPH_PRACTICE_PICTURES=Object.freeze([campTent,diamondKite]);
+export const graphPracticeGallery=mode=>GRAPH_PRACTICE_PICTURES.filter(p=>p.mode===mode);
+// Graph-to-inequality multiple choice: four genuinely different boundary
+// relations. No hidden wording gives away the answer before a choice is made.
+export function reverseInequalityOptions(rule){
+  if(!rule?.text)throw Error("Missing reverse inequality");
+  const match=rule.text.match(/[≤≥<>]/g);
+  if(!match||match.length!==1)throw Error("A single inequality sign is required");
+  const options=["<","≤",">","≥"].map(sign=>rule.text.replace(match[0],sign));
+  const seed=[...rule.id].reduce((n,ch)=>n+ch.charCodeAt(0),0);
+  const turn=seed%4;
+  return Object.freeze([...options.slice(turn),...options.slice(0,turn)]);
+}
+
 const galleries=Object.freeze({
   fill:Object.freeze([flag,house,sail,fox,rocket]),
   build:Object.freeze([gift,mountains,robot,crystal,castle])
@@ -377,7 +439,7 @@ export const GRAPH_ART_MODES=Object.freeze([
 ]);
 export const GRAPH_ART_SAVE_KEY="inequality-ink-graph-art-v2";
 export const GRAPH_ART_LEGACY_SAVE_KEY="inequality-ink-graph-art-v1";
-export const graphPicture=id=>GRAPH_ART_PICTURES.find(p=>p.id===id)||null;
+export const graphPicture=id=>[...GRAPH_ART_PICTURES,...GRAPH_PRACTICE_PICTURES].find(p=>p.id===id)||null;
 export const graphMode=id=>GRAPH_ART_MODES.some(m=>m.id===id);
 export const graphModeGallery=mode=>galleries[mode]||[];
 export const graphLegacyExtras=(mode,records={})=>
@@ -434,7 +496,7 @@ export function validateGraphPictureLibrary(){
     if(gallery.some((p,i)=>i>0&&p.pieces.length<=gallery[i-1].pieces.length))
       throw Error("Picture piece counts must increase strictly");
   }
-  for(const p of GRAPH_ART_PICTURES){
+  for(const p of [...GRAPH_ART_PICTURES,...GRAPH_PRACTICE_PICTURES]){
     if(pictureIds.has(p.id)||!p.pieces.length||!p.focus)
       throw Error("Invalid picture "+p.id);
     pictureIds.add(p.id);
@@ -472,6 +534,12 @@ export function validateGraphPictureLibrary(){
       }
     }
   }
-  if(GRAPH_ART_PICTURES.length!==10)throw Error("Expected ten unique pictures");
+  if(GRAPH_ART_PICTURES.length!==10||GRAPH_PRACTICE_PICTURES.length!==2)
+    throw Error("Expected ten core and two practice pictures");
+  for(const mode of GRAPH_ART_MODES){
+    const bonus=graphPracticeGallery(mode.id);
+    if(bonus.length!==1||bonus[0].step!==2||bonus[0].stage!=="Step Up"||
+      bonus[0].pieces.length!==3)throw Error("Step Up practice must match core difficulty");
+  }
   return true;
 }
