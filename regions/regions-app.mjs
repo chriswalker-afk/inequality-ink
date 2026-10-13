@@ -3,8 +3,10 @@ import {
   regionBoundaryStyle,regionCorrect,regionHint,pointSatisfiesAll
 } from "./regions-engine.mjs";
 import {
-  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
-  graphPicture,graphCellAt,graphArrow,validateGraphPictureLibrary
+  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
+  GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
+  graphPicture,graphModeGallery,graphLegacyExtras,graphTotalBoundaries,
+  graphCellAt,graphArrow,validateGraphPictureLibrary
 } from "./graph-art-pictures.mjs";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
@@ -13,7 +15,7 @@ const py=y=>PAD+(REGION_WORLD.ymax-y)*GRID/(REGION_WORLD.ymax-REGION_WORLD.ymin)
 const path=points=>points.map((p,i)=>(i?"L":"M")+px(p.x).toFixed(2)+" "+py(p.y).toFixed(2)).join(" ")+" Z";
 const blank=()=>({done:0,line:0,replays:0});
 const key=(mode,id)=>mode+":"+id;
-const clean=()=>({mode:"fill",picture:"little-house",records:{}});
+const clean=()=>({mode:"fill",picture:"signal-flag",records:{}});
 const number=n=>Number.isInteger(n)&&n>=0&&n<=10000;
 const validRecord=(r,p)=>r&&number(r.done)&&r.done<=p.pieces.length&&number(r.line)&&
   // The final answered boundary remains on screen until the student chooses
@@ -111,7 +113,40 @@ function directionArrow(doc,svg,ruleDef,region,{enter=false,agree=false}={}){
     "stroke-width":1.25,"stroke-linejoin":"round"},group);
   return group;
 }
-function decorations(doc,svg,p){
+function decorationStages(p){
+  return Array.isArray(p.details)?p.details.reduce((n,d)=>Math.max(n,d.stage+1),0):1;
+}
+function decorations(doc,svg,p,stages=Infinity){
+  if(stages<=0)return;
+  if(Array.isArray(p.details)){
+    const unit=GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
+    for(const d of p.details){
+      if(d.stage>=stages)continue;
+      if(d.type==="line"){
+        el(doc,"line",{x1:px(d.x1),y1:py(d.y1),x2:px(d.x2),y2:py(d.y2),
+          stroke:d.color,"stroke-width":Math.max(2,d.width*unit),
+          "stroke-linecap":"round","pointer-events":"none"},svg);
+      }else if(d.type==="circle"||d.type==="ellipse"){
+        el(doc,"ellipse",{cx:px(d.x),cy:py(d.y),
+          rx:(d.rx??d.r)*unit,ry:(d.ry??d.r)*unit,
+          fill:d.color,"pointer-events":"none"},svg);
+      }else if(d.type==="rect"){
+        el(doc,"rect",{x:px(d.x),y:py(d.y+d.h),
+          width:d.w*unit,height:d.h*unit,rx:4,fill:d.color,
+          "pointer-events":"none"},svg);
+      }else if(d.type==="star"){
+        const nodes=[];
+        for(let i=0;i<10;i++){
+          const r=d.r*(i%2?.42:1);
+          const theta=-Math.PI/2+i*Math.PI/5;
+          nodes.push([px(d.x+Math.cos(theta)*r),py(d.y+Math.sin(theta)*r)]);
+        }
+        el(doc,"polygon",{points:nodes.map(pair=>pair.join(",")).join(" "),
+          fill:d.color,"pointer-events":"none"},svg);
+      }
+    }
+    return;
+  }
   if(p.details==="house"){
     const rectangle=(x1,y1,x2,y2,fill,attrs={})=>
       el(doc,"rect",{x:px(x1),y:py(y2),width:px(x2)-px(x1),
@@ -172,53 +207,97 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(next==="summary")summaryView();
   }
-  function miniature(svg,p){
+  function miniature(svg,p,completed=false){
     baseGraph(svg,doc,{grid:false});
-    p.pieces.forEach(f=>polygon(svg,doc,intersectRegion(f.rules),{
-      fill:f.color,stroke:"#fff9ee","stroke-width":3}));
-    decorations(doc,svg,p);
+    p.pieces.forEach((f,i)=>{
+      const visible=completed||i<Math.min(2,p.pieces.length);
+      polygon(svg,doc,intersectRegion(f.rules),{
+        fill:visible?f.color:"#bfcac7",
+        "fill-opacity":visible?1:.22,
+        stroke:visible?"#fff9ee":"#bfcac7",
+        "stroke-dasharray":visible?"":"9 7","stroke-width":3
+      });
+    });
+    if(completed)decorations(doc,svg,p);
   }
   function pickerView(){
     for(const m of GRAPH_ART_MODES){
       const b=$(m.id==="fill"?"graphModeFill":"graphModeBuild");
       b.setAttribute("aria-pressed",String(mode()===m.id));
     }
+    const gallery=graphModeGallery(mode());
+    const completed=gallery.filter(p=>
+      saved.records[key(mode(),p.id)]?.done===p.pieces.length).length;
+    const recommended=gallery.find(p=>
+      saved.records[key(mode(),p.id)]?.done!==p.pieces.length)||gallery[4];
     $("graphModeDescription").textContent=mode()==="fill"?
-      "Choose the regions shared by each set of inequalities.":
-      "Build every boundary and reveal its common region.";
-    const cards=$("graphPictureCards");cards.replaceChildren();
-    for(const p of GRAPH_ART_PICTURES){
+      "Start with two simple regions; work towards nine with strict and mixed-form inequalities.":
+      "Start with solid straight boundaries; finish with eight complex intersecting regions.";
+    $("graphGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+      (completed===5?"All five stages complete!":"Next up: "+recommended.stage);
+    const track=$("graphStageTrack");track.replaceChildren();
+    for(const p of gallery){
+      const r=saved.records[key(mode(),p.id)]||blank();
+      const item=doc.createElement("div");
+      item.className="graph-step-node"+
+        (r.done===p.pieces.length?" is-complete":"")+
+        (p.id===recommended.id?" is-recommended":"");
+      item.setAttribute("aria-label",p.stage+" stage, "+
+        (r.done===p.pieces.length?"complete":r.done+" of "+p.pieces.length+" pieces"));
+      const dot=doc.createElement("span");dot.className="graph-step-number";
+      dot.textContent=r.done===p.pieces.length?"✓":String(p.step);
+      const caption=doc.createElement("span");caption.textContent=p.stage;
+      item.append(dot,caption);track.append(item);
+    }
+    function makeCard(p,extra=false){
       const r=saved.records[key(mode(),p.id)]||blank();
       const card=doc.createElement("button");card.type="button";
-      card.className="graph-picture-card";card.setAttribute("aria-label",
-        p.clue+", "+p.stage+", "+p.pieces.length+" mathematical pieces");
+      card.className="graph-picture-card"+
+        (!extra&&p.id===recommended.id?" is-recommended":"");
+      card.setAttribute("aria-label",p.clue+", "+p.stage+", "+
+        p.pieces.length+" mathematical pieces, "+r.done+" completed");
       const svg=doc.createElementNS(NS,"svg");
       svg.setAttribute("viewBox","0 0 620 620");
       svg.setAttribute("aria-hidden","true");
-      miniature(svg,p);
-      const info=doc.createElement("span");
+      miniature(svg,p,r.done===p.pieces.length);
+      const info=doc.createElement("span");info.className="graph-picture-info";
       const stage=doc.createElement("span");stage.className="graph-stage";
-      stage.textContent=p.stage+" · "+p.pieces.length+" pieces";
+      stage.textContent=(extra?"BONUS · ":p.step+" · ")+
+        p.stage.toUpperCase()+" · "+p.pieces.length+" pieces";
       const name=doc.createElement("strong");
       name.textContent=r.done===p.pieces.length?p.name:p.clue;
       const desc=doc.createElement("small");desc.textContent=p.description;
+      const focus=doc.createElement("span");focus.className="graph-card-maths";
+      focus.textContent=p.focus;
       const go=doc.createElement("span");go.className="graph-card-go";
       const pendingReview=mode()==="build"&&r.done<p.pieces.length&&
         r.line===p.pieces[r.done].rules.length;
-      go.textContent=r.done===p.pieces.length?"✓ Completed · Play again":
-        pendingReview?"Review your completed region →":
-        r.done?"Continue picture · "+r.done+"/"+p.pieces.length+" pieces":
+      go.textContent=r.done===p.pieces.length?"✓ Finished · Play again":
+        pendingReview?"Review completed region →":
+        r.done||r.line?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":
           "Start picture →";
-      info.append(stage,name,desc,go);card.append(svg,info);
+      const progress=doc.createElement("span");progress.className="graph-card-progress";
+      progress.setAttribute("aria-hidden","true");
+      const filled=doc.createElement("span");
+      filled.style.width=(100*r.done/p.pieces.length)+"%";
+      progress.append(filled);
+      info.append(stage,name,desc,focus,progress,go);card.append(svg,info);
       card.addEventListener("click",()=>{
+        cancelBuildRevealTimer();
         saved.picture=p.id;
         if(r.done===p.pieces.length)saved.records[key(mode(),p.id)]={
           done:0,line:0,replays:r.replays+1};
         persist();resetChoices();notify("Find the common region.");
         setScreen("play");
       });
-      cards.append(card);
+      return card;
     }
+    const cards=$("graphPictureCards");cards.replaceChildren();
+    for(const p of gallery)cards.append(makeCard(p));
+    const extras=graphLegacyExtras(mode(),saved.records);
+    $("graphMorePictures").hidden=extras.length===0;
+    const extraCards=$("graphExtraCards");extraCards.replaceChildren();
+    for(const p of extras)extraCards.append(makeCard(p,true));
   }
   function draw(){
     baseGraph(graph,doc);
@@ -299,7 +378,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const allBuilt=mode()==="build"&&r.line===part.rules.length;
     const converging=allBuilt&&buildRevealPhase==="converging";
     const awaitingNext=allBuilt&&!converging;
-    $("graphGameMode").textContent=mode()==="fill"?"FIND & FILL":"BUILD & SHADE";
+    $("graphGameMode").textContent=
+      (mode()==="fill"?"FIND & FILL":"BUILD & SHADE")+
+      " · STEP "+p.step+" · "+p.stage.toUpperCase();
+    $("graphGameFocus").textContent=p.focus;
     $("graphPictureName").textContent=p.name;
     $("graphPieceCount").textContent="Piece "+(r.done+1)+" of "+p.pieces.length;
     $("graphCanvasCount").textContent=r.done+" / "+p.pieces.length;
@@ -487,9 +569,14 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const p=picture();
     $("graphSummaryTitle").textContent=p.name+" ✦";
     $("graphSummaryText").textContent="You created every piece from the common solutions of simultaneous inequalities.";
-    $("graphSummaryStats").textContent=p.pieces.length+" real regions · "+
-      p.pieces.reduce((n,f)=>n+f.rules.length,0)+" inequalities · "+
-      GRAPH_ART_MODES.find(m=>m.id===mode()).name;
+    $("graphSummaryStats").textContent="Stage "+p.step+" · "+p.stage+" · "+
+      p.pieces.length+" real regions · "+graphTotalBoundaries(p)+
+      " inequalities · "+GRAPH_ART_MODES.find(m=>m.id===mode()).name;
+    $("graphNextPicture").hidden=p.step===GRAPH_ART_STAGES.length||
+      p.mode!==mode();
+    $("graphNextPicture").textContent="Explore "+(
+      graphModeGallery(mode())[p.step]?.stage||"the next")+
+      " →";
   }
   function restart(){
     cancelBuildRevealTimer();
@@ -595,6 +682,12 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphHint").addEventListener("click",showHint);
   $("graphRestart").addEventListener("click",restart);
   $("graphChooseAgain").addEventListener("click",()=>setScreen("picker"));
+  $("graphNextPicture").addEventListener("click",()=>{
+    // Progression is suggested, never auto-started or locked.
+    const next=graphModeGallery(mode())[picture().step];
+    if(!next)return;
+    setScreen("picker");
+  });
   $("graphReplayReveal").addEventListener("click",openReveal);
   $("graphRevealClose").addEventListener("click",closeReveal);
   $("graphRevealSkip").addEventListener("click",showFinished);
