@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Curve &amp; Fill | Inequality Ink</title>
+<link rel="stylesheet" href="./curve-art.css">
+<script type="module" src="./curve-art.mjs"></script></head>
+<body><header class="top"><a href="./" class="back">← Graph Art</a><span>INEQUALITY <b>INK</b> · CURVE &amp; FILL</span><a href="../" class="back">Home</a></header>
+<main><section class="hero"><div class="eyebrow">GRAPH ART · PHASE 1 PROTOTYPE</div><h1>Curve <em>&amp; Fill</em></h1><p>The curves are the boundaries. Find their common region and paint a butterfly, one mathematical piece at a time.</p></section>
+<div class="workspace">
+<section class="panel canvas-panel"><div class="panel-head"><div><div class="eyebrow">YOUR MATHEMATICAL CANVAS</div><h2>Find the curved intersection</h2></div><span id="progress" class="pill"></span></div>
+<svg id="graph" viewBox="0 0 620 620" tabindex="0" role="group" aria-label="Coordinate graph. Click or tap a region; use arrow keys and Enter with keyboard."></svg>
+<p class="muted">Tap inside a region, away from the boundaries. Keyboard: arrow keys to move, Enter to select.</p></section>
+<section class="panel task-panel"><div class="eyebrow" id="pieceLabel">PIECE 1 OF 2</div><h2 id="pieceName">Left wing</h2><p>Find the region satisfying <strong>all</strong> these inequalities:</p><div id="rules" class="rules"></div><div class="key"><span><i class="solid"></i> Solid: equality included</span><span><i class="dashed"></i> Dashed: strict inequality</span></div>
+<div class="actions"><button id="undo" class="secondary">Clear selection</button><button id="check">Check region →</button></div>
+<p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+<button id="hint" class="hint">✳ Give me a hint</button><button id="reset" class="reset">↺ Restart picture</button>
+<div id="complete" class="complete" hidden><h2>Butterfly complete! ✦</h2><p>Both coloured wings were made from real intersections of quadratic inequalities.</p><button id="replay">Make it again ↻</button></div>
+</section></div></main></body></html>
