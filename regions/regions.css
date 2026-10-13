@@ -29,6 +29,122 @@
 .graph-picture-card small{font-size:.74rem;color:#72828c;line-height:1.5}
 .graph-picture-card .graph-stage{font-size:.65rem;text-transform:uppercase;font-weight:850;letter-spacing:.08em;color:#4d947f}
 .graph-card-go{font-size:.72rem;font-weight:800;color:#4a9280;margin-top:9px;display:block}
+
+/* Five increasingly challenging pictures, matching the Pixel Art journey.
+   Mode-specific galleries share a visual language but never share pictures. */
+.graph-journey-status{
+ display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
+ gap:7px 14px;margin:8px 0 11px;color:#75868b;font-size:.74rem;
+}
+.graph-journey-status strong{font-size:.77rem;color:#417e70}
+.graph-stage-track{
+ display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+ gap:5px;margin-bottom:15px;position:relative;
+}
+.graph-step-node{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ min-width:0;gap:4px;color:#9a9faa;font-size:.65rem;font-weight:750;
+}
+.graph-step-number{
+ display:grid;place-items:center;width:27px;height:27px;border:1px solid #dddeda;
+ border-radius:50%;background:#f6f5f1;color:#7d8993;font-weight:900;
+}
+.graph-step-node.is-recommended{color:#377d6b}
+.graph-step-node.is-recommended .graph-step-number{
+ background:#e3f5ed;border-color:#6bae9d;box-shadow:0 0 0 3px #d9f0e588;color:#2c806a
+}
+.graph-step-node.is-complete{color:#317e66}
+.graph-step-node.is-complete .graph-step-number{
+ background:#468f79;border-color:#468f79;color:white
+}
+.graph-picture-grid{
+ grid-template-columns:repeat(5,minmax(0,1fr));
+ align-items:stretch;gap:9px;
+}
+.graph-picture-card{
+ flex-direction:column;align-items:stretch;gap:7px;
+ justify-content:start;padding:9px 9px 12px;
+ position:relative;border-radius:13px;
+}
+.graph-picture-card.is-recommended{
+ background:#f1faf3;border-color:#7bb7a3;box-shadow:0 0 0 2px #68b19a1c
+}
+.graph-picture-card svg{
+ width:100%;height:auto;aspect-ratio:1;
+ max-height:154px;margin:auto;
+ border:1px solid #e8e3d8;border-radius:9px;
+}
+.graph-picture-info{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.graph-picture-card .graph-stage{font-size:.6rem;line-height:1.4;min-height:1.6em}
+.graph-picture-card strong{
+ font-size:.98rem;letter-spacing:-.02em;line-height:1.17;margin:1px 0 2px
+}
+.graph-picture-card small{
+ line-height:1.35;font-size:.68rem;min-height:2.7em
+}
+.graph-card-maths{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ overflow:hidden;margin-top:2px;color:#7b7f86;font-size:.66rem;
+ line-height:1.4;min-height:2.7em;
+}
+.graph-card-progress{
+ display:block;overflow:hidden;background:#e1e9df;height:4px;
+ border-radius:8px;margin-top:auto
+}
+.graph-card-progress span{
+ display:block;height:100%;background:#60ad8f;
+ border-radius:8px;transition:width .3s ease
+}
+.graph-card-go{
+ padding:4px 0 0;margin-top:2px;
+ font-size:.69rem;line-height:1.35;
+}
+.graph-more-pictures{margin-top:17px;border-top:1px solid #e6e8e1;padding-top:11px}
+.graph-more-pictures summary{
+ font-size:.78rem;font-weight:850;color:#448f7d;cursor:pointer
+}
+.graph-more-pictures p{font-size:.74rem;color:#70818b}
+.graph-extra-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.graph-game-focus{
+ display:block;margin-top:1px;color:#668381;font-size:.69rem;
+ max-width:450px;line-height:1.35
+}
+@media(min-width:780px){
+ .graph-landing-intro{margin:9px auto 12px}
+ .graph-landing-intro h1{font-size:clamp(1.85rem,3.15vw,2.7rem);margin:6px 0}
+ .graph-landing-intro p{font-size:.84rem}
+ .graph-picker-modes,.graph-picture-picker{padding:14px 17px;margin-top:10px}
+ .graph-mode-card{padding:11px 14px}
+ .graph-mode-icon{font-size:1.6rem}
+ .graph-picture-picker .graph-picker-heading h2{font-size:1.43rem}
+}
+@media(min-width:780px) and (max-width:1120px){
+ .graph-picture-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .graph-picture-card{flex-direction:row;gap:9px;padding:9px}
+ .graph-picture-card svg{width:86px;height:90px;max-height:none;flex:none}
+ .graph-picture-card .graph-card-maths{display:none}
+ .graph-picture-card small{min-height:0}
+ .graph-picture-card .graph-stage{min-height:0}
+}
+@media(max-width:779px){
+ .graph-picture-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .graph-picture-card{padding:9px}
+ .graph-picture-card svg{height:auto;max-height:155px}
+ .graph-mode-card{padding:13px}
+ .graph-card-maths{min-height:0}
+ .graph-journey-status span{display:none}
+}
+@media(max-width:480px){
+ .graph-picture-grid{grid-template-columns:1fr}
+ .graph-picture-card{flex-direction:row;align-items:center;gap:12px}
+ .graph-picture-card svg{width:94px;height:100px;flex:0 0 94px;max-height:none}
+ .graph-picture-card .graph-stage{min-height:0}
+ .graph-picture-card small,.graph-card-maths{min-height:0}
+ .graph-stage-track{gap:3px}
+ .graph-step-node{font-size:.57rem}
+ .graph-step-number{width:25px;height:25px}
+}
+
 .graph-play{padding-top:5px}
 .graph-game-top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:5px 0 11px}
 .graph-game-title{text-align:center}
