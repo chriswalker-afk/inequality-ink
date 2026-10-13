@@ -51,7 +51,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   const start=readCurveSave(storage);
   let saved={picture:start.picture,records:start.records};
   let screen="picker",selected=null,flash=null,cursor={x:0,y:0},
-    message="",status="",hint="",flashTimer=null,revealTimers=[];
+    message="",status="",hint="",hintStage=0,hintKey="",flashTimer=null,revealTimers=[];
 
   function picture(){return curvePicture(saved.picture);}
   function record(){
@@ -285,6 +285,11 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     $("graphFeedback").className="graph-feedback"+(status?" "+status:"");
     $("graphHintText").textContent=hint;
     $("graphHintText").hidden=!hint;
+    const scope=saved.picture+":"+r.done;
+    const stage=scope===hintKey?hintStage:0;
+    $("graphHint").textContent=stage>=3?"✳ All hints shown":
+      stage?"✳ More help ("+(stage+1)+"/3)":"✳ Give me a hint";
+    $("graphHint").disabled=stage>=3;
     draw();
   }
   function summaryView(){
@@ -464,11 +469,20 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   }
   function showHint(){
     if(screen!=="play"||!current())return;
-    const part=current(),point=hintPoint(part);
-    hint=point?
-      "Try the test point ("+point.x+", "+point.y+"). Check it against every inequality. Which curved region contains that point?":
-      "Try a test point away from the boundaries. Check whether it satisfies every inequality.";
-    notify("A hint has appeared below.");playView();
+    const part=current(),scope=saved.picture+":"+record().done;
+    if(hintKey!==scope){hintKey=scope;hintStage=0;}
+    hintStage=Math.min(3,hintStage+1);
+    if(hintStage===1){
+      hint="Look at each curved boundary in turn. Decide where the inequality is true before finding the overlap.";
+    }else if(hintStage===2){
+      hint="Start with "+part.rules[0].text+". Choose a simple point away from the curve and substitute its coordinates.";
+    }else{
+      const point=hintPoint(part);
+      hint=point?"The point ("+point.x+", "+point.y+
+        ") satisfies every displayed inequality. Fill the curved region containing it.":
+        "Test a point away from all boundaries, and keep only a region where every inequality is true.";
+    }
+    notify("Hint "+hintStage+" of 3 is shown below.");playView();
   }
 
   $("curveBack").addEventListener("click",()=>{
