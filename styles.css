@@ -1343,3 +1343,10 @@ body.paint-session{overflow:hidden}
 @media(max-width:380px){
   .studio-switch .studio-tab{padding:7px 6px;font-size:.72rem}
 }
+
+/* Narrow phones: let the switch wrap naturally rather than clip or shrink labels. */
+@media(max-width:350px){
+  .topbar .top-actions{flex-wrap:wrap}
+  .topbar .studio-switch{flex:1 1 100%;width:100%}
+  .topbar .top-actions>.top-button{margin-left:auto}
+}
