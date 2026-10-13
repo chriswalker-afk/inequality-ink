@@ -231,7 +231,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     if(record().done===p.pieces.length){
       record().done=0;record().replays++;
     }
-    persist();selected=null;hint="";cursor={x:0,y:0};
+    persist();selected=null;hint="";hintStage=0;hintKey="";cursor={x:0,y:0};
     notify("Find the common region.");setScreen("play");
   }
   function draw(){
@@ -370,7 +370,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   function restart(){
     stopFlash();stopReveal();
     record().done=0;record().replays++;
-    persist();selected=null;cursor={x:0,y:0};hint="";
+    persist();selected=null;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
     notify("Find the common region.");setScreen("play");
   }
   function stopReveal(){
