@@ -8,10 +8,10 @@
   <title>Graph Art | Inequality Ink</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M9 32 32 8 55 32 32 56Z' fill='%237cc2af'/%3E%3Cpath d='M9 32 32 8 32 32Z' fill='%23f6a17e'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
-  <link rel="stylesheet" href="./regions.css?v=graph-modes-v6" />
+  <link rel="stylesheet" href="./regions.css?v=graph-hub-pass2" />
   <link rel="stylesheet" href="../help/how-to-play.css?v=guide-v1" />
   <script type="module" src="../help/how-to-play.mjs?v=guide-v1"></script>
-  <script type="module" src="./regions-app.mjs?v=decorative-contrast-v5"></script>
+  <script type="module" src="./regions-app.mjs?v=graph-hub-pass2"></script>
 </head>
 <body class="regions-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -32,46 +32,82 @@
     </header>
     <main class="region-main">
 
-      <section id="graphPicker" class="graph-picker" aria-labelledby="graphPickerTitle">
+      <section id="graphPicker" class="graph-picker graph-hub-picker" aria-labelledby="graphPickerTitle">
         <div class="graph-landing-intro">
-          <div class="eyebrow"><span class="spark-dot"></span> GRAPH ART STUDIO</div>
+          <div class="eyebrow"><span class="spark-dot"></span> THE GRAPH ART STUDIO</div>
           <h1 id="graphPickerTitle">Shade the maths. <em>Make the art.</em></h1>
-          <p>Several inequalities. One shared region. Every region you find becomes a real piece of your picture.</p>
+          <p>Four ways to create real art with inequalities. Choose your challenge and a picture, then let the mathematics do the painting.</p>
         </div>
-        <section class="graph-picker-modes" aria-label="Choose a Graph Art challenge">
-          <h2>How will you make your picture?</h2>
-          <div class="graph-mode-grid" role="group" aria-label="Choose Graph Art mode">
-            <button type="button" class="graph-mode-card" id="graphModeFill" aria-pressed="true">
-              <span class="graph-mode-icon" aria-hidden="true">◩</span>
-              <span><strong>Find &amp; Fill</strong><small>Read the inequalities. Fill the region they have in common.</small></span>
-              <span class="graph-mode-tick" aria-hidden="true">✓</span>
-            </button>
-            <button type="button" class="graph-mode-card" id="graphModeBuild" aria-pressed="false">
-              <span class="graph-mode-icon" aria-hidden="true">↗</span>
-              <span><strong>Build &amp; Shade</strong><small>Choose each side and line style. Watch the overlap appear.</small></span>
-              <span class="graph-mode-tick" aria-hidden="true">✓</span>
-            </button>
-            <a class="graph-mode-card" href="./curve.html"><span class="graph-mode-icon" aria-hidden="true">⌒</span><span><strong>Curve &amp; Fill</strong><small>Read curved inequalities. Fill the region they have in common.</small></span><span class="graph-mode-go" aria-hidden="true">→</span></a>
-            <a class="graph-mode-card" href="./plot.html"><span class="graph-mode-icon" aria-hidden="true">✎</span><span><strong>Plot &amp; Shade</strong><small>Plot lines and curves, then shade the shared region across five pictures.</small></span><span class="graph-mode-go" aria-hidden="true">→</span></a>
-          </div>
-        </section>
-        <section class="graph-picture-picker" aria-labelledby="graphPictureHeading">
-          <div class="graph-picker-heading">
-            <div><div class="eyebrow">A SMALL START. A BIG REVEAL.</div><h2 id="graphPictureHeading">Choose a picture</h2></div>
-            <p id="graphModeDescription">Choose the right region to fill.</p>
-          </div>
-          <div class="graph-journey-status">
-            <strong id="graphGalleryProgress" aria-live="polite">0 of 5 pictures complete</strong>
-            <span>Choose any stage. Progress saves separately in each mode.</span>
-          </div>
-          <div id="graphStageTrack" class="graph-stage-track" role="group" aria-label="Five-step Graph Art progression"></div>
-          <div id="graphPictureCards" class="graph-picture-grid" role="group" aria-label="Five pictures in increasing difficulty"></div>
-          <details id="graphMorePictures" class="graph-more-pictures" hidden>
-            <summary>Earlier pictures with saved progress</summary>
-            <p>Your previous work is still available here.</p>
-            <div id="graphExtraCards" class="graph-picture-grid graph-extra-grid"></div>
-          </details>
-        </section>
+
+        <div class="graph-hub-workspace">
+          <section class="graph-picker-modes graph-hub-modes" aria-labelledby="graphHubModeHeading">
+            <div class="graph-hub-panel-heading">
+              <span class="eyebrow">CHOOSE YOUR CHALLENGE</span>
+              <h2 id="graphHubModeHeading">How will you make it?</h2>
+            </div>
+            <div class="graph-mode-grid" role="group" aria-label="Choose Graph Art mode">
+              <button type="button" class="graph-mode-card" id="graphModeFill" aria-pressed="true">
+                <span class="graph-mode-icon" aria-hidden="true">◩</span>
+                <span><strong>Find &amp; Fill</strong><small>Read inequalities and find the shared region.</small></span>
+                <span class="graph-mode-tick" aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="graph-mode-card" id="graphModeBuild" aria-pressed="false">
+                <span class="graph-mode-icon" aria-hidden="true">↗</span>
+                <span><strong>Build &amp; Shade</strong><small>Choose sides and boundary styles.</small></span>
+                <span class="graph-mode-tick" aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="graph-mode-card" id="graphModeCurve" aria-pressed="false">
+                <span class="graph-mode-icon" aria-hidden="true">⌒</span>
+                <span><strong>Curve &amp; Fill</strong><small>Find regions between curved boundaries.</small></span>
+                <span class="graph-mode-tick" aria-hidden="true">✓</span>
+              </button>
+              <button type="button" class="graph-mode-card" id="graphModePlot" aria-pressed="false">
+                <span class="graph-mode-icon" aria-hidden="true">✎</span>
+                <span><strong>Plot &amp; Shade</strong><small>Construct the graphs, then shade them.</small></span>
+                <span class="graph-mode-tick" aria-hidden="true">✓</span>
+              </button>
+            </div>
+            <p id="graphModeDescription" class="graph-hub-mode-description">Read all the inequalities, then fill their common region.</p>
+          </section>
+
+          <section class="graph-picture-picker graph-hub-pictures" aria-labelledby="graphPictureHeading">
+            <div class="graph-hub-panel-heading">
+              <span class="eyebrow">CHOOSE A PICTURE</span>
+              <div class="graph-hub-picture-heading">
+                <h2 id="graphPictureHeading">Your picture journey</h2>
+                <span id="graphGalleryProgress" aria-live="polite">0 of 5 completed</span>
+              </div>
+            </div>
+            <div id="graphStageTrack" class="graph-stage-track" role="group" aria-label="Five picture stages, from Starter to Big Finish"></div>
+            <div id="graphPictureCards" class="graph-picture-grid" role="group" aria-label="Select one of five pictures"></div>
+            <details id="graphMorePictures" class="graph-more-pictures" hidden>
+              <summary>Earlier pictures with saved progress</summary>
+              <p>Your earlier artwork is still here and keeps its own progress.</p>
+              <div id="graphExtraCards" class="graph-picture-grid graph-extra-grid" role="group" aria-label="Earlier pictures"></div>
+            </details>
+          </section>
+
+          <section class="graph-hub-preview" aria-labelledby="graphPreviewHeading">
+            <div class="graph-hub-panel-heading">
+              <span class="eyebrow">YOUR CANVAS</span>
+              <div class="graph-hub-picture-heading">
+                <h2 id="graphPreviewHeading">Your next picture</h2>
+                <span id="graphPreviewStage" class="graph-hub-stage">1 · Starter</span>
+              </div>
+            </div>
+            <div class="graph-hub-art-frame">
+              <svg id="graphPreviewSvg" viewBox="0 0 620 620" role="img" aria-label="Preview of the selected mathematical picture"></svg>
+              <span class="graph-hub-art-sticker" aria-hidden="true">real maths ✦</span>
+            </div>
+            <div class="graph-hub-art-info">
+              <strong id="graphPreviewName">Mystery picture</strong>
+              <p id="graphPreviewFocus">Choose a picture to begin.</p>
+              <p id="graphPreviewProgress" aria-live="polite">A quick win to get you started.</p>
+            </div>
+            <button type="button" class="button button-primary graph-hub-start" id="graphStartPicture">Start picture ↗</button>
+            <p class="graph-hub-reassurance">Your work saves automatically on this device · No login needed</p>
+          </section>
+        </div>
       </section>
 
       <section id="graphPlay" class="graph-play" hidden aria-label="Graph Art activity">
