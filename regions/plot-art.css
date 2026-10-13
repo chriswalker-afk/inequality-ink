@@ -1,0 +1,61 @@
+/* Plot & Shade inherits Graph Art's visual language and adds a small
+   contextual plotting toolbar rather than a separate page design. */
+.plot-page .plot-picture-grid{grid-template-columns:minmax(0,240px)}
+.plot-page .plot-gallery-note{font-size:.75rem;color:#758a91;line-height:1.55;margin:13px 0 0}
+.plot-page .plot-picture-grid .graph-picture-card{width:100%}
+.plot-page #plotGraph{display:block;width:100%;max-width:525px;height:auto;aspect-ratio:1;touch-action:none;cursor:crosshair;outline-offset:3px}
+.plot-page .plot-mobile-equation{display:none}
+.plot-page .plot-phase-track{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:6px 0 14px}
+.plot-page .plot-phase{min-width:0;border:1px solid #dfe5df;color:#8b9a9d;text-align:center;font-size:.7rem;font-weight:850;border-radius:8px;padding:7px 3px;background:#fbfaf7}
+.plot-page .plot-phase.is-current{color:#327e6d;background:#e7f4ec;border-color:#7db6a2}
+.plot-page .plot-phase.is-done{color:#548672;background:#f0f7f0;border-color:#d1e4d5}
+.plot-page .plot-point-readout{font-size:.76rem;color:#5b7180;border:1px solid #e1e6e0;border-radius:9px;background:#f9fbf7;margin:10px 0 0;padding:9px 11px;line-height:1.45}
+.plot-page .plot-nudge-controls{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:.73rem;color:#6a7a86}
+.plot-page .plot-nudge-controls>div{display:flex;gap:5px}
+.plot-page .plot-nudge-controls button{width:36px;height:34px;border-radius:8px;border:1px solid #d7e3da;background:#fff;color:#456f6a;cursor:pointer;font:inherit;font-weight:900;font-size:1rem}
+.plot-page .plot-nudge-controls button:hover{background:#eaf7ef;border-color:#9dc6b2}
+.plot-page .plot-nudge-controls button:focus-visible{outline:3px solid #e7af67;outline-offset:2px}
+.plot-page .plot-controls[hidden],.plot-page .plot-nudge-controls[hidden]{display:none}
+.plot-page .plot-rule-plot{border-color:#88bcab;background:#ecf8f0}
+.plot-page .plot-rule-plot .rule-state{color:#267e68}
+.plot-page .plot-rule-given{background:#f9faf7}
+.plot-page #plotFeedback{overflow-wrap:break-word}
+.plot-page .plot-mobile-dock{display:none}
+.plot-page .plot-preview-point{filter:drop-shadow(0 1px 2px #34586644)}
+.plot-page .plot-sketch-preview{filter:drop-shadow(0 0 2px #519eac45)}
+.plot-page #plotRevealSvg .plot-piece-enter{transform-box:fill-box;transform-origin:center;animation:plot-piece-pop .65s cubic-bezier(.2,.8,.2,1) both}
+.plot-page #plotRevealSvg .plot-detail-enter{transform-box:fill-box;transform-origin:center;animation:plot-detail-pop .56s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes plot-piece-pop{from{opacity:.12;transform:scale(.87)}to{opacity:1;transform:scale(1)}}
+@keyframes plot-detail-pop{from{opacity:0;transform:scale(.48)}to{opacity:1;transform:scale(1)}}
+@media(max-width:780px){
+  .plot-page .plot-play{padding-bottom:86px}
+  .plot-page .plot-mobile-equation{display:block;color:#3c6e6a;background:#edf7f1;border-radius:8px;padding:5px 9px;font-size:.8rem;font-weight:800;margin-bottom:6px}
+  .plot-page #plotGraph{max-width:min(100%,43dvh,410px)}
+  .plot-page .plot-canvas-panel{position:static}
+  .plot-page .plot-phase-track{margin:3px 0 10px}
+  .plot-page .plot-desktop-actions{display:none}
+  .plot-page .plot-mobile-dock{
+    display:flex;align-items:center;gap:7px;position:fixed;bottom:0;left:0;right:0;z-index:12;
+    background:#fffcf9ee;backdrop-filter:blur(12px);border-top:1px solid #d6e3d9;
+    padding:9px max(11px,env(safe-area-inset-left)) calc(9px + env(safe-area-inset-bottom));
+    box-shadow:0 -6px 16px #263f3c0f
+  }
+  .plot-page .plot-mobile-dock span{font-size:.7rem;font-weight:850;color:#4e7b73;min-width:57px}
+  .plot-page .plot-mobile-dock button{font-size:.76rem;min-height:42px;padding:8px 10px}
+  .plot-page #plotDockCheck{flex:1}
+  .plot-page .graph-rule-list{max-height:155px}
+  .plot-page .plot-point-readout{font-size:.73rem}
+}
+@media(max-width:480px){
+  .plot-page .plot-picture-grid{grid-template-columns:1fr}
+  .plot-page .plot-picture-grid .graph-picture-card{flex-direction:row;align-items:center}
+  .plot-page .plot-picture-grid svg{width:94px;height:98px}
+  .plot-page .plot-mobile-dock{gap:5px}
+  .plot-page .plot-mobile-dock span{min-width:46px}
+  .plot-page .plot-mobile-dock button{padding:7px 8px}
+  .plot-page .plot-nudge-controls button{width:34px}
+}
+@media(prefers-reduced-motion:reduce){
+  .plot-page #plotRevealSvg .plot-piece-enter,
+  .plot-page #plotRevealSvg .plot-detail-enter{animation:none!important}
+}
