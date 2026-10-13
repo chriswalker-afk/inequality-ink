@@ -2,14 +2,15 @@
 
 Inequality Ink builds its exercises from pixel-art **silhouette data**, not from a hand-written list of questions. New pictures are declared in [pictures.mjs](pictures.mjs); the engine validates their row shapes and generates the maths. The student only sees ordinary number lines.
 
-## Current library: twenty-four pictures (42 picture–mode combinations)
+## Current library: twenty-nine pictures (47 picture–mode combinations)
 
-Each mode now offers a five-step path of **6, 8, 10, 12 and 14 rows**. Eight new small inequality illustrations live in `starter-pictures.mjs` and four short Paint pictures in `paint-starters.mjs`; the twelve original designs are retained under More pictures.
+Each mode offers a five-step path of **6, 8, 10, 12 and 14 rows**. Eight starter illustrations live in `starter-pictures.mjs`, **five exclusively Mixed Challenge pictures** in `mixed-pictures.mjs` and four short Paint pictures in `paint-starters.mjs`. The original and formerly shared artwork remains accessible under More pictures.
 
 | Mode family | Pictures (picker order) | Mathematical focus |
 | --- | --- | --- |
 | One-sided rays / Mirror | Cat Cameo, Heart Glow, **Coral Crab**, **Twilight Owl** | Genuine left- and right-pointing rays, open and closed circles, smaller picture-specific windows |
-| Double-ended intervals / Full, Solve and Mixed | Mushroom Mystery, Rocket Launch, **Blooming Flower**, **Enchanted Potion**, **Ice Cream Treat** | Different interval widths and linear transformations; symmetry also permits reflected rays in Mixed |
+| Double-ended intervals / Full and Solve (Mixed extras) | Mushroom Mystery, Rocket Launch, **Blooming Flower**, **Enchanted Potion**, **Ice Cream Treat** | Varied bounded intervals, transformed algebra; historical Mixed progress preserved in More pictures |
+| Original Mixed-only five-stage journey | **Little Shield**, **Flying Saucer**, **Golden Hourglass**, **Butterfly**, **Dragon Guardian** | Every picture combines mirrored one-sided rays, full bounded intervals and algebraic solutions; stages introduce stricter endpoints and sign reversals |
 
 The new sprites are intentionally different both visually and mathematically. Crab and Owl use a roughly even balance of left and right rays with different endpoints; Flower, Potion and Ice Cream include at least six distinct row widths. Each has its own final colour palette, background and animated finishing details.
 
@@ -21,7 +22,7 @@ When adding future illustrations, avoid long runs of identical-width intervals u
 
 **Full picture (Full Picture, Solve & Paint):** Each row must be **one contiguous interval** of pixels, which the engine uses to derive its two real endpoints and their open/closed circles. Solve & Paint applies linear transformations, including negative coefficients, to the same interval.
 
-**Mixed Challenge:** Full picture must also be horizontally symmetrical, so selected rows can come from reflected one-sided inequalities.
+**Mixed Challenge:** Five uniquely authored pictures live in `mixed-pictures.mjs` and have `levels:["mixed"]`. A Mixed silhouette must be a **full, horizontally symmetric, even-width picture**, so selected rows can be created by reflecting one-sided rays. The four-question cycle includes reading a mirrored ray, drawing one, drawing a bounded interval, and solving a transformed bounded inequality. **Every** picture has all four tasks. Former shared art remains available as Mixed bonuses without progression positions.
 
 A row such as `██···██` contains two disconnected runs: it cannot currently be generated from a single inequality question and the validator will reject it. Simplify the silhouette or split the question into multiple tasks in a future engine upgrade.
 
@@ -86,14 +87,14 @@ All example picture definitions live in one place: no JavaScript functions are n
 
 Each mode has exactly five core pictures. The stages are **Starter (6 rows)**, **Step Up (8)**, **Building (10)**, **Challenge (12)** and **Big Finish (14)**. The engine rejects duplicate or missing stage positions.
 
-New symmetric, contiguous-interval full pictures can be reused in Full Picture, Solve & Paint and Mixed Challenge. Small Mirror sprites must still be connected with every half-row touching an edge. Keep exact real-number endpoints visible even when a strict ray endpoint lies just outside the painted columns.
+New symmetric, contiguous-interval full pictures *can* technically be reused across levels, but Mixed Challenge's primary path deliberately has five exclusive pictures. Small Mirror sprites must still be connected with every half-row touching an edge. Keep exact real-number endpoints visible even when a strict ray endpoint lies just outside the painted columns.
 
 Paint by Inequalities also grows from **two to five distinct swatches** (including its actively painted background), progressing 2, 2, 3, 4, 5. Paint grids may have 6–14 rows. A complete one-colour row may have a single genuine inequality; the rule validator still checks every integer is painted exactly once.
 
 Preserve all existing picture IDs and row counts so saved student progress remains valid. A picture without a mode-specific progression position is always offered as a bonus under More pictures.
 ### Stage-aware mathematical profiles
 
-Core picture steps 1–4 use the central `math-progression.mjs` profiles. The modes retain their original skills, but open/closed endpoints and the complexity of Solve & Paint transformations are introduced in a deliberate order. In Paint by Inequalities, the rules continue to be derived from contiguous colour runs; the profiles change only the presentation of their endpoints, not the run count or painted result. Stage 5 and More pictures retain existing question mathematics and replay behavior.
+Core picture steps 1–4 use the central `math-progression.mjs` profiles. The modes retain their original skills, but open/closed endpoints and the complexity of Solve & Paint transformations are introduced in a deliberate order. In Paint by Inequalities, the rules continue to be derived from contiguous colour runs; the profiles change only the presentation of their endpoints, not the run count or painted result. Existing Stage 5 and More pictures retain their original question mathematics and replay behavior. The new Mixed-only Stage 5 is additionally guaranteed to have two negative-coefficient algebra questions on each replay.
 
 Never change an existing picture ID or row count to adjust difficulty. For new artwork, confirm that real-number inequality endpoints remain fully visible and that every allowed replay still paints precisely the authored integer columns.
 
