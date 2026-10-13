@@ -750,7 +750,8 @@ test("Hub query links restore the selected mode and picture",()=>{
   const s=session({},"?mode=curve&picture=rolling-hills"),{$}=s;
   assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPreviewStage").textContent,"2 · Step Up");
-  assert.equal($("graphPreviewName").textContent,"Rolling Hills");
+  assert.equal($("graphPreviewName").textContent,"A sunny landscape",
+    "Unfinished previews should show the mystery clue, not spoil the picture name");
   assert.equal($("graphPictureCards").children[1].getAttribute("aria-pressed"),"true");
   $("graphStartPicture").click();
   assert.equal(s.redirects.at(-1),"./curve.html?picture=rolling-hills");
