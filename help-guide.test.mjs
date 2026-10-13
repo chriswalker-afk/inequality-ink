@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {HOW_TO_PLAY_GUIDES} from "./help/how-to-play.mjs";
 
-const required=["mirror","full","solve","mixed","paint","quadratic","find","build","curve","plot"];
+const required=["mirror","full","solve","mixed","paint","quadratic","find","build","reverse","curve","plot"];
 
 test("Every Inequality Ink mode has its own full help guide",()=>{
   assert.deepEqual(Object.keys(HOW_TO_PLAY_GUIDES).sort(),required.slice().sort());
