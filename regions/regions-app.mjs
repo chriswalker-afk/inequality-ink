@@ -16,8 +16,8 @@ const key=(mode,id)=>mode+":"+id;
 const clean=()=>({mode:"fill",picture:"little-house",records:{}});
 const number=n=>Number.isInteger(n)&&n>=0&&n<=10000;
 const validRecord=(r,p)=>r&&number(r.done)&&r.done<=p.pieces.length&&number(r.line)&&
-  // A refresh during the final green pulse used to save the completed last
-  // boundary before advancing to the next piece. Preserve that success.
+  // The final answered boundary remains on screen until the student chooses
+  // Next piece. Preserve that state if the page is reloaded.
   (r.done===p.pieces.length?r.line===0:r.line<=p.pieces[r.done].rules.length)&&
   number(r.replays);
 export function readGraphArtSave(storage){
@@ -30,11 +30,9 @@ export function readGraphArtSave(storage){
   for(const mode of GRAPH_ART_MODES)for(const p of GRAPH_ART_PICTURES){
     const id=key(mode.id,p.id),record=raw.records?.[id];
     if(validRecord(record,p)){
-      const finishedBoundary=mode.id==="build"&&record.done<p.pieces.length&&
-        record.line===p.pieces[record.done].rules.length;
       output.records[id]={
-        done:record.done+(finishedBoundary?1:0),
-        line:mode.id==="build"&&!finishedBoundary?record.line:0,
+        done:record.done,
+        line:mode.id==="build"?record.line:0,
         replays:record.replays
       };
     }
@@ -141,7 +139,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   let saved=readGraphArtSave(storage),screen="picker",choiceSide=null,
     choiceStyle=null,selected=null,flash=null,message="",status="",hint="",
     revealTimers=[],cursor={x:0,y:0},activeReveal=false,
-    pendingPieceTimer=null,lastAddedArrow=null;
+    pendingPieceTimer=null,lastAddedArrow=null,buildRevealPhase="idle";
   function persist(){try{storage.setItem(GRAPH_ART_SAVE_KEY,JSON.stringify(saved));}catch{}}
   function picture(){return graphPicture(saved.picture);}
   function mode(){return saved.mode;}
@@ -232,6 +230,19 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     }
     if(!part)return;
     const points=intersectRegion(part.rules);
+    const allBuilt=mode()==="build"&&r.line===part.rules.length;
+    if(allBuilt){
+      const converging=buildRevealPhase==="converging";
+      const completed=polygon(graph,doc,points,{
+        fill:converging?"#48b98c":part.color,
+        "fill-opacity":converging?.35:1,
+        stroke:converging?"#20976f":"#fff9ec",
+        "stroke-width":converging?4:3,
+        "data-region-layer":converging?"intersection-celebration":"completed-build-piece",
+        "pointer-events":"none"});
+      if(completed)completed.classList?.add(converging?
+        "graph-common-pulse":"graph-build-settled");
+    }
     for(const rr of part.rules){
       boundary(doc,graph,rr,{stroke:mode()==="fill"?"#5b7890":"#a5b7bf",
         "stroke-width":mode()==="fill"?2.6:1.65,
@@ -261,7 +272,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
           "stroke-opacity":1});
         directionArrow(doc,graph,rr,points,{
           enter:r.line<part.rules.length&&lastAddedArrow===rr.id,
-          agree:r.line===part.rules.length
+          agree:r.line===part.rules.length&&buildRevealPhase==="converging"
         });
       }
       if(rule())boundary(doc,graph,rule(),{stroke:"#304f78",
@@ -275,6 +286,9 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function playView(){
     const p=picture(),r=record(),part=current();
     if(!part){setScreen("summary");return;}
+    const allBuilt=mode()==="build"&&r.line===part.rules.length;
+    const converging=allBuilt&&buildRevealPhase==="converging";
+    const awaitingNext=allBuilt&&!converging;
     $("graphGameMode").textContent=mode()==="fill"?"FIND & FILL":"BUILD & SHADE";
     $("graphPictureName").textContent=p.name;
     $("graphPieceCount").textContent="Piece "+(r.done+1)+" of "+p.pieces.length;
@@ -290,8 +304,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       "For each inequality, choose the correct side and boundary style. All the arrows will point into the common region.";
     $("graphCanvasInstruction").textContent=mode()==="fill"?
       "Tap the correct region, then press Check. Keyboard: arrows + Enter.":
-      r.line===part.rules.length?
-        "The glowing region is the overlap: ALL the inequalities are true here.":
+      allBuilt?
+        (converging?
+          "Watch the arrows meet: the green overlap satisfies ALL the inequalities.":
+          "This coloured piece is the intersection. Follow the arrows before moving on."):
         r.line>0?"The faint teal area is the overlap of your "+r.line+
           " completed "+(r.line===1?"inequality":"inequalities")+".": 
           "Each arrow points towards the half-plane satisfying that inequality.";
@@ -314,6 +330,13 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       holder.append(item);
     });
     if(mode()==="build"){
+      $("graphBuildControls").classList.toggle("is-solved",allBuilt);
+      $("graphAddLine").hidden=allBuilt;
+      $("graphBuildWaiting").hidden=!converging;
+      $("graphNextPiece").hidden=!awaitingNext;
+      $("graphNextPiece").disabled=!awaitingNext;
+      $("graphNextPiece").textContent=r.done===p.pieces.length-1?
+        "Finish picture ✦":"Next piece →";
       const rr=rule();
       $("graphActiveEquation").textContent=rr?.text||"All boundaries added ✓";
       const sides=rr?regionSideOptions(rr):["above","below"];
@@ -321,17 +344,21 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
         const b=$(id),value=sides[i];
         b.textContent=value[0].toUpperCase()+value.slice(1);
         b.dataset.side=value;
-        b.disabled=pendingPieceTimer!==null||!rr;
+        b.disabled=allBuilt||!rr;
         b.setAttribute("aria-pressed",String(choiceSide===value));
       }
       for(const [id,style] of [["graphSolid","solid"],["graphDashed","dashed"]]){
-        $(id).disabled=pendingPieceTimer!==null||!rr;
+        $(id).disabled=allBuilt||!rr;
         $(id).setAttribute("aria-pressed",String(choiceStyle===style));
       }
-      $("graphAddLine").disabled=pendingPieceTimer!==null||!rr;
-      $("graphHint").disabled=pendingPieceTimer!==null;
-      $("graphOverlapText").textContent=r.line===part.rules.length?
-        "All "+part.rules.length+" arrows point to the same overlap. This is the region satisfying EVERY inequality.":
+      $("graphAddLine").disabled=allBuilt||!rr;
+      $("graphHint").disabled=allBuilt;
+      $("graphOverlapText").textContent=allBuilt?
+        (converging?
+          "The green region is where all "+part.rules.length+
+          " half-planes overlap. Every arrow points into this shared solution.":
+          "Why this coloured shape? It lies on the correct side of EVERY boundary. "+
+          "Any point outside fails at least one inequality. Review the arrows, then continue."):
         r.line===0?
           "Each arrow shows one inequality's valid half-plane. Only their shared overlap will be shaded.":
           r.line+" of "+part.rules.length+" lines added. The faint teal area satisfies the "+r.line+
@@ -374,7 +401,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     finishPiece();
   }
   function addLine(){
-    if(screen!=="play"||mode()!=="build"||pendingPieceTimer!==null)return;
+    if(screen!=="play"||mode()!=="build"||
+      pendingPieceTimer!==null||buildRevealPhase==="ready")return;
     const rr=rule();if(!rr)return;
     if(!choiceSide||!choiceStyle){
       notify("Choose both the direction and whether the line is solid or dashed.","error");
