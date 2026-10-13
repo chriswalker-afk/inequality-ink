@@ -238,7 +238,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function choosePicture(id){
     const p=plotPicture(id);if(!p)return;
-    clearFlash();stopReveal();selected=null;drag=null;hint="";
+    clearFlash();stopReveal();selected=null;drag=null;hint="";hintStage=0;hintKey="";
     saved.picture=p.id;
     save=saved.records[p.id]||fresh();
     if(save.done===p.pieces.length){
@@ -556,7 +556,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     clearFlash();stopReveal();drag=null;
     const replays=save.replays;
     save=fresh();save.replays=replays+1;
-    selected=null;activePoint=-1;cursor={x:0,y:0};hint="";
+    selected=null;activePoint=-1;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
     persist();notify("Begin by plotting the missing graph.");setScreen("play");
   }
   function begin(){choosePicture(saved.picture);}
