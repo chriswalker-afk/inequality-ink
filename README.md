@@ -27,8 +27,8 @@ mathematical marking, Quadratic Quest and Graph Art remain independent.
 
 A shared **Pixel Art / Graph Art** selector switches between independent
 maths experiences. Pixel Art keeps its number-line modes and saved progress.
-Graph Art at [regions/](regions/) has its own **two modes, each with five
-unique pictures** and an independent saved journey:
+Graph Art at [regions/](regions/) has **three modes, each with five unique
+pictures** and independently saved journeys:
 
 - **Find & Fill:** all inequalities for one mathematical shape are shown
   together. Students identify and paint their **common solution region**.
@@ -40,8 +40,12 @@ unique pictures** and an independent saved journey:
   inequality the arrows converge, the actual intersection glows green, and
   the shape settles into its colour. **Next piece** waits for the student's
   decision so the maths can be studied before moving on.
+- **Curve & Fill:** students identify actual intersections of parabolas,
+  quadratic curves, absolute-value graphs, circles and straight lines.
+  Five unique pictures progress from two to seven coloured pieces. Correct
+  selections persist until Check; incorrect curved regions flash red and clear.
 
-Both modes follow the Pixel Art progression labels **Starter → Step Up →
+All three modes follow the Pixel Art progression labels **Starter → Step Up →
 Building → Challenge → Big Finish**. No stage is locked, and partial
 progress saves by picture and mode. The picture itself is always formed from
 real simultaneous inequalities; decorative finishing touches are added only
@@ -72,7 +76,14 @@ mode is retained in an optional **Earlier pictures with saved progress**
 section rather than deleted. The retired v1 Aurora Crystal completion can
 still be imported. Pixel Art and Quadratic Quest saves are not changed.
 
-Graph Art uses the dependency-free half-plane clipper in
+**Curve & Fill full mode:** [Open the gallery](regions/curve.html). The five
+pictures are **Parabola Butterfly (2 pieces)**, **Rolling Hills (3)**,
+**Rainbow Ribbons (4)**, **Orbit Flower (5)** and **Cosmic Jellyfish (7)**.
+See the [Phase 2 implementation guide](CURVE_ART_PHASE2.md) for the curved
+mathematics and save migration. The original butterfly save is imported
+without overwriting it, and Find & Fill/Build & Shade progress is unchanged.
+
+The two straight-line modes use the dependency-free half-plane clipper in
 regions/regions-engine.mjs, the authored ten-picture gallery in
 regions/graph-art-pictures.mjs and the interactive UI in
 regions/regions-app.mjs. regions.test.mjs checks ten pictures, valid
