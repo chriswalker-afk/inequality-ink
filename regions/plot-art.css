@@ -28,7 +28,7 @@
 @keyframes plot-piece-pop{from{opacity:.12;transform:scale(.87)}to{opacity:1;transform:scale(1)}}
 @keyframes plot-detail-pop{from{opacity:0;transform:scale(.48)}to{opacity:1;transform:scale(1)}}
 @media(max-width:780px){
-  .plot-page .plot-play{padding-bottom:86px}
+  .plot-page #plotPlay{padding-bottom:86px}
   .plot-page .plot-mobile-equation{display:block;color:#3c6e6a;background:#edf7f1;border-radius:8px;padding:5px 9px;font-size:.8rem;font-weight:800;margin-bottom:6px}
   .plot-page #plotGraph{max-width:min(100%,43dvh,410px)}
   .plot-page .plot-canvas-panel{position:static}
