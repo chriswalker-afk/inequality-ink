@@ -57,6 +57,20 @@ test("Mathematical challenge advances from axial to strict, sloped and mixed for
         "Stage 4 must introduce x/y on one side");
       assert.ok(all(path[4]).filter(r=>r.form==="standard").length>=4);
     }else{
+      const strictCounts=path.map(p=>all(p).filter(r=>!r.inclusive).length);
+      assert.equal(strictCounts[0],0,"Wrapped Gift should teach solid boundaries first");
+      assert.equal(strictCounts[1],1,"Mountain Morning should introduce exactly one dashed boundary");
+      for(let i=2;i<path.length;i++){
+        assert.ok(strictCounts[i]>0,"Later stages should include dashed boundaries");
+        assert.ok(strictCounts[i]<all(path[i]).length,
+          "Later stages must continue to mix solid and dashed boundaries");
+      }
+      const sun=path[1].pieces.find(p=>p.id==="mountain-sun");
+      const dashed=sun.rules.filter(r=>!r.inclusive);
+      assert.deepEqual(dashed.map(r=>r.id),["mountain-sun-2"]);
+      assert.equal(regionBoundaryStyle(dashed[0]),"dashed");
+      assert.equal(regionCorrect(dashed[0],regionSide(dashed[0]),"solid"),false);
+      assert.equal(regionCorrect(dashed[0],regionSide(dashed[0]),"dashed"),true);
       assert.ok(all(path[3]).filter(r=>!r.inclusive).length>=4,
         "Crystal challenge must feature a strict inner diamond");
       assert.ok(all(path[4]).filter(r=>r.form==="standard").length>=3);
