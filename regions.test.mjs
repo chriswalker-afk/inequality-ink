@@ -623,3 +623,53 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   assert.match($("graphGalleryProgress").textContent,/0 of 5 completed/);
   assert.equal($("graphPictureCards").children.length,5);
 });
+
+
+test("Completed Graph Art cards open view-only; replay needs confirmation",()=>{
+  const finished=modePictures("fill")[0];
+  const other=modePictures("fill")[1];
+  const initial={
+    mode:"fill",picture:finished.id,records:{
+      ["fill:"+finished.id]:{done:finished.pieces.length,line:0,replays:1},
+      ["fill:"+other.id]:{done:1,line:0,replays:0}
+    }
+  };
+  const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(initial)}),{$}=s;
+  const card=$("graphPictureCards").children[0];
+  assert.match(card.className,/is-complete/);
+  assert.match(card.getAttribute("aria-label"),/View completed picture/);
+  assert.match(card.children[1].children.at(-1).textContent,/View picture/);
+  card.click();
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal($("graphReveal").getAttribute("open"),"");
+  assert.equal(s.app.readProgress().records["fill:"+finished.id].done,
+    finished.pieces.length,"Viewing must retain finished progress");
+  $("graphRevealClose").click();
+  s.win.confirm=()=>false;
+  $("graphRestart").click();
+  assert.equal(s.app.readProgress().records["fill:"+finished.id].done,
+    finished.pieces.length,"Cancellation must not erase finished art");
+  s.win.confirm=()=>true;
+  $("graphRestart").click();
+  assert.equal($("graphPlay").hidden,false);
+  assert.equal(s.app.readProgress().records["fill:"+finished.id].done,0);
+  assert.equal(s.app.readProgress().records["fill:"+other.id].done,1,
+    "Restart must not clear progress on other pictures");
+  assert.equal(s.app.readProgress().records["fill:"+finished.id].replays,2);
+});
+
+test("The in-game Restart control can be cancelled without losing progress",()=>{
+  const s=session(),{$}=s;
+  $("graphPictureCards").children[0].click();
+  const p=modePictures("fill")[0];
+  const candidate=graphCellAt(p.pieces[0],0,0);
+  // The button must work even before any piece is checked.
+  let confirmations=0;
+  s.win.confirm=()=>{confirmations++;return false;};
+  $("graphRestartPlaying").click();
+  assert.equal(confirmations,1);
+  assert.equal(s.app.readProgress().records["fill:"+p.id].replays,0);
+  s.win.confirm=()=>true;
+  $("graphRestartPlaying").click();
+  assert.equal(s.app.readProgress().records["fill:"+p.id].replays,1);
+});
