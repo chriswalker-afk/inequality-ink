@@ -681,3 +681,64 @@ test("The in-game Restart control can be cancelled without losing progress",()=>
   $("graphRestartPlaying").click();
   assert.equal(s.app.readProgress().records["fill:"+p.id].replays,1);
 });
+
+
+test("One Graph Art studio switches across four galleries without mixing progress",()=>{
+  const curveRecord={picture:"parabola-butterfly",records:{
+    "parabola-butterfly":{done:2,replays:0}
+  }};
+  const plotRecord={picture:"little-umbrella",records:{
+    "little-umbrella":{done:1,phase:"plot",plotIndex:0,points:[],
+      styleChoice:null,verified:[],replays:0}
+  }};
+  const initial={
+    "inequality-ink-curve-fill-v2":JSON.stringify(curveRecord),
+    "inequality-ink-plot-shade-v2":JSON.stringify(plotRecord)
+  };
+  const s=session(initial),{$}=s;
+  const urls=[];
+  s.win.location={href:"https://example.com/regions/",search:"",
+    assign:url=>urls.push(url)};
+  $("graphModeCurve").click();
+  assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
+  assert.equal($("graphPictureCards").children.length,5);
+  assert.match($("graphGalleryProgress").textContent,/1 of 5 completed/);
+  assert.ok($("graphPreviewSvg").children.some(n=>n.tagName==="path"),
+    "Curve gallery should preview actual curved regions");
+  assert.equal($("graphPreviewStage").textContent,"2 · Step Up",
+    "Completed first stage should recommend the next challenge");
+  $("graphPictureCards").children[0].click();
+  assert.match($("graphStartPicture").textContent,/View completed picture/);
+  assert.equal($("graphPicker").hidden,false,
+    "Selecting a picture should preview it, not immediately start");
+  $("graphStartPicture").click();
+  assert.equal(urls.at(-1),"./curve.html?picture=parabola-butterfly");
+  $("graphModePlot").click();
+  assert.equal($("graphModePlot").getAttribute("aria-pressed"),"true");
+  assert.equal($("graphPictureCards").children.length,5);
+  assert.match($("graphGalleryProgress").textContent,/0 of 5 completed/);
+  $("graphPictureCards").children[0].click();
+  assert.match($("graphStartPicture").textContent,/Continue picture/);
+  $("graphStartPicture").click();
+  assert.equal(urls.at(-1),"./plot.html?picture=little-umbrella");
+  $("graphModeFill").click();
+  assert.equal($("graphModeFill").getAttribute("aria-pressed"),"true");
+  assert.equal($("graphPictureCards").children.length,5);
+  assert.equal(s.store.get("inequality-ink-curve-fill-v2"),
+    JSON.stringify(curveRecord),"Selecting other modes must preserve curve progress");
+  assert.equal(s.store.get("inequality-ink-plot-shade-v2"),
+    JSON.stringify(plotRecord),"Selecting other modes must preserve plot progress");
+});
+
+test("The hub needs a separate, visible Start action to open linear pictures",()=>{
+  const s=session(),{$}=s;
+  $("graphPictureCards").children[2].click();
+  assert.equal($("graphPicker").hidden,false);
+  assert.equal($("graphPictureCards").children[2].getAttribute("aria-pressed"),"true");
+  assert.match($("graphPreviewStage").textContent,/3 · Building/);
+  $("graphStartPicture").click();
+  assert.equal($("graphPlay").hidden,false);
+  $("graphBack").click();
+  assert.equal($("graphPicker").hidden,false);
+  assert.equal($("graphPictureCards").children[2].getAttribute("aria-pressed"),"true");
+});
