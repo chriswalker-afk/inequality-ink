@@ -1,6 +1,6 @@
 /* Plot & Shade inherits Graph Art's visual language and adds a small
    contextual plotting toolbar rather than a separate page design. */
-.plot-page .plot-picture-grid{grid-template-columns:minmax(0,240px)}
+.plot-page .plot-picture-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
 .plot-page .plot-gallery-note{font-size:.75rem;color:#758a91;line-height:1.55;margin:13px 0 0}
 .plot-page .plot-picture-grid .graph-picture-card{width:100%}
 .plot-page #plotGraph{display:block;width:100%;max-width:525px;height:auto;aspect-ratio:1;touch-action:none;cursor:crosshair;outline-offset:3px}
@@ -19,6 +19,10 @@
 .plot-page .plot-rule-plot{border-color:#88bcab;background:#ecf8f0}
 .plot-page .plot-rule-plot .rule-state{color:#267e68}
 .plot-page .plot-rule-given{background:#f9faf7}
+.plot-page .graph-rule-item{overflow-wrap:anywhere;min-width:0}
+.plot-page .graph-rule-list{max-height:270px}
+.plot-page .graph-card-progress span{transition:width .3s ease}
+.plot-page .plot-picture-grid .graph-picture-card{min-height:0}
 .plot-page #plotFeedback{overflow-wrap:break-word}
 .plot-page .plot-mobile-dock{display:none}
 .plot-page .plot-preview-point{filter:drop-shadow(0 1px 2px #34586644)}
@@ -27,7 +31,11 @@
 .plot-page #plotRevealSvg .plot-detail-enter{transform-box:fill-box;transform-origin:center;animation:plot-detail-pop .56s cubic-bezier(.2,1.4,.4,1) both}
 @keyframes plot-piece-pop{from{opacity:.12;transform:scale(.87)}to{opacity:1;transform:scale(1)}}
 @keyframes plot-detail-pop{from{opacity:0;transform:scale(.48)}to{opacity:1;transform:scale(1)}}
+@media(min-width:781px) and (max-width:1120px){
+ .plot-page .plot-picture-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 @media(max-width:780px){
+ .plot-page .plot-picture-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .plot-page #plotPlay{padding-bottom:86px}
   .plot-page .plot-mobile-equation{display:block;color:#3c6e6a;background:#edf7f1;border-radius:8px;padding:5px 9px;font-size:.8rem;font-weight:800;margin-bottom:6px}
   .plot-page #plotGraph{max-width:min(100%,43dvh,410px)}
