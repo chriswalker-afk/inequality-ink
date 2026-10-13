@@ -239,7 +239,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
       ". Look for where the curve is "+(q.operator[0]==="<"?"below":"above")+
       " the axis; the sign tells you whether each root is included.";
   }
-  function question(){
+  function loadQuestion(){
     cancelTimer();
     if(progress.done>=QUEST_TOTAL){finish(false);return;}
     question=QUEST_QUESTIONS[progress.done];
@@ -302,7 +302,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
       timer=null;
       if(progress.done===QUEST_TOTAL){finish(true);}
       else{
-        question();
+        loadQuestion();
         if(win.matchMedia?.("(max-width:740px)")?.matches)
           $("questQuestionStep").scrollIntoView?.({behavior:"smooth",block:"start"});
       }
@@ -353,7 +353,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     $("questPlaying").hidden=progress.done===QUEST_TOTAL;
     $("questFinished").hidden=progress.done!==QUEST_TOTAL;
     if(progress.done===QUEST_TOTAL)finish(false);
-    else question();
+    else loadQuestion();
     win.scrollTo?.({top:0,behavior:"instant"});
   }
   function closeReveal(){
@@ -363,13 +363,13 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     cancelTimer();closeReveal();onReturn();updateEntry();
   }
   function restart({confirmFirst=true}={}){
-    if(confirmFirst&&!win.confirm?.(
+    if(confirmFirst&&!(win.confirm||globalThis.confirm)(
       "Restart Quadratic Quest? Its bonus picture progress will reset; other pictures are safe."
     ))return;
     cancelTimer();closeReveal();
     progress={...fresh(),replay:progress.replay+1};store();
     $("questFinished").hidden=true;$("questPlaying").hidden=false;
-    question();
+    loadQuestion();
     win.scrollTo?.({top:0,behavior:"instant"});
   }
   $("questEnter").addEventListener("click",open);
