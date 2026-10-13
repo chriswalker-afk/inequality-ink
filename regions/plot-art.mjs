@@ -77,7 +77,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   let save=saved.records[saved.picture]||fresh();
   let screen="picker",selected=null,wrong=null,
     cursor={x:0,y:0},activePoint=save.points.length-1,drag=null,
-    message="",status="",hint="",flashTimer=null,revealTimers=[];
+    message="",status="",hint="",hintStage=0,hintKey="",flashTimer=null,revealTimers=[];
   function picture(){return plotPicture(saved.picture);}
   function persist(){
     saved.records[saved.picture]=save;
@@ -388,6 +388,11 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("plotFeedback").textContent=message||"Place two points to construct the boundary.";
     $("plotHintText").hidden=!hint;
     $("plotHintText").textContent=hint;
+    const currentHintKey=save.done+":"+save.phase+":"+save.plotIndex;
+    const availableHintStage=hintKey===currentHintKey?hintStage:0;
+    $("plotHint").textContent=availableHintStage>=3?"✳ All hints shown":
+      availableHintStage?"✳ More help ("+(availableHintStage+1)+"/3)":"✳ Give me a hint";
+    $("plotHint").disabled=availableHintStage>=3;
     $("plotDockStep").textContent=save.phase==="plot"?"1 · Plot":
       save.phase==="style"?"2 · Style":"3 · Shade";
     $("plotDockUndo").textContent=save.phase==="plot"?"Undo point":
@@ -637,21 +642,43 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function giveHint(){
     if(screen!=="play"||!current())return;
+    const key=save.done+":"+save.phase+":"+save.plotIndex;
+    if(hintKey!==key){hintKey=key;hintStage=0;}
+    hintStage=Math.min(hintStage+1,3);
     if(save.phase==="plot"){
-      const hints=step()?.hints||[];
-      hint=save.points.length?(hints[1]||hints[0]):(hints[0]||"Use key points on the graph.");
-    }else if(save.phase==="style")
-      hint="Solid means equality is included (≤ or ≥). Strict inequality (< or >) means dashed.";
-    else{
-      let answer=null;
-      for(let x=-4.5;x<=4.5&&!answer;x+=.5)
-        for(let y=-4.5;y<=4.5;y+=.5)
-          if(satisfiesAll(current().rules,x,y)){answer={x,y};break;}
-      hint=answer?"Try the point ("+nice(answer.x)+", "+nice(answer.y)+
-        "). Does it satisfy every inequality?":
-        "Test a point away from every boundary, then check each inequality.";
+      const task=step(),hints=task?.hints||[];
+      const first={
+        parabola:"Find the parabola's turning point first, then substitute another x-value to get a second point.",
+        absolute:"Find the vertex of the V-shaped graph first. Then choose a point on either arm.",
+        circle:"Read the circle's centre and radius from its equation. The second point must lie exactly one radius from the centre.",
+        line:"Choose two different points satisfying the equation. For a horizontal or vertical line, keep the appropriate coordinate fixed."
+      };
+      hint=hintStage===1?(first[task?.kind]||"Choose two points that lie exactly on the boundary."):
+        hintStage===2?(hints[0]||"Check your first point against the equation."):
+          (hints[1]||hints[0]||"Substitute a second coordinate pair into the equation.");
+    }else if(save.phase==="style"){
+      hint=hintStage===1?"Look carefully at the inequality sign. Does it allow points on the boundary?":
+        hintStage===2?"Use solid for ≤ or ≥ (equality included); use dashed for < or > (strict inequality).":
+          "This boundary must be "+(targetRule()?.inclusive?"solid, because equality is included.":"dashed, because equality is excluded.");
+    }else{
+      let answer=null,best=-1;
+      for(let x=-4.5;x<=4.5;x+=.5)for(let y=-4.5;y<=4.5;y+=.5){
+        if(!satisfiesAll(current().rules,x,y))continue;
+        const distance=Math.min(...current().rules.map(r=>{
+          if(r.kind==="circle")return Math.abs(Math.hypot(x-r.cx,y-r.cy)-r.r);
+          if(r.kind==="vertical")return Math.abs(x-r.x);
+          const value=r.kind==="absolute"?
+            (r.k+r.a*Math.abs(x-r.h)):r.coeffs.reduce((v,a,i)=>v+a*x**i,0);
+          return Math.abs(y-value);
+        }));
+        if(distance>best){best=distance;answer={x,y};}
+      }
+      hint=hintStage===1?"Test an easy point in each candidate area. Keep only the area where every inequality is true.":
+        hintStage===2?"Check the inequalities one by one. A point in the right region must satisfy all "+current().rules.length+" conditions.":
+          answer?"Try the point ("+nice(answer.x)+", "+nice(answer.y)+"). It satisfies every inequality. Shade the region containing it.":
+          "Use a point away from the boundaries and test it against every inequality.";
     }
-    notify("A hint has appeared below.");playView();
+    notify("Hint "+hintStage+" of 3 is shown below.");playView();
   }
   function worldAt(ev){
     const rect=svg.getBoundingClientRect();
