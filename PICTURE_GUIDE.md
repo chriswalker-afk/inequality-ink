@@ -65,6 +65,7 @@ Open `PICTURE_DEFINITIONS` in [pictures.mjs](pictures.mjs). Copy the structure o
 | `name` | The true picture name, revealed on completion |
 | `clue` | A playful, non-spoiler title such as `To the Moon`; shown in the picture picker and activity heading until completion |
 | `progression` | Optional mode-specific positions, e.g. `{full:1,solve:1,mixed:1}` for a starter or `{mirror:5}` for a final picture; absent means More pictures |
+| `legacyMathStage` | Only for previously published pictures moved to More pictures: retain their former question difficulty without occupying a current progression stage (e.g. `{mixed:2}`) |
 | `description` | Short non-spoiler metadata |
 | `family` | `"half"` or `"full"` |
 | `levels` | Half: `["mirror"]`; full: any combination of `"full"`, `"solve"`, `"mixed"` |
