@@ -366,7 +366,7 @@ const castle=picture({
 /* Phase 6: optional same-level practice, separate from the five-stage path.
    These pictures are independent mathematical polygons, not copies of art
    whose answers have already been seen. */
-const campTent=picture({
+const campTent=Object.freeze({...picture({
   id:"camping-tent",name:"Mountain Tent",mode:"fill",step:2,
   clue:"Under the Stars",description:"Build a tent, doorway and glowing campfire.",
   focus:"Three genuine intersections · straight lines · changing gradients",
@@ -387,7 +387,7 @@ const campTent=picture({
     S(2,-4,-.5,.22,DETAIL.amber),
     L(2,-3.8,-3.3,-2.9,-3.3,DETAIL.mintInk,.08)
   ]
-});
+}),practice:true});
 const diamondKite=Object.freeze({...picture({
   id:"diamond-kite",name:"Diamond Kite",mode:"build",step:2,
   clue:"Catch the Wind",description:"Read the shaded sides to assemble a kite and bows.",
