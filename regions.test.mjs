@@ -7,7 +7,7 @@ import {
   regionBoundaryStyle,regionCorrect,lineOnRegionGraph,evaluateRegionRule
 } from "./regions/regions-engine.mjs";
 import {
-  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,
+  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_STAGES,GRAPH_ART_DETAIL_COLORS,
   GRAPH_ART_SAVE_KEY,graphPicture,graphModeGallery,graphLegacyExtras,
   graphTotalBoundaries,graphCellAt,graphArrow,validateGraphPictureLibrary
 } from "./regions/graph-art-pictures.mjs";
@@ -151,6 +151,84 @@ test("Displayed inequality text agrees with the geometry at sample coordinates",
             "Misleading displayed inequality '"+r.text+"' at ("+x+","+y+")");
         }
     }
+});
+
+test("Decorations outside coloured regions remain visible on the ivory canvas",()=>{
+  const luminance=color=>{
+    assert.match(color,/^#[0-9a-fA-F]{6}$/);
+    const channels=[1,3,5].map(i=>
+      parseInt(color.slice(i,i+2),16)/255)
+      .map(c=>c<=0.04045?c/12.92:((c+0.055)/1.055)**2.4);
+    return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+  };
+  const contrast=(a,b)=>{
+    const [bright,dark]=[luminance(a),luminance(b)].sort((a,b)=>b-a);
+    return (bright+.05)/(dark+.05);
+  };
+  const canvas="#fffcf8";
+  for(const [name,color] of Object.entries(GRAPH_ART_DETAIL_COLORS)){
+    assert.ok(contrast(color,canvas)>=3,
+      "Shared accent "+name+" must remain visible against the ivory canvas");
+  }
+  for(const picture of GRAPH_ART_PICTURES){
+    if(!Array.isArray(picture.details))continue;
+    for(const [index,d] of picture.details.entries()){
+      // Decorations wholly outside any coloured region (stars, water, bows)
+      // cannot use the near-white colours kept for in-shape highlights.
+      const center=d.type==="line"?
+        {x:(d.x1+d.x2)/2,y:(d.y1+d.y2)/2}:
+        {x:d.x,y:d.y};
+      const onArt=picture.pieces.some(part=>part.rules.every(rule=>
+        evaluateRegionRule(rule,center.x,center.y)<=1e-7));
+      if(!onArt){
+        assert.ok(contrast(d.color,canvas)>=3,
+          picture.id+" detail "+index+" ("+d.type+") "+
+          d.color+" is too faint against the canvas");
+      }
+    }
+  }
+  const flag=graphPicture("signal-flag");
+  assert.equal(flag.details[0].outline,GRAPH_ART_DETAIL_COLORS.brown,
+    "Keep the sunny star distinct from its coral banner");
+  const mountain=graphPicture("mountain-morning");
+  assert.equal(mountain.details.filter(d=>d.type==="line"&&d.outline).length,2,
+    "The snowcaps should remain legible over the mountains");
+  const castle=graphPicture("moonlit-castle");
+  assert.equal(castle.details.filter(d=>d.type==="rect"&&d.outline).length,2,
+    "Castle windows should retain a darker outline");
+});
+
+test("Finished reveal renders decorative outlines and legacy artwork details",()=>{
+  const s=session(),{$,app}=s;
+  app.choose("mountain-morning","build");
+  app.showFinished();
+  const snowy=$("graphRevealSvg").children.filter(el=>el.tagName==="line"&&
+    el.getAttribute("stroke")===GRAPH_ART_DETAIL_COLORS.mintInk);
+  assert.equal(snowy.length,2,"A dark under-stroke must outline both snowy ridges");
+
+  app.choose("moonlit-castle","build");
+  app.showFinished();
+  const castleWindows=$("graphRevealSvg").children.filter(el=>
+    el.tagName==="rect"&&
+    el.getAttribute("stroke")===GRAPH_ART_DETAIL_COLORS.brown);
+  assert.equal(castleWindows.length,2);
+
+  app.choose("signal-flag","fill");
+  app.showFinished();
+  const outlinedStars=$("graphRevealSvg").children.filter(el=>
+    el.tagName==="polygon"&&
+    el.getAttribute("stroke")===GRAPH_ART_DETAIL_COLORS.brown);
+  assert.equal(outlinedStars.length,1);
+
+  for(const [picture,mode,colour,expected] of [
+    ["little-house","fill",GRAPH_ART_DETAIL_COLORS.gold,1],
+    ["aurora-crystal","build",GRAPH_ART_DETAIL_COLORS.terracotta,3]
+  ]){
+    app.choose(picture,mode);app.showFinished();
+    const sparkle=$("graphRevealSvg").children.filter(el=>
+      el.tagName==="text"&&el.getAttribute("fill")===colour);
+    assert.equal(sparkle.length,expected,picture+" exterior sparkles should stand out");
+  }
 });
 
 test("The original Little House and Aurora Crystal mathematics is unchanged",()=>{

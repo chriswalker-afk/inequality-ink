@@ -61,6 +61,11 @@ inequality is a real boundary, the intersection has the exact authored area,
 and piece counts increase strictly in both modes. Students' drawings
 **cannot** be unlocked by answering unrelated questions.
 
+Decorative finishing details use a small shared contrast-safe accent palette
+for features against the ivory canvas. Pale highlights inside the artwork
+retain thin contrasting outlines where needed (snowcaps, gift details,
+window panes), while the inequality-generated picture regions are unchanged.
+
 The original **Little House** and **Aurora Crystal** IDs, piece order,
 inequalities and saved progress remain intact. Existing work in the other
 mode is retained in an optional **Earlier pictures with saved progress**

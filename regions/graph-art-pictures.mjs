@@ -109,12 +109,30 @@ function polygonPiece(id,name,color,points,{strict=[],standard=[],flip=[]}={}){
     Object.freeze({x:p[0],y:p[1]})));
   return piece(id,name,color,edges,frozenVertices);
 }
+// Details must read both on the coloured geometry and on the ivory canvas.
+// Keep delicate pale highlights on filled shapes, but use darker accents for
+// elements floating outside the picture. The latter meet approximately 3:1
+// non-text contrast against the graph's #fffcf8 canvas.
+export const GRAPH_ART_DETAIL_COLORS=Object.freeze({
+  gold:"#ac773d",
+  amber:"#b78349",
+  terracotta:"#ae7156",
+  teal:"#4b8f9e",
+  deepTeal:"#367c83",
+  mintInk:"#2f6170",
+  plum:"#8274b1",
+  brown:"#885740",
+  berry:"#a85970"
+});
+const DETAIL=GRAPH_ART_DETAIL_COLORS;
 const D=(type,stage,attrs)=>Object.freeze({type,stage,...attrs});
-const L=(stage,x1,y1,x2,y2,color="#fff4db",width=.1)=>
-  D("line",stage,{x1,y1,x2,y2,color,width});
+const L=(stage,x1,y1,x2,y2,color=DETAIL.gold,width=.1,outline=null)=>
+  D("line",stage,{x1,y1,x2,y2,color,width,outline});
 const C=(stage,x,y,r,color)=>D("circle",stage,{x,y,r,color});
-const S=(stage,x,y,r,color)=>D("star",stage,{x,y,r,color});
-const R=(stage,x,y,w,h,color)=>D("rect",stage,{x,y,w,h,color});
+const S=(stage,x,y,r,color,outline=null)=>
+  D("star",stage,{x,y,r,color,outline});
+const R=(stage,x,y,w,h,color,outline=null)=>
+  D("rect",stage,{x,y,w,h,color,outline});
 const E=(stage,x,y,rx,ry,color)=>D("ellipse",stage,{x,y,rx,ry,color});
 
 // Find & Fill: 2 → 3 → 4 → 6 → 9 regions.
@@ -127,7 +145,8 @@ const flag=picture({
     polygonPiece("banner","The colourful banner","#ef887f",rect(-2,0,3,3))
   ],
   details:[
-    S(0,.45,1.5,.72,"#fff2b2"),S(1,3.65,3.75,.32,"#f4bf77"),
+    S(0,.45,1.5,.72,"#e7c86e",DETAIL.brown),
+    S(1,3.65,3.75,.32,DETAIL.gold),
     L(1,-3.5,-4,-1.5,-4,"#58717c",.14)
   ]
 });
@@ -172,11 +191,11 @@ const sail=picture({
       diamond(3.25,3.25,.75,.75))
   ],
   details:[
-    L(0,-4.5,-3.5,-2.9,-3.5,"#9dd2d8",.09),
-    L(0,.2,-3.55,2.2,-3.55,"#9dd2d8",.09),
+    L(0,-4.5,-3.5,-2.9,-3.5,DETAIL.teal,.09),
+    L(0,.2,-3.55,2.2,-3.55,DETAIL.teal,.09),
     L(0,-.08,-2,-.08,3.2,"#7a6a61",.1),
-    S(1,-3.5,3.7,.32,"#f9d29a"),
-    C(1,3.25,3.25,.3,"#ffe7a0")
+    S(1,-3.5,3.7,.32,DETAIL.gold),
+    C(1,3.25,3.25,.3,DETAIL.amber)
   ]
 });
 const fox=picture({
@@ -199,10 +218,10 @@ const fox=picture({
       diamond(0,-1.75,.5,.5),{standard:[1,3]})
   ],
   details:[
-    C(0,-2,-1.1,.24,"#eab6aa"),C(0,2,-1.1,.24,"#eab6aa"),
-    L(1,-.45,-2.3,-1.8,-2.55,"#fff0d9",.075),
-    L(1,.45,-2.3,1.8,-2.55,"#fff0d9",.075),
-    S(1,3.65,3.8,.28,"#ebc58e")
+    C(0,-2,-1.1,.24,DETAIL.berry),C(0,2,-1.1,.24,DETAIL.berry),
+    L(1,-.45,-2.3,-1.8,-2.55,DETAIL.brown,.075),
+    L(1,.45,-2.3,1.8,-2.55,DETAIL.brown,.075),
+    S(1,3.65,3.8,.28,DETAIL.gold)
   ]
 });
 const rocket=picture({
@@ -233,10 +252,10 @@ const rocket=picture({
   ],
   details:[
     C(0,0,.75,.3,"#d3f7f7"),
-    L(0,-1.2,-.2,1.2,-.2,"#e8f7ed",.09),
-    S(1,-3.65,2.9,.38,"#f8dfaa"),
-    S(1,3.65,-.7,.23,"#d8d6fa"),
-    S(2,-4,-3.8,.22,"#f3c9a0")
+    L(0,-1.2,-.2,1.2,-.2,DETAIL.deepTeal,.09),
+    S(1,-3.65,2.9,.38,DETAIL.amber),
+    S(1,3.65,-.7,.23,DETAIL.plum),
+    S(2,-4,-3.8,.22,DETAIL.amber)
   ]
 });
 
@@ -252,10 +271,10 @@ const gift=picture({
       rect(-.5,-3,.5,1.5))
   ],
   details:[
-    E(0,-.6,2.05,.9,.43,"#f5d594"),
-    E(0,.6,2.05,.9,.43,"#f5d594"),
-    C(1,0,2,.22,"#e8a877"),S(1,3.4,3.2,.32,"#dfb99e"),
-    L(1,-2.2,-2.55,-1.4,-2.55,"#f7c4d3",.1)
+    E(0,-.6,2.05,.9,.43,DETAIL.amber),
+    E(0,.6,2.05,.9,.43,DETAIL.amber),
+    C(1,0,2,.22,DETAIL.brown),S(1,3.4,3.2,.32,DETAIL.terracotta),
+    L(1,-2.2,-2.55,-1.4,-2.55,DETAIL.berry,.1)
   ]
 });
 const mountains=picture({
@@ -271,10 +290,10 @@ const mountains=picture({
       diamond(3,3,1,1),{strict:[1]})
   ],
   details:[
-    L(0,-.5,1,-1.15,.35,"#e9f4ef",.10),
-    L(0,-.5,1,.15,.35,"#e9f4ef",.10),
-    C(1,-3.5,3.5,.22,"#f2e0bc"),
-    S(1,-2.5,3.9,.27,"#f2d48e")
+    L(0,-.5,1,-1.15,.35,"#b9ddd0",.10,DETAIL.mintInk),
+    L(0,-.5,1,.15,.35,"#b9ddd0",.10,DETAIL.mintInk),
+    C(1,-3.5,3.5,.22,DETAIL.amber),
+    S(1,-2.5,3.9,.27,DETAIL.gold)
   ]
 });
 const robot=picture({
@@ -299,7 +318,7 @@ const robot=picture({
     C(0,1.05,1.1,.18,"#ddf9ec"),
     L(1,-.75,.2,.75,.2,"#365771",.12),
     C(1,0,-1.8,.34,"#e6d097"),
-    S(2,-3.55,3.8,.27,"#e4bb83")
+    S(2,-3.55,3.8,.27,DETAIL.gold)
   ]
 });
 // Preserve Aurora Crystal's original five facet rules and progress exactly.
@@ -334,13 +353,13 @@ const castle=picture({
       diamond(0,4.25,.5,.5),{standard:[0,2],strict:[3]})
   ],
   details:[
-    R(0,-3.6,.15,.85,.65,"#eff1d5"),
-    R(0,2.75,.15,.85,.65,"#eff1d5"),
+    R(0,-3.6,.15,.85,.65,"#cfcfaf",DETAIL.brown),
+    R(0,2.75,.15,.85,.65,"#cfcfaf",DETAIL.brown),
     R(0,-.6,-.1,1.2,.5,"#f2d6ad"),
-    L(1,-4,-1.1,-2,-1.1,"#eee1cf",.06),
-    L(1,2,-1.1,4,-1.1,"#eee1cf",.06),
+    L(1,-4,-1.1,-2,-1.1,"#75637c",.06),
+    L(1,2,-1.1,4,-1.1,"#75637c",.06),
     L(1,-.25,1.5,-.25,4,"#675b77",.075),
-    S(2,-.5,4.2,.2,"#fff0bc")
+    S(2,-.5,4.2,.2,DETAIL.gold)
   ]
 });
 const galleries=Object.freeze({
