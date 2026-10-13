@@ -76,6 +76,11 @@ function finish(s,p){
     s.$("graphCheckFill").click();
   }
   assert.equal(s.$("curveSummary").hidden,false);
+  assert.equal(s.$("curveSummaryMetrics").children.length,3);
+  assert.equal(s.$("curvePieceMarkers").children.length,p.pieces.length);
+  assert.ok(s.$("curveSummaryArt").children.some(node=>node.tagName==="path"),
+    "Completed curve artwork should be visible on the summary screen");
+  assert.ok(s.$("curveSavePicture").listeners.get("click")?.length);
   assert.equal(s.$("curveReveal").getAttribute("open"),"");
   s.$("curveRevealSkip").click();
   assert.ok(details(s.$("graphRevealSvg")).length>=8);

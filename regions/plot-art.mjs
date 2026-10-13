@@ -1,3 +1,4 @@
+import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
@@ -335,6 +336,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("plotPieceCount").textContent="Piece "+(save.done+1)+" of "+p.pieces.length;
     $("plotCanvasCount").textContent=save.done+" / "+p.pieces.length;
     $("plotProgressFill").style.width=(100*save.done/p.pieces.length)+"%";
+    renderPieceMarkers($("plotPieceMarkers"),doc,p.pieces.length,save.done);
     $("plotProgress").setAttribute("aria-valuenow",
       String(Math.round(100*save.done/p.pieces.length)));
     $("plotTaskKicker").textContent="PIECE "+(save.done+1)+" OF "+p.pieces.length;
@@ -419,6 +421,18 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("plotSummaryStats").textContent=p.pieces.length+" regions · "+
       p.pieces.reduce((n,part)=>n+plotSteps(part).length,0)+
       " graph constructions · "+p.stage;
+    const art=$("plotSummaryArt");
+    baseGraph(art,{grid:false});
+    for(const part of p.pieces)
+      drawPiece(art,part,{fill:part.color,stroke:"#fff9ed",
+        "stroke-width":3.5,"pointer-events":"none"});
+    drawDetails(art,p);
+    art.setAttribute("aria-label","Completed plotted inequality art: "+p.name);
+    renderSummaryMetrics($("plotSummaryMetrics"),doc,[
+      {value:p.pieces.length,label:"Picture pieces"},
+      {value:p.pieces.reduce((n,part)=>n+plotSteps(part).length,0),label:"Graphs plotted"},
+      {value:p.step+" / 5",label:"Stage complete"}
+    ]);
     $("plotNextPicture").hidden=p.step===PLOT_PICTURES.length;
   }
   function setScreen(next){
@@ -802,6 +816,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   $("plotRevealSkip").addEventListener("click",showFinished);
   $("plotRevealAgain").addEventListener("click",playReveal);
   $("plotDownload").addEventListener("click",savePNG);
+  $("plotSavePicture").addEventListener("click",()=>{showFinished();savePNG();});
   reveal.addEventListener("cancel",ev=>{ev.preventDefault?.();closeReveal();});
   setScreen("picker");
   if(linkedPicture)choosePicture(linkedPicture);

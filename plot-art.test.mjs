@@ -112,6 +112,11 @@ function completePicture(s,p){
   }
   assert.equal(s.app.readProgress().done,p.pieces.length);
   assert.equal(s.$("plotSummary").hidden,false);
+  assert.equal(s.$("plotSummaryMetrics").children.length,3);
+  assert.equal(s.$("plotPieceMarkers").children.length,p.pieces.length);
+  assert.ok(s.$("plotSummaryArt").children.some(node=>node.tagName==="path"),
+    "Completed plotted artwork should be visible without another reveal");
+  assert.ok(s.$("plotSavePicture").listeners.get("click")?.length);
   assert.equal(s.$("plotReveal").getAttribute("open"),"");
   s.$("plotRevealSkip").click();
   assert.equal(s.$("plotDownload").hidden,false);

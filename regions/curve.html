@@ -9,9 +9,10 @@
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
   <link rel="stylesheet" href="./regions.css?v=five-stage-v4" />
   <link rel="stylesheet" href="./curve-art.css?v=curve-full-v5" />
+  <link rel="stylesheet" href="../studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="../help/how-to-play.css?v=guide-v1" />
   <script type="module" src="../help/how-to-play.mjs?v=guide-v1"></script>
-  <script type="module" src="./curve-art.mjs?v=curve-full-v5"></script>
+  <script type="module" src="./curve-art.mjs?v=studio-pass3"></script>
 </head>
 <body class="regions-page curve-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -64,6 +65,7 @@
         <div class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="graphProgress">
           <div id="graphProgressFill"></div>
         </div>
+        <div id="curvePieceMarkers" class="graph-piece-markers" aria-hidden="true"></div>
         <div class="region-workspace graph-workspace">
           <section class="panel graph-canvas-panel" aria-labelledby="graphCanvasHeading">
             <div class="graph-panel-top">
@@ -106,12 +108,15 @@
         </div>
       </section>
       <section id="curveSummary" class="graph-summary" hidden aria-labelledby="curveSummaryTitle">
-        <div class="eyebrow">YOUR MATHEMATICAL ART IS COMPLETE ✦</div>
+        <div class="eyebrow">MASTERPIECE COMPLETE ✦</div>
         <h1 id="curveSummaryTitle">Parabola Butterfly</h1>
         <p id="curveSummaryText">You created each coloured region by finding the intersection of its inequalities.</p>
+        <div class="graph-summary-art-shell"><svg id="curveSummaryArt" viewBox="0 0 620 620" role="img" aria-label="Your completed mathematical artwork"></svg></div>
+        <div id="curveSummaryMetrics" class="graph-summary-metrics" aria-label="Picture completion statistics"></div>
         <div id="curveSummaryStats" class="graph-summary-stats">2 curved regions · 6 inequalities</div>
         <div class="graph-summary-buttons">
-          <button type="button" id="curveReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
+          <button type="button" id="curveReplayReveal" class="button button-light">Watch reveal ✦</button>
+          <button type="button" id="curveSavePicture" class="button button-light">Save picture ↓</button>
           <button type="button" id="curveRestart" class="button button-light">Play again ↻</button>
           <button type="button" id="curveNextPicture" class="button button-primary">Next picture →</button>
           <button type="button" id="curveChooseAgain" class="button button-light">Choose a picture</button>

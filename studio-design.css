@@ -1,0 +1,328 @@
+/* Inequality Ink · Shared studio design system (alignment pass 3)
+   Presentation only. SVG endpoint gestures, graph picking and saved state
+   are governed by the existing game modules, not by this stylesheet. */
+:root {
+  --ink-navy:#304760;
+  --ink-teal:#368b76;
+  --ink-teal-deep:#286e60;
+  --ink-teal-wash:#e9f6ee;
+  --ink-paper:#fffdf9;
+  --ink-border:#dce5df;
+  --ink-muted:#687b87;
+  --ink-shadow:0 12px 35px #354d4912;
+  --ink-focus:#d7a553;
+}
+:is(.play-screen,.paint-screen,.quest-screen) .panel,
+.regions-page .graph-play .panel{
+  border:1px solid var(--ink-border);
+  border-radius:19px;
+  background:var(--ink-paper);
+  box-shadow:var(--ink-shadow);
+}
+:is(.play-screen,.paint-screen,.quest-screen) .panel-kicker,
+.regions-page .graph-play .panel-kicker {
+  color:#578678;
+}
+.play-screen .play-heading,
+.regions-page .graph-game-top{
+  border-bottom:1px solid #e9e7e0;
+  padding-bottom:12px;
+}
+.play-screen .play-heading h1,.regions-page .graph-game-title h1{
+  color:var(--ink-navy);
+  letter-spacing:-.05em;
+}
+.play-screen .play-heading-actions .button,
+.regions-page .graph-game-top .graph-quiet-button{
+  border-radius:10px;
+}
+.play-screen .progress-track,
+.paint-progress .progress-track,
+.quest-progress .progress-track,
+.regions-page .graph-progress-track{
+  height:7px;
+  border-radius:99px;
+  background:#e3e9e4;
+  overflow:hidden;
+  box-shadow:inset 0 1px 2px #345a5710;
+}
+.play-screen .progress-fill,
+.paint-progress .progress-fill,
+.quest-progress .progress-fill,
+.regions-page #graphProgressFill,
+.regions-page #plotProgressFill{
+  background:linear-gradient(90deg,#519c89,#75bda1);
+  border-radius:99px;
+}
+.play-screen .progress-markers span{
+  height:6px;
+  background:#e1e6e1;
+  border-radius:6px;
+}
+.play-screen .progress-markers span.done{background:#57a38c}
+.regions-page .graph-piece-markers{
+  display:flex;
+  gap:5px;
+  margin:8px 0 14px;
+}
+.regions-page .graph-piece-markers span{
+  flex:1;
+  min-width:0;
+  height:6px;
+  border-radius:99px;
+  background:#e0e7e1;
+}
+.regions-page .graph-piece-markers span.is-done{
+  background:#56a188;
+}
+.regions-page .graph-piece-markers span.is-current{
+  background:#fffcf8;
+  box-shadow:inset 0 0 0 1.5px #6aae97;
+}
+.play-screen .canvas-stage,
+.regions-page .graph-frame,
+.play-screen .numberline-holder,
+.quest-screen .quest-line-frame{
+  border:1px solid #dce6dd;
+  background:#f9fbf7;
+  border-radius:14px;
+}
+.play-screen .canvas-stage svg{
+  border-radius:6px;
+}
+.play-screen .numberline-holder:focus-within,
+.quest-screen .quest-line-frame:focus-within,
+.regions-page .graph-frame:focus-within{
+  border-color:#70ad9a;
+  box-shadow:0 0 0 3px #8ecab536;
+}
+.play-screen .numberline-gesture-tip{
+  margin:4px 0 12px;
+  padding:8px 10px;
+  border-radius:9px;
+  color:#507d71;
+  background:#eef7f0;
+  font-size:.74rem;
+  font-weight:700;
+  line-height:1.45;
+}
+.play-screen .numberline-gesture-tip strong{color:#2f7766}
+/* Keep SVG hit targets untouched; the original quick-tap / drag distinction
+   is essential on both phone and desktop. */
+.play-screen .draw-line-holder svg [data-endpoint]{
+  cursor:pointer;
+  touch-action:none;
+}
+.play-screen .draw-line-holder svg [data-endpoint]:focus-visible{
+  outline:none;
+}
+.play-screen .draw-line-holder svg [data-endpoint]:focus-visible circle:last-child{
+  stroke:#d39748;
+  stroke-width:3.5;
+}
+:is(.play-screen,.quest-screen) :is(.circle-buttons,.quest-inclusion,.direction-chooser)
+  button:is(.selected,[aria-pressed="true"]),
+.regions-page .graph-choice-row button[aria-pressed="true"],
+.regions-page .plot-choice-row button[aria-pressed="true"]{
+  background:var(--ink-teal-wash);
+  border-color:#69ad97;
+  color:var(--ink-teal-deep);
+  box-shadow:inset 0 0 0 1px #a5d5bd;
+}
+:is(.play-screen,.quest-screen) :is(.circle-buttons,.quest-inclusion,.direction-chooser)
+  button:focus-visible,
+.regions-page .graph-choice-row button:focus-visible,
+.regions-page .plot-nudge-controls button:focus-visible{
+  outline:3px solid var(--ink-focus);
+  outline-offset:2px;
+}
+.play-screen .feedback:not(:empty),
+.paint-screen .feedback:not(:empty),
+.quest-screen .feedback:not(:empty),
+.regions-page .graph-feedback {
+  margin-top:12px;
+  padding:11px 13px;
+  border:1px solid #ead8cb;
+  border-left:4px solid #d18e6a;
+  border-radius:11px;
+  color:#8d5746;
+  background:#fff3ea;
+  line-height:1.52;
+  font-size:.8rem;
+}
+:is(.play-screen,.paint-screen,.quest-screen) .feedback.success:not(:empty),
+.regions-page .graph-feedback.success{
+  color:#286e5b;
+  background:#e9f7ed;
+  border-color:#b9ddc7;
+  border-left-color:#49a581;
+}
+.regions-page .graph-feedback:not(.error):not(.success){
+  background:#f5f8f3;
+  color:#647b83;
+  border-color:#e1e8df;
+  border-left-color:#a2bdb0;
+}
+.regions-page .graph-feedback.error{
+  color:#a04244;
+  background:#fff0ee;
+  border-color:#efc9c5;
+  border-left-color:#d85c60;
+}
+.regions-page .graph-hint,
+.play-screen .hint-panel{
+  border:1px solid #eadfbe;
+  border-left:4px solid #d5a35b;
+  border-radius:11px;
+  background:#fff7e9;
+  color:#765d3d;
+  padding:12px 14px;
+  line-height:1.55;
+}
+.regions-page .graph-commands .button,
+.regions-page .graph-full-button,
+.regions-page .graph-choice-row button,
+.regions-page .graph-game-actions .graph-restart-button,
+.regions-page .graph-summary-buttons .button,
+.play-screen .question-footer .button {
+  min-height:43px;
+}
+.regions-page .graph-help-actions button{
+  min-height:38px;
+  border-radius:9px;
+}
+.regions-page .graph-task-panel .graph-rule-list{
+  scrollbar-color:#b7cec4 #f4f7f2;
+}
+.regions-page .graph-summary{
+  max-width:750px;
+  margin:24px auto 28px;
+  padding:clamp(18px,3vw,32px);
+  background:var(--ink-paper);
+  border:1px solid var(--ink-border);
+  border-radius:22px;
+  box-shadow:var(--ink-shadow);
+}
+.regions-page .graph-summary h1{
+  margin:8px 0 5px;
+  font-size:clamp(1.8rem,4vw,2.9rem);
+  color:var(--ink-navy);
+  letter-spacing:-.055em;
+}
+.regions-page .graph-summary>.eyebrow{
+  color:#c08068;
+  letter-spacing:.12em;
+  font-size:.69rem;
+}
+.regions-page .graph-summary>p{
+  margin:6px auto 13px;
+  max-width:540px;
+  line-height:1.5;
+  font-size:.82rem;
+}
+.regions-page .graph-summary-art-shell{
+  width:min(100%,350px);
+  padding:14px;
+  margin:15px auto 13px;
+  border:1px solid #e1e5db;
+  border-radius:17px;
+  background:#f1f1e8;
+  box-shadow:inset 0 1px 4px #59706712;
+}
+.regions-page .graph-summary-art-shell svg{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:1;
+  background:#fffaf0;
+  border:1px solid #e9e2d4;
+  border-radius:10px;
+}
+.regions-page .graph-summary-metrics{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  max-width:530px;
+  margin:0 auto 10px;
+}
+.regions-page .graph-summary-metric{
+  min-width:0;
+  padding:11px 8px;
+  border:1px solid #e2eae3;
+  border-radius:12px;
+  background:#f3f8f3;
+}
+.regions-page .graph-summary-metric strong{
+  display:block;
+  color:#377d69;
+  font-size:clamp(1.05rem,2.6vw,1.5rem);
+  line-height:1.2;
+}
+.regions-page .graph-summary-metric span{
+  display:block;
+  margin-top:4px;
+  color:#6e8185;
+  font-size:.7rem;
+}
+.regions-page .graph-summary-stats{
+  margin:0 auto 12px;
+  padding:3px 8px;
+  font-size:.73rem;
+  line-height:1.6;
+  color:#719087;
+}
+.regions-page .graph-summary-buttons{
+  display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;
+}
+.regions-page .graph-summary-buttons .button{
+  box-shadow:none;
+  font-size:.78rem;
+  padding:11px 13px;
+}
+.regions-page .graph-summary-buttons .button-primary{
+  background:#31445e;
+  color:#fff;
+}
+.regions-page .graph-summary-buttons .button-primary:hover{
+  background:#405b71;
+}
+.finish-screen .finish-card{
+  border:1px solid var(--ink-border);
+  box-shadow:var(--ink-shadow);
+  background:var(--ink-paper);
+}
+.finish-screen .finished-art-shell{
+  border:1px solid #e1e5db;
+  background:#f1f1e8;
+}
+.finish-screen .finish-stats div{
+  border:1px solid #e2eae3;
+  background:#f3f8f3;
+}
+.finish-screen .finish-stats b{color:#377d69}
+.finish-screen .finish-stats span{color:#70828a}
+@media(max-width:780px){
+  .regions-page .graph-piece-markers{margin:6px 0 9px;gap:4px}
+  .regions-page .graph-piece-markers span{height:5px}
+  .regions-page .graph-progress-track{margin-bottom:0}
+  .regions-page .graph-play .panel{border-radius:15px}
+  .regions-page .graph-summary{margin:15px auto 25px;padding:17px}
+  .regions-page .graph-summary-art-shell{
+    width:min(100%,260px);padding:10px;margin:12px auto;
+  }
+  .regions-page .graph-summary-metrics{gap:6px}
+  .regions-page .graph-summary-metric{padding:9px 5px}
+  .regions-page .graph-summary-metric span{font-size:.64rem}
+  .regions-page .graph-summary-buttons .button{flex:1 1 140px}
+  .play-screen .numberline-gesture-tip{font-size:.7rem;padding:8px 9px}
+  .play-screen .play-heading{padding-bottom:9px}
+}
+@media(max-width:410px){
+  .regions-page .graph-summary-art-shell{width:min(100%,220px)}
+  .regions-page .graph-summary-buttons{gap:7px}
+  .regions-page .graph-summary-buttons .button{padding:9px 8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .regions-page .graph-piece-markers span,
+  .play-screen .progress-markers span{transition:none!important}
+}

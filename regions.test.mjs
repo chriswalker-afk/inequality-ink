@@ -451,8 +451,16 @@ test("Find & Fill completes its quick-win picture without changing other modes",
     x.getAttribute("data-region-layer")==="selection"));
   app.checkFill();
   assert.equal(app.readProgress().records["fill:signal-flag"].done,1);
+  assert.deepEqual($("graphPieceMarkers").children.map(item=>item.className),
+    ["is-done","is-current"],
+    "Graph Art progress markers should reflect real painted regions");
   app.pickAt(0,1.5);app.checkFill();
   assert.equal($("graphSummary").hidden,false);
+  assert.equal($("graphSummaryMetrics").children.length,3);
+  assert.ok($("graphSummaryArt").children.some(node=>node.tagName==="path"),
+    "Completion screen must show the actual inequality artwork");
+  assert.ok($("graphSavePicture").listeners.get("click")?.length,
+    "A save action should be available without reopening the reveal");
   assert.equal($("graphReveal").getAttribute("open"),"");
   app.showFinished();
   assert.equal($("graphRevealSkip").hidden,true);
