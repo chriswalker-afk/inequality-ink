@@ -73,6 +73,29 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
 .graph-choice-row button{flex:1;min-height:42px;border-radius:9px;border:1px solid #dbe3dc;background:#fff;font:inherit;font-size:.8rem;font-weight:800;color:#465b70;cursor:pointer}
 .graph-choice-row button[aria-pressed=true]{background:#e4f5ec;border-color:#5ea990;color:#287d6b}
 .graph-full-button{width:100%;margin-top:4px}
+.graph-build-controls.is-solved .graph-selected-rule,
+.graph-build-controls.is-solved .graph-choice-set{display:none}
+.graph-build-waiting{
+  margin:5px 0;padding:12px 10px;text-align:center;
+  border:1px solid #c7e4d5;background:#eaf8f0;color:#267358;
+  border-radius:10px;font-size:.82rem;font-weight:800;line-height:1.45
+}
+.graph-next-piece{
+  width:100%;min-height:47px;margin-top:12px;
+  background:#276d64;box-shadow:0 4px 0 #1b514b;
+  animation:graph-next-appear .4s ease-out both
+}
+.graph-next-piece:hover{background:#328878}
+.graph-build-controls.is-solved .graph-overlap-note{
+  border-color:#83bca7;background:#e3f5eb;margin-top:7px;
+}
+.graph-build-controls.is-solved .graph-overlap-note p{
+  color:#315c50;font-size:.8rem;line-height:1.65
+}
+@keyframes graph-next-appear{
+  from{opacity:0;transform:translateY(7px)}
+  to{opacity:1;transform:translateY(0)}
+}
 .graph-feedback{min-height:42px;margin:11px 0;padding:10px 12px;border:1px solid #e4e9df;border-radius:9px;background:#f6f8f4;color:#677c86;font-size:.78rem;line-height:1.5}
 .graph-feedback.error{color:#a83c3c;background:#fff0ef;border-color:#edcac7}
 .graph-feedback.success{color:#277e61;background:#ebf8ef;border-color:#bfe3ca}
@@ -148,8 +171,13 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
 .graph-wrong-flash{animation:graph-wrong .7s ease-in-out 2}
 .graph-good-flash{animation:graph-good .8s ease-in-out 2}
 .graph-arrow-enter{animation:graph-arrow-enter .65s cubic-bezier(.16,.8,.2,1) both}
-.graph-arrow-converge{animation:graph-arrow-converge 1.5s ease-in-out both}
-.graph-common-pulse{animation:graph-common-highlight 1.5s ease-in-out both}
+.graph-arrow-converge{animation:graph-arrow-converge 2.35s ease-in-out both}
+.graph-common-pulse{animation:graph-common-highlight 2.35s ease-in-out both}
+@keyframes graph-build-settle{
+  from{opacity:.6;fill-opacity:.5}
+  to{opacity:1;fill-opacity:1}
+}
+.graph-build-settled{animation:graph-build-settle .55s ease-out both}
 @media(max-width:780px){
  .graph-mode-grid,.graph-picture-grid,.graph-how-grid{grid-template-columns:1fr}
  .region-workspace{grid-template-columns:1fr;gap:10px}
@@ -181,7 +209,8 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
 }
 @media(prefers-reduced-motion:reduce){
  .graph-wrong-flash,.graph-good-flash,.graph-arrow-enter,
- .graph-arrow-converge,.graph-common-pulse{animation:none!important}
+ .graph-arrow-converge,.graph-common-pulse,
+ .graph-build-settled,.graph-next-piece{animation:none!important}
  .graph-common-pulse{fill-opacity:.45}
  #graphProgressFill{transition:none}
 }
