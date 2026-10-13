@@ -23,6 +23,22 @@ Paint by Inequalities one-screen workspace is unchanged. The layout
 reorganises markup and CSS only: student saves, questions, artwork,
 mathematical marking, Quadratic Quest and Graph Art remain independent.
 
+## Plot & Shade — Phase 3 playable prototype
+
+[Try Plot & Shade](regions/plot.html) from the fourth card in Graph Art. This
+starter prototype contains an original two-piece **Little Umbrella**. Students
+plot a parabola from its vertex and another valid point, then plot a line using
+any two correct points; they choose solid/dashed line styles and select the
+common region. Incorrect shading flashes red, correct shading stays until
+Check, and the picture finishes with a staged Big Reveal.
+
+Point placement snaps to half units, supports drag, keyboard coordinate cursor
+and half-unit nudge buttons, and gives specific plotting feedback. The mobile
+view keeps a compact action bar close to the graph. Progress saves under its
+own key without touching Pixel Art or the three existing Graph Art modes.
+
+See [Plot & Shade prototype notes](PLOT_SHADE_PROTOTYPE.md).
+
 ## Two art studios: Pixel Art / Graph Art
 
 A shared **Pixel Art / Graph Art** selector switches between independent
