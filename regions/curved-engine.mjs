@@ -1,12 +1,34 @@
 // Phase 1 curved-region engine. Strictness changes boundary strokes, not area.
 export const WORLD=Object.freeze({xmin:-5,xmax:5,ymin:-5,ymax:5});
 const tol=1e-8;
-export const q=(id,text,coeffs,side,inclusive=true)=>Object.freeze({id,text,kind:"function",coeffs,side,inclusive});
-export const vertical=(id,text,x,side,inclusive=true)=>Object.freeze({id,text,kind:"vertical",x,side,inclusive});
-export function functionValue(rule,x){return rule.coeffs.reduce((sum,c,i)=>sum+c*x**i,0);}
+export const q=(id,text,coeffs,side,inclusive=true)=>
+  Object.freeze({id,text,kind:"function",coeffs:Object.freeze([...coeffs]),side,inclusive});
+export const vertical=(id,text,x,side,inclusive=true)=>
+  Object.freeze({id,text,kind:"vertical",x,side,inclusive});
+export const absolute=(id,text,h,k,a,side,inclusive=true)=>
+  Object.freeze({id,text,kind:"absolute",h,k,a,side,inclusive});
+export const circleRule=(id,text,cx,cy,r,side="inside",inclusive=true)=>
+  Object.freeze({id,text,kind:"circle",cx,cy,r,side,inclusive});
+// Vertex form is useful when authoring translated parabolas; the displayed
+// equation remains an independently authored, student-readable inequality.
+export const parabola=(id,text,a,h,k,side,inclusive=true)=>
+  q(id,text,[a*h*h+k,-2*a*h,a],side,inclusive);
+
+export function functionValue(rule,x){
+  if(rule.kind==="absolute")return rule.k+rule.a*Math.abs(x-rule.h);
+  if(rule.kind==="function")return rule.coeffs.reduce((sum,c,i)=>sum+c*x**i,0);
+  throw Error("Not a y=f(x) boundary");
+}
 export function signedDifference(rule,x,y){
-  if(rule.kind==="function")return rule.side==="above"?y-functionValue(rule,x):functionValue(rule,x)-y;
+  if(rule.kind==="function"||rule.kind==="absolute"){
+    const delta=y-functionValue(rule,x);
+    return rule.side==="above"?delta:-delta;
+  }
   if(rule.kind==="vertical")return rule.side==="right"?x-rule.x:rule.x-x;
+  if(rule.kind==="circle"){
+    const d=rule.r**2-(x-rule.cx)**2-(y-rule.cy)**2;
+    return rule.side==="inside"?d:-d;
+  }
   throw Error("Unsupported curve rule");
 }
 export function satisfies(rule,x,y){
@@ -14,42 +36,85 @@ export function satisfies(rule,x,y){
   return rule.inclusive?d>=-tol:d>tol;
 }
 export const satisfiesAll=(rules,x,y)=>rules.every(r=>satisfies(r,x,y));
-export function rangeAtX(rules,x,world=WORLD){
-  let lo=world.ymin,hi=world.ymax;
-  for(const r of rules){
-    if(r.kind==="vertical"){
-      // Boundary membership is checked exactly by satisfies(); fills remain closed geometrically.
-      if(signedDifference(r,x,0)<-tol)return null;
-    }else if(r.kind==="function"){
-      const y=functionValue(r,x);
-      if(r.side==="above")lo=Math.max(lo,y);
-      else hi=Math.min(hi,y);
-    }else throw Error("Unsupported curve rule");
+const clipped=(lo,hi,world)=>({
+  lo:Math.max(lo,world.ymin),hi:Math.min(hi,world.ymax)
+});
+function allowedIntervals(rule,x,world){
+  if(rule.kind==="vertical")
+    return signedDifference(rule,x,0)>=-tol?[{lo:world.ymin,hi:world.ymax}]:[];
+  if(rule.kind==="function"||rule.kind==="absolute"){
+    const y=functionValue(rule,x);
+    return [clipped(rule.side==="above"?y:world.ymin,
+      rule.side==="above"?world.ymax:y,world)];
   }
-  return hi-lo>tol?{lo,hi}:null;
+  if(rule.kind==="circle"){
+    const dx=x-rule.cx,radicand=rule.r*rule.r-dx*dx;
+    if(radicand<0)return rule.side==="outside"?
+      [{lo:world.ymin,hi:world.ymax}]:[];
+    const dy=Math.sqrt(Math.max(0,radicand));
+    if(rule.side==="inside")return [clipped(rule.cy-dy,rule.cy+dy,world)];
+    // Complement of a disk may have two bands at a single x. Keeping them
+    // separate prevents incorrectly painting a hole in a curved region.
+    return [clipped(world.ymin,rule.cy-dy,world),
+      clipped(rule.cy+dy,world.ymax,world)];
+  }
+  throw Error("Unsupported curve rule");
 }
-// A slice boundary is clipped at its exact y values; sampled x only controls
-// display smoothness. Mathematics and hit-testing always use the original rules.
+// Vertical cross-sections can now contain multiple disjoint intervals. This
+// supports exact point membership and the visual complement of circles.
+export function rangeIntervalsAtX(rules,x,world=WORLD){
+  if(!Number.isFinite(x)||x<world.xmin-tol||x>world.xmax+tol)return [];
+  let intervals=[{lo:world.ymin,hi:world.ymax}];
+  for(const rule of rules){
+    const permitted=allowedIntervals(rule,x,world),next=[];
+    for(const a of intervals)for(const b of permitted){
+      const lo=Math.max(a.lo,b.lo),hi=Math.min(a.hi,b.hi);
+      if(hi-lo>tol)next.push({lo,hi});
+    }
+    intervals=next;
+    if(!intervals.length)break;
+  }
+  return intervals.sort((a,b)=>a.lo-b.lo);
+}
+// Retained for Phase 1 callers that expect one vertical interval.
+export function rangeAtX(rules,x,world=WORLD){
+  return rangeIntervalsAtX(rules,x,world)[0]||null;
+}
+// Visual polygons are sampled slices; the inequalities themselves remain the
+// source of truth for marking, including strict/dashed boundaries.
 export function regionPaths(rules,world=WORLD,steps=700){
   if(!Number.isInteger(steps)||steps<10)throw Error("Invalid resolution");
-  const runs=[];let run=[];
-  function finish(){if(run.length>1)runs.push(run);run=[];}
+  const finished=[];let running=[];
+  function close(){
+    for(const run of running)if(run.length>1){
+      const top=run.map(p=>({x:p.x,y:p.hi}));
+      const bottom=[...run].reverse().map(p=>({x:p.x,y:p.lo}));
+      finished.push([...top,...bottom]);
+    }
+    running=[];
+  }
   for(let i=0;i<=steps;i++){
     const x=world.xmin+(world.xmax-world.xmin)*i/steps;
-    const interval=rangeAtX(rules,x,world);
-    if(interval)run.push({x,...interval});
-    else finish();
+    const spans=rangeIntervalsAtX(rules,x,world);
+    if(spans.length!==running.length){
+      close();running=spans.map(span=>[{x,...span}]);
+    }else spans.forEach((span,j)=>running[j].push({x,...span}));
   }
-  finish();
-  return runs.map(points=>{
-    const top=points.map(p=>({x:p.x,y:p.hi}));
-    const bottom=[...points].reverse().map(p=>({x:p.x,y:p.lo}));
-    return [...top,...bottom];
-  });
+  close();
+  return finished;
 }
-export function boundaryPoints(rule,world=WORLD,steps=320){
+export function boundaryPoints(rule,world=WORLD,steps=360){
   if(rule.kind==="vertical")return rule.x>=world.xmin&&rule.x<=world.xmax?
     [{x:rule.x,y:world.ymin},{x:rule.x,y:world.ymax}]:[];
+  if(rule.kind==="circle"){
+    // Circular boundaries are plotted as a closed SVG path. Every authored
+    // Phase 2 circle lies entirely within the graph window.
+    return [Array.from({length:steps+1},(_,i)=>{
+      const angle=i/steps*Math.PI*2;
+      return {x:rule.cx+rule.r*Math.cos(angle),
+        y:rule.cy+rule.r*Math.sin(angle)};
+    })];
+  }
   const runs=[];let run=[];
   for(let i=0;i<=steps;i++){
     const x=world.xmin+(world.xmax-world.xmin)*i/steps;
@@ -60,22 +125,25 @@ export function boundaryPoints(rule,world=WORLD,steps=320){
   if(run.length>1)runs.push(run);
   return runs;
 }
-// The curved analogue of graphCellAt() in graph-art-pictures.mjs.
-// Every selection is a whole sign cell, never just a point. Wrong cells can
-// flash red with precisely the same feedback as linear Find & Fill.
 export function curvedCellAt(rules,x,y,tolerance=.09,world=WORLD){
   if(!Number.isFinite(x)||!Number.isFinite(y)||
     x<=world.xmin||x>=world.xmax||y<=world.ymin||y>=world.ymax)return null;
   const near=rules.some(r=>{
     if(r.kind==="vertical")return Math.abs(x-r.x)<tolerance;
-    const derivative=r.coeffs.reduce((sum,c,i)=>i?sum+i*c*x**(i-1):sum,0);
+    if(r.kind==="circle")
+      return Math.abs(Math.hypot(x-r.cx,y-r.cy)-r.r)<tolerance;
+    const derivative=r.kind==="absolute"?
+      r.a*Math.sign(x-r.h):
+      r.coeffs.reduce((sum,c,i)=>i?sum+i*c*x**(i-1):sum,0);
     return Math.abs(y-functionValue(r,x))/Math.hypot(1,derivative)<tolerance;
   });
   if(near)return null;
   const cellRules=rules.map(r=>{
     const positive=signedDifference(r,x,y)>0;
-    const side=positive?r.side:r.kind==="vertical"?
-      (r.side==="left"?"right":"left"):(r.side==="above"?"below":"above");
+    if(positive)return r;
+    const side=r.kind==="vertical"?(r.side==="left"?"right":"left"):
+      r.kind==="circle"?(r.side==="inside"?"outside":"inside"):
+      (r.side==="above"?"below":"above");
     return {...r,side,inclusive:true};
   });
   const paths=regionPaths(cellRules,world);
@@ -186,12 +254,22 @@ export function validatePicture(p=PICTURE){
     if(d.type==="circle"&&!(d.r>0)||d.type==="star"&&!(d.r>0)||
       d.type==="ellipse"&&!(d.rx>0&&d.ry>0))throw Error("Invalid decoration size "+d.id);
   }
-  if(p.pieces.length!==2)throw Error("Expected two pieces");
+  if(!Array.isArray(p.pieces)||p.pieces.length<2)throw Error("Expected at least two pieces");
   for(const part of p.pieces){
     if(!part.rules.length||!regionPaths(part.rules).length)throw Error("Empty curved region");
     for(const r of part.rules){
-      if(!r.id||!r.text||!["function","vertical"].includes(r.kind))throw Error("Invalid rule");
-      if(r.kind==="function"&&(!Array.isArray(r.coeffs)||r.coeffs.some(c=>!Number.isFinite(c))))throw Error("Invalid polynomial");
+      if(!r.id||!r.text||!["function","vertical","absolute","circle"].includes(r.kind))throw Error("Invalid rule");
+      if(r.kind==="function"&&(!Array.isArray(r.coeffs)||r.coeffs.length>3||
+         r.coeffs.some(c=>!Number.isFinite(c))))throw Error("Invalid polynomial");
+      if(r.kind==="vertical"&&(!Number.isFinite(r.x)||!["left","right"].includes(r.side)))
+        throw Error("Invalid vertical boundary");
+      if(r.kind==="absolute"&&(![r.h,r.k,r.a].every(Number.isFinite)||
+         !["above","below"].includes(r.side)))throw Error("Invalid absolute-value rule");
+      if(r.kind==="circle"&&(![r.cx,r.cy,r.r].every(Number.isFinite)||
+         !(r.r>0)||!["inside","outside"].includes(r.side)))
+        throw Error("Invalid circle rule");
+      if(r.kind==="function"&&!["above","below"].includes(r.side))
+        throw Error("Invalid parabola orientation");
     }
   }
   return true;
