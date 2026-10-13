@@ -25,3 +25,5 @@ jobs:
           node --check paint-pictures.mjs
           node --check starter-pictures.mjs
           node --check paint-starters.mjs
+          node --check regions/regions-app.mjs
+          node --check regions/regions-engine.mjs
