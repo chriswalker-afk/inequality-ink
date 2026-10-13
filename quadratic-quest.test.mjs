@@ -86,8 +86,8 @@ test("Authored display is generated from roots, leading coefficient and RHS",()=
 test("All displayed quadratic answer regions agree with the real polynomial",()=>{
   for(const p of QUEST_PICTURES)for(const q of p.questions){
     const solution=quadraticAnswer(q);
-    assert.equal(quadraticValue(q,q.roots[0]),0,q.id);
-    assert.equal(quadraticValue(q,q.roots[1]),0,q.id);
+    assert.ok(quadraticValue(q,q.roots[0])===0,q.id);
+    assert.ok(quadraticValue(q,q.roots[1])===0,q.id);
     for(let x=p.axis.min-10;x<=p.axis.max+10;x+=0.125)
       assert.equal(quadraticIsTrue(q,x),quadraticAnswerContains(solution,x),
         q.id+" disagrees at x="+x);
