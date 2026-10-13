@@ -168,24 +168,88 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       if(node&&d.stage===enterStage)node.classList?.add("plot-detail-enter");
     }
   }
-  function renderPreview(){
-    baseGraph(preview,{grid:false});
-    for(const [i,part] of PLOT_PICTURE.pieces.entries()){
-      const painted=i<save.done;
-      drawPiece(preview,part,{fill:painted?part.color:"#cbd5d2",
-        "fill-opacity":painted?1:.17,
+  function miniature(svg,p,progress){
+    baseGraph(svg,{grid:false});
+    for(const [i,part]of p.pieces.entries()){
+      const painted=i<progress;
+      drawPiece(svg,part,{
+        fill:painted?part.color:"#cbd5d2",
+        "fill-opacity":painted?1:(i<2?.18:.06),
         stroke:painted?"#fff9ee":"#acbdb9",
-        "stroke-dasharray":painted?"":"9 7","stroke-width":painted?3:1.5});
+        "stroke-dasharray":painted?"":"9 7",
+        "stroke-width":painted?3:1.5
+      });
     }
-    if(save.done===PLOT_PICTURE.pieces.length)drawDetails(preview);
-    $("plotGalleryProgress").textContent=save.done+" of 2 pieces painted"+
-      (save.done===2?" · Picture complete!":"");
-    $("plotCardProgress").style.width=(save.done/2*100)+"%";
-    $("plotCardAction").textContent=save.done===2?"✓ Finished · Play again":
-      save.done?"Continue · 1/2 pieces →":"Start picture →";
+    if(progress===p.pieces.length)drawDetails(svg,p);
+  }
+  function renderPreview(){
+    const completed=PLOT_PICTURES.filter(p=>
+      saved.records[p.id]?.done===p.pieces.length).length;
+    const recommended=PLOT_PICTURES.find(p=>
+      saved.records[p.id]?.done!==p.pieces.length)||PLOT_PICTURES[4];
+    $("plotGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+      (completed===5?"All five stages complete!":"Next: "+recommended.stage);
+    const stages=$("plotStageTrack");stages.replaceChildren();
+    for(const p of PLOT_PICTURES){
+      const done=saved.records[p.id]?.done||0;
+      const stage=doc.createElement("div");
+      stage.className="graph-step-node"+
+        (done===p.pieces.length?" is-complete":"")+
+        (p.id===recommended.id?" is-recommended":"");
+      stage.setAttribute("aria-label",p.stage+", "+done+" of "+p.pieces.length+" pieces");
+      const dot=doc.createElement("span");dot.className="graph-step-number";
+      dot.textContent=done===p.pieces.length?"✓":String(p.step);
+      const caption=doc.createElement("span");caption.textContent=p.stage;
+      stage.append(dot,caption);stages.append(stage);
+    }
+    const cards=$("plotPictureCards");cards.replaceChildren();
+    for(const p of PLOT_PICTURES){
+      const r=saved.records[p.id]||fresh();
+      const finished=r.done===p.pieces.length;
+      const card=doc.createElement("button");
+      card.type="button";
+      card.className="graph-picture-card"+(p.id===recommended.id?" is-recommended":"");
+      card.setAttribute("data-plot-picture",p.id);
+      card.setAttribute("aria-label",(finished?"Replay ":"Start or continue ")+p.name+
+        ". "+r.done+" of "+p.pieces.length+" pieces complete.");
+      const svgPreview=doc.createElementNS(NS,"svg");
+      svgPreview.setAttribute("viewBox","0 0 620 620");
+      svgPreview.setAttribute("aria-hidden","true");
+      miniature(svgPreview,p,r.done);
+      const info=doc.createElement("span");info.className="graph-picture-info";
+      const badge=doc.createElement("span");badge.className="graph-stage";
+      badge.textContent=p.step+" · "+p.stage.toUpperCase()+" · "+p.pieces.length+" PIECES";
+      const name=doc.createElement("strong");
+      name.textContent=finished?p.name:p.clue;
+      const description=doc.createElement("small");description.textContent=p.description;
+      const focus=doc.createElement("span");
+      focus.className="graph-card-maths";focus.textContent=p.focus;
+      const progress=doc.createElement("span");progress.className="graph-card-progress";
+      const bar=doc.createElement("span");
+      bar.style.width=(100*r.done/p.pieces.length)+"%";progress.append(bar);
+      const go=doc.createElement("span");go.className="graph-card-go";
+      go.textContent=finished?"✓ Finished · Play again":
+        r.done?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":"Start picture →";
+      info.append(badge,name,description,focus,progress,go);
+      card.append(svgPreview,info);
+      card.addEventListener("click",()=>choosePicture(p.id));
+      cards.append(card);
+    }
+  }
+  function choosePicture(id){
+    const p=plotPicture(id);if(!p)return;
+    clearFlash();stopReveal();selected=null;drag=null;hint="";
+    saved.picture=p.id;
+    save=saved.records[p.id]||fresh();
+    if(save.done===p.pieces.length){
+      const replays=save.replays;
+      save=fresh();save.replays=replays+1;
+    }
+    activePoint=save.points.length-1;cursor={x:0,y:0};
+    persist();notify("Begin by plotting the next boundary.");setScreen("play");
   }
   function currentConstruction(){
-    return constructBoundary(current()?.plot.kind,save.points);
+    return constructBoundary(step()?.kind,save.points);
   }
   function drawCanvas(){
     baseGraph(svg);
