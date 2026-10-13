@@ -564,40 +564,46 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     if(id!=null)revealTimers.push(id);
   }
   function revealStage(count,detailsStage=0,finished=false){
+    const p=picture(),n=p.pieces.length;
     baseGraph(revealSvg,{grid:false});
-    for(const [i,part]of PLOT_PICTURE.pieces.slice(0,count).entries()){
+    for(const [i,part]of p.pieces.slice(0,count).entries()){
       drawPiece(revealSvg,part,{fill:part.color,
         stroke:"#fff9ed","stroke-width":3.5,
         "data-reveal-piece":part.id},
         !finished&&detailsStage===0&&i===count-1?"plot-piece-enter":"");
     }
-    if(count===PLOT_PICTURE.pieces.length&&detailsStage)
-      drawDetails(revealSvg,detailsStage,finished?0:detailsStage);
-    $("plotRevealTitle").textContent=finished?"Little Umbrella ✦":
+    if(count===n&&detailsStage)drawDetails(revealSvg,p,detailsStage,
+      finished?0:detailsStage);
+    $("plotRevealTitle").textContent=finished?p.name+" ✦":
       detailsStage?"Your picture is coming to life!":"Your art is coming together!";
     $("plotRevealStatus").textContent=finished?
-      "Your Little Umbrella is complete! Both coloured pieces came from your constructed mathematical boundaries.":
-      count<2?"Mathematical region "+count+" of 2 revealed":
-      detailsStage===1?"Umbrella patterns are appearing…":
-      detailsStage===2?"The handle and puddle ripples are taking shape…":
-      detailsStage===3?"Raindrops and finishing touches complete the scene!":
-      "Both curved regions are complete. Here come the finishing details…";
+      "Your "+p.name+" is complete! Every coloured piece was made with real constructed boundaries.":
+      count<n?"Mathematical region "+count+" of "+n+" revealed":
+      detailsStage===1?"Patterns and highlights are appearing…":
+      detailsStage===2?"The picture's finishing details are taking shape…":
+      detailsStage===3?"Final sparkles complete the scene!":
+      "All real inequality regions are complete. Here come the finishing details…";
     $("plotRevealSkip").hidden=finished;
     $("plotRevealAgain").hidden=!finished;
     $("plotDownload").hidden=!finished;
+    revealSvg.setAttribute("aria-label",count===n?
+      "Completed Plot & Shade art: "+p.name:"Mathematical picture being revealed");
   }
-  function showFinished(){stopReveal();revealStage(2,3,true);}
+  function showFinished(){
+    stopReveal();revealStage(picture().pieces.length,3,true);
+  }
   function playReveal(){
     stopReveal();revealStage(0);
     if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
       showFinished();return;
     }
-    later(()=>revealStage(1),610);
-    later(()=>revealStage(2),1220);
-    later(()=>revealStage(2,1),1810);
-    later(()=>revealStage(2,2),2300);
-    later(()=>revealStage(2,3),2790);
-    later(showFinished,3280);
+    const p=picture(),n=p.pieces.length;
+    const gap=n>=7?400:n>=5?480:570,details=440;
+    p.pieces.forEach((_,i)=>later(()=>revealStage(i+1),gap*(i+1)));
+    const start=gap*(n+1);
+    for(let stage=1;stage<=3;stage++)
+      later(()=>revealStage(n,stage),start+details*(stage-1));
+    later(showFinished,start+details*3+180);
   }
   function openReveal(){
     if(reveal.showModal)reveal.showModal();
@@ -622,7 +628,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       context.drawImage(image,0,0,1100,1100);
       URL.revokeObjectURL(url);
       const a=doc.createElement("a");
-      a.download="inequality-ink-little-umbrella.png";
+      a.download="inequality-ink-"+picture().id+".png";
       a.href=canvas.toDataURL("image/png");
       a.click();
     };
@@ -631,13 +637,20 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function giveHint(){
     if(screen!=="play"||!current())return;
-    if(save.phase==="plot")
-      hint=save.points.length?current().plot.hints[1]:current().plot.hints[0];
-    else if(save.phase==="style")
-      hint="Use a solid boundary when equality is included (≤ or ≥). Use dashed for a strict inequality (< or >).";
-    else hint=save.done===0?
-      "Try the point (0, 2). Is it below the parabola and above the horizontal line?":
-      "Try the point (0, −3.5). Is it above the lower parabola and below the line?";
+    if(save.phase==="plot"){
+      const hints=step()?.hints||[];
+      hint=save.points.length?(hints[1]||hints[0]):(hints[0]||"Use key points on the graph.");
+    }else if(save.phase==="style")
+      hint="Solid means equality is included (≤ or ≥). Strict inequality (< or >) means dashed.";
+    else{
+      let answer=null;
+      for(let x=-4.5;x<=4.5&&!answer;x+=.5)
+        for(let y=-4.5;y<=4.5;y+=.5)
+          if(satisfiesAll(current().rules,x,y)){answer={x,y};break;}
+      hint=answer?"Try the point ("+nice(answer.x)+", "+nice(answer.y)+
+        "). Does it satisfy every inequality?":
+        "Test a point away from every boundary, then check each inequality.";
+    }
     notify("A hint has appeared below.");playView();
   }
   function worldAt(ev){
@@ -710,7 +723,6 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       ev.preventDefault?.();undoPoint();
     }
   });
-  $("plotPictureCard").addEventListener("click",begin);
   $("plotBack").addEventListener("click",()=>{
     clearFlash();drag=null;selected=null;setScreen("picker");
   });
@@ -740,6 +752,10 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   $("plotReplayReveal").addEventListener("click",openReveal);
   $("plotRestart").addEventListener("click",restart);
   $("plotChooseAgain").addEventListener("click",()=>setScreen("picker"));
+  $("plotNextPicture").addEventListener("click",()=>{
+    const next=PLOT_PICTURES[picture().step];
+    if(next)choosePicture(next.id);else setScreen("picker");
+  });
   $("plotRevealClose").addEventListener("click",closeReveal);
   $("plotRevealSkip").addEventListener("click",showFinished);
   $("plotRevealAgain").addEventListener("click",playReveal);
@@ -748,8 +764,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   setScreen("picker");
   return {
     addPoint,movePoint,checkPlot,checkStyle,checkRegion,pickAt,undoPoint,
-    chooseStyle,giveHint,readProgress:()=>({
-      ...save,points:save.points.map(p=>({...p}))
+    chooseStyle,giveHint,choose:choosePicture,readProgress:()=>({
+      ...save,picture:saved.picture,records:saved.records,
+      points:save.points.map(p=>({...p}))
     }),start:begin,render:()=>setScreen(screen),showFinished
   };
 }
