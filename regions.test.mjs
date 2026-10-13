@@ -2,277 +2,237 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {
-  REGION_SAVE_KEY,REGION_WORLD,REGION_FACETS,REGION_TOTAL,REGION_STEP_TOTAL,
-  regionSide,regionSideOptions,otherRegionSide,regionBoundaryStyle,
-  regionCorrect,previewSideRule,pointSatisfiesRegion,pointSatisfiesAll,
-  evaluateRegionRule,samplePointForRule,regionHint,intersectRegion,
-  polygonArea,clipRegionPolygon,lineOnRegionGraph,validateRegionArt
+  REGION_WORLD,REGION_FACETS,REGION_SAVE_KEY,validateRegionArt,
+  intersectRegion,polygonArea,pointSatisfiesAll,regionSide,regionBoundaryStyle,
+  regionCorrect,lineOnRegionGraph,evaluateRegionRule
 } from "./regions/regions-engine.mjs";
-import {initRegionsApp,readRegionSave,regionProgressSteps} from "./regions/regions-app.mjs";
+import {
+  GRAPH_ART_PICTURES,GRAPH_ART_MODES,GRAPH_ART_SAVE_KEY,graphCellAt,
+  graphArrow,validateGraphPictureLibrary
+} from "./regions/graph-art-pictures.mjs";
+import {initRegionsApp,readGraphArtSave} from "./regions/regions-app.mjs";
 
-test("The five stained-glass facets are genuine convex region intersections",()=>{
+test("Both galleries use genuine nonempty inequality intersections",()=>{
   assert.equal(validateRegionArt(),true);
-  assert.equal(REGION_TOTAL,5);
-  assert.equal(REGION_STEP_TOTAL,15);
-  assert.deepEqual(REGION_FACETS.map(f=>f.rules.length-f.given),[2,3,3,3,4]);
-  assert.deepEqual(REGION_FACETS.map(f=>f.rules.length),[3,3,3,3,4]);
-  assert.deepEqual(REGION_FACETS.map(f=>f.name),[
-    "Sunlit facet","Golden facet","Ocean facet","Twilight facet","Crystal heart"
-  ]);
-  for(const [index,facet] of REGION_FACETS.entries()){
-    const vertices=intersectRegion(facet.rules);
-    assert.ok(vertices.length>=3);
-    assert.ok(Math.abs(polygonArea(vertices)-(index===4?2:8))<1e-8,
-      facet.id+" has wrong polygon area");
-    for(const vertex of vertices)for(const rule of facet.rules)
-      assert.ok(evaluateRegionRule(rule,vertex.x,vertex.y)<1e-8,
-        facet.id+" vertex violates "+rule.id);
-  }
-});
-test("Four mathematically shaded outer triangles exactly make a diamond",()=>{
-  for(let x=-4.75;x<4.75;x+=.5){
-    for(let y=-4.75;y<4.75;y+=.5){
-      if(Math.abs(Math.abs(x)+Math.abs(y)-4)<.001)continue;
-      const inside=REGION_FACETS.slice(0,4).some(f=>
-        pointSatisfiesAll(f.rules,x,y));
-      assert.equal(inside,Math.abs(x)+Math.abs(y)<4,
-        "Diamond classification mismatch at "+x+", "+y);
-    }
-  }
-  const inner=REGION_FACETS[4];
-  assert.ok(pointSatisfiesAll(inner.rules,0,0));
-  assert.ok(!pointSatisfiesAll(inner.rules,1,0),
-    "The central small diamond is open at its boundary");
-  assert.ok(pointSatisfiesAll(inner.rules,.5,0));
-  assert.ok(!pointSatisfiesAll(inner.rules,2,0));
-});
-test("Clipping never depends on a hardcoded art mask",()=>{
-  const north=REGION_FACETS[0];
-  const first=intersectRegion(north.rules.slice(0,1));
-  const second=intersectRegion(north.rules.slice(0,2));
-  const final=intersectRegion(north.rules);
-  assert.equal(polygonArea(first),50,"Top half-plane within 10x10 window");
-  assert.equal(polygonArea(second),25,"Top-left quarter-plane");
-  assert.equal(polygonArea(final),8,"Actual triangular art facet");
-  assert.equal(polygonArea(clipRegionPolygon(first,north.rules[1])),25);
-  assert.ok(final.some(p=>Math.abs(p.x+4)<1e-8&&Math.abs(p.y)<1e-8));
-  assert.ok(final.some(p=>Math.abs(p.x)<1e-8&&Math.abs(p.y-4)<1e-8));
-  assert.ok(final.some(p=>Math.abs(p.x)<1e-8&&Math.abs(p.y)<1e-8));
-});
-test("Vertical, horizontal and diagonal boundary equations stay in view",()=>{
-  for(const f of REGION_FACETS)for(const r of f.rules){
-    const segment=lineOnRegionGraph(r);
-    assert.equal(segment?.length,2,r.id+" boundary missing");
-    for(const p of segment){
-      assert.ok(Math.abs(evaluateRegionRule(r,p.x,p.y))<1e-8);
-      assert.ok(p.x>=REGION_WORLD.xmin-1e-8&&p.x<=REGION_WORLD.xmax+1e-8);
-      assert.ok(p.y>=REGION_WORLD.ymin-1e-8&&p.y<=REGION_WORLD.ymax+1e-8);
+  assert.equal(validateGraphPictureLibrary(),true);
+  assert.deepEqual(GRAPH_ART_MODES.map(m=>m.id),["fill","build"]);
+  assert.deepEqual(GRAPH_ART_PICTURES.map(p=>[p.id,p.pieces.length]),
+    [["little-house",3],["aurora-crystal",5]]);
+  assert.equal(GRAPH_ART_PICTURES[1].pieces.length,REGION_FACETS.length);
+  for(const picture of GRAPH_ART_PICTURES)for(const part of picture.pieces){
+    const polygon=intersectRegion(part.rules);
+    assert.ok(polygonArea(polygon)>.1);
+    const centroid={x:polygon.reduce((s,p)=>s+p.x,0)/polygon.length,
+      y:polygon.reduce((s,p)=>s+p.y,0)/polygon.length};
+    assert.equal(pointSatisfiesAll(part.rules,centroid.x,centroid.y),true,
+      part.id+" centroid should satisfy every inequality");
+    for(const r of part.rules){
+      assert.equal(lineOnRegionGraph(r).length,2);
+      for(const v of polygon)
+        assert.ok(evaluateRegionRule(r,v.x,v.y)<1e-7);
+      assert.ok(["above","below","left","right"].includes(regionSide(r)));
+      assert.ok(["solid","dashed"].includes(regionBoundaryStyle(r)));
+      assert.equal(regionCorrect(r,regionSide(r),regionBoundaryStyle(r)),true);
+      const arrow=graphArrow(r,polygon);
+      assert.ok(arrow,part.id+" missing arrow for "+r.text);
+      assert.ok(evaluateRegionRule(r,arrow.x2,arrow.y2)<
+        evaluateRegionRule(r,arrow.x1,arrow.y1),
+        "Arrow should point into the satisfying half-plane: "+r.text);
     }
   }
 });
-test("Correct half-plane, solid/dashed decisions and pointer selection are exact",()=>{
-  const examples=[
-    {r:REGION_FACETS[0].rules[0],side:"above",options:["above","below"],style:"solid"},
-    {r:REGION_FACETS[0].rules[1],side:"left",options:["left","right"],style:"solid"},
-    {r:REGION_FACETS[1].rules[1],side:"right",options:["left","right"],style:"solid"},
-    {r:REGION_FACETS[2].rules[2],side:"above",options:["above","below"],style:"solid"},
-    {r:REGION_FACETS[4].rules[0],side:"below",options:["above","below"],style:"dashed"}
-  ];
-  for(const {r,side,options,style} of examples){
-    assert.equal(regionSide(r),side);
-    assert.deepEqual(regionSideOptions(r),options);
-    assert.equal(regionBoundaryStyle(r),style);
-    assert.equal(regionCorrect(r,side,style),true);
-    assert.equal(regionCorrect(r,otherRegionSide(side),style),false);
-    assert.equal(regionCorrect(r,side,style==="solid"?"dashed":"solid"),false);
-    const opposite=previewSideRule(r,otherRegionSide(side));
-    assert.ok(opposite);
-    assert.equal(opposite.a,-r.a);
-    assert.equal(opposite.b,-r.b);
-    assert.equal(opposite.c,-r.c);
-    assert.equal(previewSideRule(r,side),r);
-    const [x,y]=samplePointForRule(r);
-    assert.ok(Math.abs(evaluateRegionRule(r,x,y))>.25);
-    assert.match(regionHint(r),/Try the test point/);
-  }
-  assert.equal(previewSideRule(examples[0].r,"right"),null);
-});
-test("Graph Art saves only completed decisions and keeps malformed records safe",()=>{
-  const entries=new Map();
-  const db={getItem:key=>entries.has(key)?entries.get(key):null,
-    setItem:(key,v)=>entries.set(key,v)};
-  assert.deepEqual(readRegionSave(db),{done:0,step:0,replays:0});
-  entries.set(REGION_SAVE_KEY,JSON.stringify({done:1,step:2,replays:1}));
-  assert.deepEqual(readRegionSave(db),{done:1,step:2,replays:1});
-  assert.equal(regionProgressSteps(readRegionSave(db)),4);
-  entries.set(REGION_SAVE_KEY,"{broken");
-  assert.equal(readRegionSave(db).done,0);
-  entries.set(REGION_SAVE_KEY,JSON.stringify({done:5,step:0,replays:2}));
-  assert.equal(regionProgressSteps(readRegionSave(db)),15);
-  for(const invalid of [{done:6,step:0,replays:0},
-    {done:1,step:3,replays:0},{done:5,step:1,replays:0},
-    {done:2,step:-1,replays:0}]){
-    entries.set(REGION_SAVE_KEY,JSON.stringify(invalid));
-    assert.deepEqual(readRegionSave(db),{done:0,step:0,replays:0});
+test("Actual graph cells are classified by every inequality",()=>{
+  const house=GRAPH_ART_PICTURES[0];
+  const walls=house.pieces[0],roof=house.pieces[1],door=house.pieces[2];
+  assert.equal(graphCellAt(walls,1,0).correct,true);
+  assert.equal(graphCellAt(walls,4,0).correct,false);
+  assert.equal(graphCellAt(roof,0,2).correct,true);
+  assert.equal(graphCellAt(roof,0,-2).correct,false);
+  assert.equal(graphCellAt(door,0,-2).correct,true);
+  assert.equal(graphCellAt(door,2,-2).correct,false);
+  assert.equal(graphCellAt(walls,2.5,0),null,"Boundary taps are not guesses");
+  assert.equal(graphCellAt(roof,0,1),null);
+  assert.equal(graphCellAt(roof,10,0),null);
+  for(const part of [...house.pieces,...GRAPH_ART_PICTURES[1].pieces]){
+    const points=intersectRegion(part.rules);
+    const x=points.reduce((sum,p)=>sum+p.x,0)/points.length;
+    const y=points.reduce((sum,p)=>sum+p.y,0)/points.length;
+    const region=graphCellAt(part,x,y);
+    assert.ok(region?.correct,part.id);
+    assert.ok(Math.abs(polygonArea(region.polygon)-polygonArea(points))<1e-7);
   }
 });
-test("The two studio pages remain independent, navigable and accessible",()=>{
+test("Saves are separate by picture and mode, and invalid data is discarded",()=>{
+  const db=new Map();
+  const storage={getItem:k=>db.get(k)||null,setItem:(k,v)=>db.set(k,v)};
+  assert.deepEqual(readGraphArtSave(storage),{
+    mode:"fill",picture:"little-house",records:{}});
+  db.set(GRAPH_ART_SAVE_KEY,JSON.stringify({
+    mode:"build",picture:"aurora-crystal",records:{
+      "build:aurora-crystal":{done:2,line:2,replays:1},
+      "fill:little-house":{done:3,line:0,replays:0},
+      "build:little-house":{done:99,line:0,replays:0}
+    }}));
+  const saved=readGraphArtSave(storage);
+  assert.equal(saved.mode,"build");
+  assert.deepEqual(saved.records["build:aurora-crystal"],{done:2,line:2,replays:1});
+  assert.equal(saved.records["fill:little-house"].done,3);
+  assert.equal(saved.records["build:little-house"],undefined);
+  db.set(GRAPH_ART_SAVE_KEY,"broken");
+  assert.equal(readGraphArtSave(storage).mode,"fill");
+});
+test("Graph studio remains independent, responsive and self-contained",()=>{
+  const page=readFileSync(new URL("./regions/index.html",import.meta.url),"utf8");
   const main=readFileSync(new URL("./index.html",import.meta.url),"utf8");
-  const region=readFileSync(new URL("./regions/index.html",import.meta.url),"utf8");
-  const css=readFileSync(new URL("./styles.css",import.meta.url),"utf8");
-  const rgcss=readFileSync(new URL("./regions/regions.css",import.meta.url),"utf8");
+  const css=readFileSync(new URL("./regions/regions.css",import.meta.url),"utf8");
+  const app=readFileSync(new URL("./regions/regions-app.mjs",import.meta.url),"utf8");
   assert.ok(main.includes('class="studio-tab" href="./regions/"'));
-  assert.ok(main.includes('class="studio-tab is-active" href="./" aria-current="page"'));
-  assert.ok(region.includes('class="studio-tab" href="../"'));
-  assert.ok(region.includes('class="studio-tab is-active" href="./" aria-current="page"'));
-  assert.ok(region.includes('src="./regions-app.mjs"'));
-  assert.match(region,/href="\.\.\/styles\.css(?:\?[^"]*)?"/);
-  assert.ok(region.includes('href="./regions.css"'));
-  assert.ok(!region.includes('src="../app.mjs"'));
-  assert.ok(css.includes(".studio-switch{"));
-  assert.ok(css.includes("body.paint-session .studio-switch{display:none}"));
-  assert.ok(rgcss.includes(".region-workspace{"));
-  const ids=[...region.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
-  assert.equal(new Set(ids).size,ids.length);
-  for(const id of ["regionGraph","regionSideA","regionSideB","regionSolid",
-    "regionDashed","regionCheckButton","regionHintButton","regionFeedback",
-    "regionProgressDots","regionFinishPanel","regionPlayAgain"]){
-    assert.ok(ids.includes(id),"Missing Graph Art UI control "+id);
+  assert.ok(page.includes('class="studio-tab is-active" href="./" aria-current="page"'));
+  assert.match(page,/src="\.\/regions-app\.mjs(?:\?[^"]*)?"/);
+  assert.match(page,/href="\.\/regions\.css(?:\?[^"]*)?"/);
+  assert.ok(!page.includes('src="../app.mjs"'));
+  const ids=[...page.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+  assert.equal(ids.length,new Set(ids).size);
+  for(const id of ["graphPicker","graphPlay","graphArtGraph","graphModeFill",
+    "graphModeBuild","graphPictureCards","graphRuleList","graphCheckFill",
+    "graphUndoFill","graphSideA","graphSideB","graphSolid","graphDashed",
+    "graphAddLine","graphFeedback","graphHint","graphHintText","graphReveal",
+    "graphRevealSvg","graphRevealSkip","graphRevealClose","graphReplayReveal"]){
+    assert.ok(ids.includes(id),"Missing "+id);
   }
-  assert.ok(region.includes('aria-live="polite"'));
-  assert.ok(!/\b(Foundation|4MA1)\b/i.test(region));
+  assert.ok(page.includes('aria-live="polite"'));
+  assert.ok(page.includes('tabindex="0"'));
+  assert.ok(app.includes('prefers-reduced-motion: reduce'));
+  assert.ok(app.includes('a.download="inequality-ink-"+picture().id+".png"'));
+  assert.ok(css.includes("@media(max-width:780px)"));
+  assert.ok(css.includes("height:100dvh"));
+  assert.ok(!/\b(Foundation|4MA1)\b/i.test(page));
 });
 
-// Minimal browser-like elements to exercise the actual Graph Art entrypoint
-// without modifying or booting Inequality Ink's existing Pixel Art scripts.
+// Deterministic small DOM avoids browser/third-party dependencies in CI.
 class Element{
   constructor(tag="div"){
     this.tagName=tag;this.attrs={};this.children=[];
     this.textContent="";this.className="";this.hidden=false;this.dataset={};
-    this.style={setProperty:(name,v)=>{this.style[name]=v}};
+    this.disabled=false;this.style={setProperty:(name,v)=>{this.style[name]=v}};
     this.listeners=new Map();this.names=new Set();
-    this.classList={
-      add:x=>this.names.add(x),
-      remove:x=>this.names.delete(x),
+    this.classList={add:x=>this.names.add(x),remove:x=>this.names.delete(x),
       contains:x=>this.names.has(x),
-      toggle:(x,on)=>{on?this.names.add(x):this.names.delete(x);return !!on}
-    };
+      toggle:(x,on)=>{on?this.names.add(x):this.names.delete(x);return !!on}};
   }
   setAttribute(k,v){this.attrs[k]=String(v);}
   getAttribute(k){return this.attrs[k]??null;}
-  append(...nodes){for(const n of nodes)if(n)this.children.push(n);}
+  removeAttribute(k){delete this.attrs[k];}
+  append(...nodes){this.children.push(...nodes.filter(Boolean));}
   replaceChildren(...nodes){this.children=[];this.append(...nodes);}
   addEventListener(name,fn){
     if(!this.listeners.has(name))this.listeners.set(name,[]);
     this.listeners.get(name).push(fn);
   }
-  click(data={}){
-    for(const fn of this.listeners.get("click")||[])fn({
-      target:this,clientX:0,clientY:0,...data
-    });
+  fire(name,data={}){
+    for(const fn of this.listeners.get(name)||[])fn({
+      target:this,clientX:0,clientY:0,preventDefault(){},...data});
   }
+  click(data={}){this.fire("click",data);}
   getBoundingClientRect(){return {left:0,top:0,width:620,height:620};}
+  querySelectorAll(selector){
+    if(selector==="[data-direction-arrow]")
+      return this.children.filter(n=>n.getAttribute("data-direction-arrow")!==null);
+    return [];
+  }
+  showModal(){this.setAttribute("open","");}
+  close(){this.removeAttribute("open");}
 }
 function fakeDoc(){
   const html=readFileSync(new URL("./regions/index.html",import.meta.url),"utf8");
   const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);
-  const elems=new Map(ids.map(id=>[id,new Element(id)]));
-  return {
-    getElementById:id=>{
-      if(!elems.has(id))throw Error("Missing element "+id);
-      return elems.get(id);
+  const elements=new Map(ids.map(id=>[id,new Element(id)]));
+  return {getElementById:id=>{
+      if(!elements.has(id))throw Error("Missing element "+id);
+      return elements.get(id);
     },
     createElement:tag=>new Element(tag),
-    createElementNS:(_ns,tag)=>new Element(tag),
-    elems
+    createElementNS:(_ns,tag)=>new Element(tag)
   };
 }
-test("Graph Art lets students shade, preview, finish five true facets and replay",()=>{
+function session(){
   const doc=fakeDoc(),store=new Map([
     ["inequality-ink-v5","keep-pixel-save"],
     ["inequality-ink-quadratic-quest-v2","keep-quadratic-save"]
   ]);
-  const storage={getItem:k=>store.has(k)?store.get(k):null,
-    setItem:(k,v)=>store.set(k,v)};
-  const win={confirm:()=>true,scrollTo(){}};
+  const timers=[];
+  const win={setTimeout:fn=>{timers.push(fn);return timers.length;},
+    clearTimeout:()=>{},matchMedia:()=>({matches:false})};
+  const storage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
   const app=initRegionsApp({doc,storage,win});
   const $=doc.getElementById;
-  assert.equal($("regionFacetTitle").textContent,"Sunlit facet");
-  assert.equal($("regionEquation").textContent,"x ≤ 0");
-  assert.equal($("regionGiven").textContent,"Already shaded: y ≥ 0");
-  assert.equal($("regionStepCount").textContent,"0 of 15 decisions");
-  const preview=()=>$("regionGraph").children
-    .filter(node=>node.getAttribute("data-region-layer")==="preview");
-  const coloured=()=>$("regionGraph").children
-    .filter(node=>node.getAttribute("data-region-layer")?.startsWith("finished-"));
-  assert.ok(preview().length===1);
-  // Incorrect sides and styles must never complete a decision.
-  $("regionSideB").click(); // Right, but x <= 0 needs Left.
-  $("regionSolid").click();
-  assert.ok(preview().length===1);
-  $("regionCheckButton").click();
-  assert.match($("regionFeedback").textContent,/Not quite/);
-  assert.equal(app.readProgress().step,0);
-  $("regionHintButton").click();
-  assert.equal($("regionHintBox").hidden,false);
-  // Actual graph tapping should choose the left half-plane, not just a button.
-  const x=52+(-2+5)/10*516, y=52+(5-2)/10*516;
-  $("regionGraph").click({clientX:x,clientY:y});
-  assert.equal($("regionSideA").getAttribute("aria-pressed"),"true");
-  $("regionCheckButton").click();
-  assert.equal(app.readProgress().step,1);
-  assert.equal($("regionEquation").textContent,"y ≤ x + 4");
-  assert.equal($("regionGiven").textContent,"Already shaded: y ≥ 0  ∩  x ≤ 0");
-  assert.equal(regionProgressSteps(app.readProgress()),1);
-  assert.equal(JSON.parse(storage.getItem(REGION_SAVE_KEY)).step,1);
-
-  let solved=1;
-  for(const [index,facet] of REGION_FACETS.entries()){
-    const start=index===0?facet.given+1:facet.given;
-    for(let i=start;i<facet.rules.length;i++){
-      const rule=facet.rules[i],expectSide=regionSide(rule);
-      const target=regionSideOptions(rule).indexOf(expectSide)===0?
-        "regionSideA":"regionSideB";
-      $(target).click();
-      $(rule.inclusive?"regionSolid":"regionDashed").click();
-      $("regionCheckButton").click();
-      solved++;
-      const snapshot=app.readProgress();
-      assert.equal(regionProgressSteps(snapshot),solved,
-        "Decision "+solved+" should be saved");
-      assert.equal(coloured().length,snapshot.done);
-      assert.equal(store.get("inequality-ink-v5"),"keep-pixel-save");
-      assert.equal(store.get("inequality-ink-quadratic-quest-v2"),"keep-quadratic-save");
-    }
-    assert.equal(app.readProgress().done,index+1);
-  }
-  assert.equal(solved,REGION_STEP_TOTAL);
-  assert.equal($("regionTaskPanel").hidden,true);
-  assert.equal($("regionFinishPanel").hidden,false);
-  assert.equal(coloured().length,5);
-  assert.equal($("regionProgressFill").style.width,"100%");
-  assert.equal($("regionCanvasCount").textContent,"5 / 5 facets");
-  assert.equal($("regionReviewContent").children.length,10);
-  $("regionPlayAgain").click();
-  assert.deepEqual(app.readProgress(),{done:0,step:0,replays:1});
-  assert.equal(coloured().length,0);
-  assert.equal($("regionTaskPanel").hidden,false);
+  return {doc,store,storage,timers,win,app,$};
+}
+test("Find & Fill rejects wrong regions and checks provisional correct fills",()=>{
+  const s=session(),{$,app,store}=s;
+  assert.equal($("graphPicker").hidden,false);
+  $("graphPictureCards").children[0].click();
+  assert.equal($("graphPlay").hidden,false);
+  assert.equal($("graphRuleList").children.length,4);
+  app.pickAt(4,0);
+  assert.match($("graphFeedback").textContent,/Not quite/);
+  assert.equal(app.readProgress().records["fill:little-house"].done,0);
+  app.checkFill();
+  assert.match($("graphFeedback").textContent,/First fill/);
+  app.pickAt(1,0);
+  assert.ok($("graphArtGraph").children.some(x=>
+    x.getAttribute("data-region-layer")==="selection"));
+  app.checkFill();
+  assert.equal(app.readProgress().records["fill:little-house"].done,1);
+  app.pickAt(0,2);app.checkFill();
+  app.pickAt(0,-2);app.checkFill();
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal($("graphReveal").getAttribute("open"),"");
+  app.showFinished();
+  assert.equal($("graphRevealSkip").hidden,true);
+  assert.equal($("graphDownload").hidden,false);
+  $("graphRevealClose").click();
+  assert.equal($("graphSummary").hidden,false);
   assert.equal(store.get("inequality-ink-v5"),"keep-pixel-save");
   assert.equal(store.get("inequality-ink-quadratic-quest-v2"),"keep-quadratic-save");
 });
-test("Reloading Graph Art resumes within a facet, preserving real inequality intersections",()=>{
-  const doc=fakeDoc(),storage=new Map();
-  storage.set(REGION_SAVE_KEY,JSON.stringify({done:3,step:2,replays:1}));
-  const app=initRegionsApp({
-    doc,
-    storage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},
-    win:{confirm:()=>true,scrollTo(){}}
-  });
-  assert.deepEqual(app.readProgress(),{done:3,step:2,replays:1});
-  assert.equal(doc.getElementById("regionFacetTitle").textContent,"Twilight facet");
-  assert.equal(doc.getElementById("regionEquation").textContent,"y ≥ x − 4");
-  const graph=doc.getElementById("regionGraph");
-  assert.equal(graph.children.filter(n=>n.getAttribute("data-region-layer")?.startsWith("finished-")).length,3);
-  assert.equal(graph.children.filter(n=>n.getAttribute("data-region-layer")==="preview").length,1);
-  assert.equal(doc.getElementById("regionStepCount").textContent,"10 of 15 decisions");
+test("Build & Shade requires correct sides and styles, commits whole pieces",()=>{
+  const s=session(),{$,app,timers}=s;
+  $("graphModeBuild").click();
+  $("graphPictureCards").children[0].click();
+  assert.equal($("graphBuildControls").hidden,false);
+  const p=GRAPH_ART_PICTURES[0];
+  for(const [pi,part] of p.pieces.entries()){
+    for(const rr of part.rules){
+      const side=regionSide(rr),button=[$("graphSideA"),$("graphSideB")]
+        .find(b=>b.dataset.side===side);
+      assert.ok(button,"Missing correct direction for "+rr.text);
+      button.click();
+      $(rr.inclusive?"graphSolid":"graphDashed").click();
+      $("graphAddLine").click();
+    }
+    // Timed green pulse must finish before the next region begins.
+    timers.at(-1)();
+    assert.equal(app.readProgress().records["build:little-house"].done,pi+1);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal($("graphReveal").getAttribute("open"),"");
+});
+test("Keyboard can navigate the fill canvas and saved partial build resumes",()=>{
+  const s=session(),{$,app,store}=s;
+  $("graphPictureCards").children[0].click();
+  $("graphArtGraph").fire("keydown",{key:"ArrowRight"});
+  assert.match($("graphFeedback").textContent,/Cursor at/);
+  $("graphArtGraph").fire("keydown",{key:"Enter"});
+  assert.ok($("graphArtGraph").children.some(x=>
+    x.getAttribute("data-region-layer")==="selection"));
+  $("graphBack").click();
+  $("graphModeBuild").click();
+  $("graphPictureCards").children[0].click();
+  $("graphSideA").click();$("graphSolid").click();$("graphAddLine").click();
+  // Wrong direction must not advance the line counter.
+  assert.equal(app.readProgress().records["build:little-house"].line,0);
+  $("graphSideB").click();$("graphAddLine").click();
+  assert.equal(app.readProgress().records["build:little-house"].line,1);
+  assert.equal(JSON.parse(store.get(GRAPH_ART_SAVE_KEY)).records["build:little-house"].line,1);
 });

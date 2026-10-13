@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <meta name="theme-color" content="#f5f1e9" />
-  <meta name="description" content="Create real geometric art by shading intersecting linear inequalities on coordinate graphs. An optional Inequality Ink prototype." />
+  <meta name="description" content="Turn simultaneous linear inequalities into beautiful geometric art. Find and fill regions or build them line by line." />
   <title>Graph Art | Inequality Ink</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M9 32 32 8 55 32 32 56Z' fill='%237cc2af'/%3E%3Cpath d='M9 32 32 8 32 32Z' fill='%23f6a17e'/%3E%3Cpath d='M32 32 55 32 32 56Z' fill='%238ba5d3'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M9 32 32 8 55 32 32 56Z' fill='%237cc2af'/%3E%3Cpath d='M9 32 32 8 32 32Z' fill='%23f6a17e'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../styles.css?v=desktop-home-v1" />
-  <link rel="stylesheet" href="./regions.css" />
-  <script type="module" src="./regions-app.mjs"></script>
+  <link rel="stylesheet" href="./regions.css?v=two-modes-v1" />
+  <script type="module" src="./regions-app.mjs?v=two-modes-v1"></script>
 </head>
 <body class="regions-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -17,7 +17,7 @@
   <div class="app">
     <header class="topbar">
       <a class="brand" href="../" aria-label="Inequality Ink home">
-        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
         <span><strong>Inequality<span class="brand-accent">Ink</span></strong><small>Make maths into art</small></span>
       </a>
       <div class="top-actions">
@@ -29,108 +29,139 @@
       </div>
     </header>
     <main class="region-main">
-      <section class="region-hero" aria-labelledby="regionTitle">
-        <div class="region-hero-copy">
-          <div class="eyebrow"><span class="spark-dot"></span> GRAPH ART · FIRST EXPERIMENT</div>
-          <h1 id="regionTitle">Shade the maths.<br /><em>Make the art.</em></h1>
-          <p>Choose which side of each line satisfies an inequality. See overlapping regions come together to form a stained-glass crystal — using the actual mathematics.</p>
-          <div class="region-hero-facts"><span>◇ One crystal</span><span>◫ Five coloured facets</span><span>✳ Fifteen decisions</span></div>
+
+      <section id="graphPicker" class="graph-picker" aria-labelledby="graphPickerTitle">
+        <div class="graph-landing-intro">
+          <div class="eyebrow"><span class="spark-dot"></span> GRAPH ART STUDIO</div>
+          <h1 id="graphPickerTitle">Shade the maths. <em>Make the art.</em></h1>
+          <p>Several inequalities. One shared region. Every region you find becomes a real piece of your picture.</p>
         </div>
-        <div class="region-hero-note">
-          <span class="region-note-icon" aria-hidden="true">✧</span>
-          <div><strong>This is a separate experiment</strong><p>Pixel Art and Quadratic Quest are exactly where you left them. Complete crystal facets are saved here independently.</p></div>
+        <section class="graph-picker-modes" aria-label="Choose a Graph Art challenge">
+          <h2>How will you make your picture?</h2>
+          <div class="graph-mode-grid" role="group" aria-label="Choose Graph Art mode">
+            <button type="button" class="graph-mode-card" id="graphModeFill" aria-pressed="true">
+              <span class="graph-mode-icon" aria-hidden="true">◩</span>
+              <span><strong>Find &amp; Fill</strong><small>Read the inequalities. Fill the region they have in common.</small></span>
+              <span class="graph-mode-tick" aria-hidden="true">✓</span>
+            </button>
+            <button type="button" class="graph-mode-card" id="graphModeBuild" aria-pressed="false">
+              <span class="graph-mode-icon" aria-hidden="true">↗</span>
+              <span><strong>Build &amp; Shade</strong><small>Choose each side and line style. Watch the overlap appear.</small></span>
+              <span class="graph-mode-tick" aria-hidden="true">✓</span>
+            </button>
+          </div>
+        </section>
+        <section class="graph-picture-picker" aria-labelledby="graphPictureHeading">
+          <div class="graph-picker-heading">
+            <div><div class="eyebrow">A SMALL START. A BIG REVEAL.</div><h2 id="graphPictureHeading">Choose a picture</h2></div>
+            <p id="graphModeDescription">Choose the right region to fill.</p>
+          </div>
+          <div id="graphPictureCards" class="graph-picture-grid"></div>
+        </section>
+      </section>
+
+      <section id="graphPlay" class="graph-play" hidden aria-label="Graph Art activity">
+        <div class="graph-game-top">
+          <button type="button" id="graphBack" class="graph-quiet-button">← Pictures</button>
+          <div class="graph-game-title"><span class="eyebrow" id="graphGameMode">FIND &amp; FILL</span><h1 id="graphPictureName">Little House</h1></div>
+          <span id="graphPieceCount" class="graph-piece-pill">Piece 1 of 3</span>
+        </div>
+        <div class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="graphProgress"><div id="graphProgressFill"></div></div>
+        <div class="region-workspace graph-workspace">
+          <section class="panel graph-canvas-panel" aria-labelledby="graphCanvasHeading">
+            <div class="graph-panel-top">
+              <div><span class="panel-kicker">YOUR MATHEMATICAL CANVAS</span><h2 id="graphCanvasHeading">Find the overlap</h2></div>
+              <span class="graph-canvas-count" id="graphCanvasCount">0 / 3</span>
+            </div>
+            <div class="graph-frame">
+              <svg id="graphArtGraph" viewBox="0 0 620 620" tabindex="0" role="group"
+                aria-label="Interactive coordinate graph. Click a region to fill it. For keyboard use, press arrow keys to move the cursor and Enter to fill."></svg>
+            </div>
+            <div class="graph-canvas-footer">
+              <span id="graphCanvasInstruction">Tap inside the region where every inequality is true.</span>
+              <span class="graph-canvas-key">◌ Ghost line &nbsp; ▰ Painted piece</span>
+            </div>
+          </section>
+          <section class="panel graph-task-panel" aria-labelledby="graphTaskTitle">
+            <div class="graph-task-heading">
+              <div><span class="panel-kicker" id="graphTaskKicker">PIECE 1 OF 3</span><h2 id="graphTaskTitle">Golden walls</h2></div>
+              <span id="graphPieceSwatch" class="graph-piece-swatch" aria-hidden="true"></span>
+            </div>
+            <p id="graphTaskLead" class="graph-task-lead">Find the region that satisfies every inequality.</p>
+            <div class="graph-rule-heading"><strong>All the inequalities for this shape</strong><span id="graphRuleCount">4 inequalities</span></div>
+            <div id="graphRuleList" class="graph-rule-list" aria-label="Inequalities defining this piece"></div>
+            <div id="graphFillControls" class="graph-fill-controls">
+              <div class="graph-tool-hint"><span aria-hidden="true">▨</span><div><strong>Fill tool selected</strong><small>Tap a region on the graph. A wrong region flashes red and clears; a correct one stays until you check.</small></div></div>
+              <div class="graph-commands">
+                <button type="button" id="graphUndoFill" class="button button-light">↶ Undo fill</button>
+                <button type="button" id="graphCheckFill" class="button button-primary">Check region →</button>
+              </div>
+            </div>
+            <div id="graphBuildControls" class="graph-build-controls" hidden>
+              <p class="graph-selected-rule"><span class="eyebrow">SELECTED INEQUALITY</span><strong id="graphActiveEquation">y ≥ 0</strong></p>
+              <fieldset class="graph-choice-set">
+                <legend>Which side satisfies it?</legend>
+                <div class="graph-choice-row"><button type="button" id="graphSideA" aria-pressed="false">Above</button><button type="button" id="graphSideB" aria-pressed="false">Below</button></div>
+              </fieldset>
+              <fieldset class="graph-choice-set">
+                <legend>What style should its boundary have?</legend>
+                <div class="graph-choice-row"><button type="button" id="graphSolid" aria-pressed="false">━━ Solid</button><button type="button" id="graphDashed" aria-pressed="false">┄┄ Dashed</button></div>
+              </fieldset>
+              <button type="button" id="graphAddLine" class="button button-primary graph-full-button">Add this boundary →</button>
+            </div>
+            <p id="graphFeedback" class="graph-feedback" role="status" aria-live="polite">Select the common region to start.</p>
+            <div class="graph-help-actions">
+              <button type="button" id="graphHint" class="graph-quiet-button">✳ Give me a hint</button>
+              <span>No penalty for trying again</span>
+            </div>
+            <p id="graphHintText" class="graph-hint" hidden></p>
+          </section>
         </div>
       </section>
 
-      <section class="region-stage" aria-label="Graph Art progression">
-        <div class="region-stage-heading">
-          <div><span class="eyebrow">YOUR STAINED-GLASS CREATION</span><strong id="regionJourneyLabel">Facet 1 of 5</strong></div>
-          <span id="regionStepCount" aria-live="polite">0 of 15 decisions</span>
+      <section id="graphSummary" class="graph-summary" hidden aria-labelledby="graphSummaryTitle">
+        <div class="eyebrow">YOUR MATHEMATICAL ART IS COMPLETE ✦</div>
+        <h1 id="graphSummaryTitle">Little House</h1>
+        <p id="graphSummaryText">You created each piece by finding the intersection of its inequalities.</p>
+        <div id="graphSummaryStats" class="graph-summary-stats"></div>
+        <div class="graph-summary-buttons">
+          <button type="button" id="graphReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
+          <button type="button" id="graphRestart" class="button button-light">Make this picture again ↻</button>
+          <button type="button" id="graphChooseAgain" class="button button-light">Choose another picture</button>
         </div>
-        <div id="regionProgressDots" class="region-progress-dots" aria-label="Crystal facet progression"></div>
-        <div class="region-progress-track"><div id="regionProgressFill" class="region-progress-fill"></div></div>
       </section>
 
-      <div class="region-workspace">
-        <section class="panel region-graph-panel" aria-labelledby="regionCanvasHeading">
-          <div class="region-panel-heading">
-            <div><span class="panel-kicker">THE ART IS THE MATHEMATICS</span><h2 id="regionCanvasHeading">Your coordinate canvas</h2></div>
-            <span id="regionCanvasCount" class="panel-pill">0 / 5 facets</span>
-          </div>
-          <div class="region-graph-frame">
-            <svg id="regionGraph" viewBox="0 0 620 620" role="img"
-              aria-label="Coordinate graph. Tap a side of the active boundary to select the shading region."></svg>
-          </div>
-          <div class="region-canvas-legend">
-            <span><i class="region-key region-key--finished"></i>Finished coloured region</span>
-            <span><i class="region-key region-key--preview"></i>Current intersection</span>
-            <span><i class="region-key region-key--boundary"></i>Active boundary</span>
-          </div>
-          <p class="region-canvas-note">Every coloured facet is the real intersection of the inequalities you solved. Tap the graph to choose a side, or use the buttons.</p>
-        </section>
-        <section class="panel region-task-panel" id="regionTaskPanel" aria-labelledby="regionFacetTitle">
-          <div class="region-panel-heading">
-            <div><span class="panel-kicker" id="regionFacetStep">FACET 1 OF 5</span><h2 id="regionFacetTitle">Sunlit facet</h2></div>
-            <span id="regionFacetSwatch" class="region-facet-swatch" aria-hidden="true"></span>
-          </div>
-          <p id="regionFacetIntro" class="region-facet-intro"></p>
-          <div id="regionRuleTrail" class="region-rule-trail" aria-label="Boundary decisions in this facet"></div>
-          <div class="region-current-rule">
-            <span class="equation-label" id="regionRuleLabel">BOUNDARY 1 OF 2</span>
-            <div id="regionEquation" class="region-equation">x ≤ 0</div>
-            <p id="regionGiven" class="region-given">Already shaded: y ≥ 0</p>
-          </div>
-          <p class="region-task-instruction">The boundary is drawn for you. Shade the correct side, then decide whether the line should be solid or dashed.</p>
-          <fieldset class="region-choice-set">
-            <legend>1. Which side satisfies the inequality?</legend>
-            <div class="region-choice-pair" role="group" aria-label="Choose side of boundary">
-              <button type="button" id="regionSideA" aria-pressed="false">Left</button>
-              <button type="button" id="regionSideB" aria-pressed="false">Right</button>
-            </div>
-            <p class="region-mini-hint">You can also tap directly on the coordinate graph.</p>
-          </fieldset>
-          <fieldset class="region-choice-set">
-            <legend>2. Should the boundary line be included?</legend>
-            <div class="region-choice-pair" role="group" aria-label="Choose boundary style">
-              <button type="button" id="regionSolid" aria-pressed="false"><span class="region-solid-glyph">━━━</span> Solid</button>
-              <button type="button" id="regionDashed" aria-pressed="false"><span class="region-dashed-glyph">┄┄┄</span> Dashed</button>
-            </div>
-          </fieldset>
-          <div class="region-response">
-            <p id="regionFeedback" role="status" aria-live="polite">Choose a side and boundary style to get started.</p>
-          </div>
-          <div class="region-actions">
-            <button type="button" id="regionHintButton" class="button button-light">✳ Give me a hint</button>
-            <button type="button" id="regionCheckButton" class="button button-primary">Check shading →</button>
-          </div>
-          <div id="regionHintBox" class="region-hint-box" hidden></div>
-          <p class="region-unmarked">No penalties for trying again. Each correct decision changes the graph itself.</p>
-        </section>
-        <section id="regionFinishPanel" class="panel region-finish-panel" hidden aria-labelledby="regionFinishTitle">
-          <div class="eyebrow">YOUR STAINED GLASS IS COMPLETE ✦</div>
-          <h2 id="regionFinishTitle">Aurora Crystal</h2>
-          <p>You've created a picture entirely from the intersections of linear inequalities. Every coloured shape on the graph is a genuine mathematical region.</p>
-          <div id="regionFinishStats" class="region-finish-stats">5 facets · 15 decisions</div>
-          <details class="region-review">
-            <summary>Review the inequalities that made this picture</summary>
-            <div id="regionReviewContent"></div>
-          </details>
-          <button type="button" class="button button-primary" id="regionPlayAgain">Create the crystal again ↻</button>
-          <a class="button button-light region-return" href="../">Back to Pixel Art ↗</a>
-        </section>
-      </div>
-      <section id="how-graph-art-works" class="region-how" aria-labelledby="regionHowHeading">
-        <span class="eyebrow">WHY THIS IS REAL MATHEMATICAL ART</span>
-        <h2 id="regionHowHeading">Every piece is an overlap.</h2>
-        <div class="region-how-grid">
-          <div><span>01</span><strong>Choose a half-plane</strong><p>For each inequality, decide which side of the boundary contains its solutions.</p></div>
-          <div><span>02</span><strong>Keep only the overlap</strong><p>The preview shows the intersection with inequalities you have already answered.</p></div>
-          <div><span>03</span><strong>Build the stained glass</strong><p>Each completed intersection becomes a coloured facet of the picture — no unrelated image is unlocked.</p></div>
+      <section id="how-graph-art-works" class="graph-how" aria-labelledby="graphHowTitle">
+        <div class="eyebrow">THE ART IS THE MATHEMATICS</div>
+        <h2 id="graphHowTitle">Every piece is a real intersection.</h2>
+        <div class="graph-how-grid">
+          <div><span>01</span><strong>Read the whole set</strong><p>All the inequalities for one piece are shown together.</p></div>
+          <div><span>02</span><strong>Find the common region</strong><p>Fill it directly, or construct the boundaries and their arrows.</p></div>
+          <div><span>03</span><strong>Build the picture</strong><p>Correct regions remain, and finishing details arrive at the final reveal.</p></div>
         </div>
-        <p class="region-how-footnote">In this first experiment, the boundary lines are supplied. Solid lines are for ≤ and ≥; dashed lines are for &lt; and &gt;. The shaded shapes show the same interiors for strict and inclusive inequalities, but their boundaries are distinguished mathematically.</p>
       </section>
     </main>
-    <footer class="region-footer"><span>INEQUALITY INK ✳ GRAPH ART</span><a href="../">Try Pixel Art instead ↗</a></footer>
+    <footer class="region-footer"><span>INEQUALITY INK ✳ GRAPH ART</span><a href="../">Pixel Art ↗</a></footer>
   </div>
+
+  <dialog id="graphReveal" class="graph-reveal" aria-labelledby="graphRevealTitle" aria-describedby="graphRevealStatus">
+    <div class="graph-reveal-layout">
+      <header class="graph-reveal-head">
+        <div><span class="eyebrow">INEQUALITY INK ✦ THE BIG REVEAL</span><h2 id="graphRevealTitle">Your art is coming together!</h2></div>
+        <button type="button" id="graphRevealClose" class="graph-reveal-close" aria-label="Close picture reveal">×</button>
+      </header>
+      <div class="graph-reveal-board">
+        <svg id="graphRevealSvg" viewBox="0 0 620 620" role="img" aria-label="Your completed mathematical regions forming a colourful geometric picture"></svg>
+      </div>
+      <div class="graph-reveal-foot">
+        <p id="graphRevealStatus" role="status" aria-live="polite">Watch your regions come together.</p>
+        <div class="graph-reveal-buttons">
+          <button type="button" id="graphRevealSkip">Show finished picture →</button>
+          <button type="button" id="graphRevealAgain" hidden>Replay ✦</button>
+          <button type="button" id="graphDownload" hidden>↓ Save PNG</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 </body>
 </html>
