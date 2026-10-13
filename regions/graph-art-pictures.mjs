@@ -376,7 +376,7 @@ const campTent=Object.freeze({...picture({
     polygonPiece("camp-entrance","Tent doorway","#597f9f",
       [[-.75,-3],[0,-1.5],[.75,-3]]),
     polygonPiece("camp-fire","Firelight","#efad70",
-      diamond(3.75,-2.3,.75,.85))
+      diamond(3.75,-2.25,.75,.75))
   ],
   details:[
     L(0,0,2.55,0,3.5,DETAIL.brown,.085),
@@ -396,9 +396,9 @@ const diamondKite=Object.freeze({...picture({
     polygonPiece("kite-sail","The diamond sail","#83b7cc",
       diamond(0,1.5,2,2.25),{strict:[1]}),
     polygonPiece("kite-bow-left","Left ribbon","#efa0ac",
-      diamond(-.85,-2.35,.8,.55)),
+      diamond(-1,-2.25,.75,.5)),
     polygonPiece("kite-bow-right","Right ribbon","#eabf79",
-      diamond(.85,-2.35,.8,.55),{strict:[2]})
+      diamond(1,-2.25,.75,.5),{strict:[2]})
   ],
   details:[
     L(0,0,-.75,0,-4.2,DETAIL.mintInk,.09),
