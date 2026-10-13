@@ -1,64 +1,322 @@
-import {WORLD,PICTURE,regionPaths,boundaryPoints,satisfiesAll,validatePicture} from "./curved-engine.mjs";
-validatePicture();
-const NS="http://www.w3.org/2000/svg",S=620,P=53,U=S-2*P,px=x=>P+(x-WORLD.xmin)*U/10,py=y=>P+(WORLD.ymax-y)*U/10;
-const $=id=>document.getElementById(id),svg=$("graph");
-const SAVE="inequality-ink-curve-fill-prototype-v1";
-let done=0,selected=false,cursor={x:0,y:0},message="",tone="";
-try{const saved=JSON.parse(localStorage.getItem(SAVE));if(saved?.done===1||saved?.done===2)done=saved.done;}catch{}
-function el(tag,attrs={},parent=svg){const e=document.createElementNS(NS,tag);for(const [k,v]of Object.entries(attrs))e.setAttribute(k,v);parent.append(e);return e;}
-function path(points,close=false){return points.map((p,i)=>(i?"L":"M")+px(p.x).toFixed(2)+" "+py(p.y).toFixed(2)).join(" ")+(close?" Z":"");}
-function text(x,y,str,attrs={}){const e=el("text",{x,y,fill:"#718b99","font-size":"13",...attrs});e.textContent=str;return e;}
-function drawRegion(part,attrs){for(const pts of regionPaths(part.rules))el("path",{d:path(pts,true),...attrs,"pointer-events":"none"});}
-function render(){
- svg.replaceChildren();
- el("rect",{x:P,y:P,width:U,height:U,rx:10,fill:"#fffcf8",stroke:"#d4ddd8","stroke-width":2});
- for(let n=-5;n<=5;n++){
- el("line",{x1:px(n),y1:P,x2:px(n),y2:S-P,stroke:"#7d98a0","stroke-opacity":n===0?".55":".19","stroke-width":n===0?2:1});
- el("line",{x1:P,y1:py(n),x2:S-P,y2:py(n),stroke:"#7d98a0","stroke-opacity":n===0?".55":".19","stroke-width":n===0?2:1});
- if(n!==0&&n%2===0){text(px(n),py(0)+18,String(n),{"text-anchor":"middle"});text(px(0)-11,py(n)+5,String(n),{"text-anchor":"end"});}
- }
- text(px(5)-12,py(0)-11,"x",{"font-size":"17"});text(px(0)+10,py(5)+22,"y",{"font-size":"17"});
- PICTURE.pieces.slice(0,done).forEach(part=>drawRegion(part,{fill:part.color,stroke:"#fff9ee","stroke-width":"1"}));
- if(done<2){
- const part=PICTURE.pieces[done];
- if(selected)drawRegion(part,{fill:part.color,"fill-opacity":".67",stroke:"#358a78","stroke-width":"1"});
- for(const rule of part.rules){
-   const paths=boundaryPoints(rule);const list=rule.kind==="vertical"?[paths]:paths;
-   for(const pts of list)if(pts.length>1)el("path",{d:path(pts),fill:"none",stroke:rule.kind==="function"?"#416e9a":"#66778f","stroke-width":"3","stroke-dasharray":rule.inclusive?"":"9 7","pointer-events":"none"});
- }
- el("circle",{cx:px(cursor.x),cy:py(cursor.y),r:7,fill:"none",stroke:"#2a9476","stroke-width":2,"stroke-dasharray":"3 3","pointer-events":"none"});
- }
- $("progress").textContent=done+" / 2 pieces";
- $("pieceLabel").textContent=done<2?"PIECE "+(done+1)+" OF 2":"PICTURE FINISHED";
- $("pieceName").textContent=done<2?PICTURE.pieces[done].name:PICTURE.name;
- $("rules").replaceChildren();
- if(done<2)for(const r of PICTURE.pieces[done].rules){
- const item=document.createElement("div");item.className="rule";
- const t=document.createElement("span");t.textContent=r.text;
- const small=document.createElement("small");small.textContent=r.inclusive?"solid":"dashed";
- item.append(t,small);$("rules").append(item);
- }
- $("complete").hidden=done!==2;
- $("check").disabled=done===2||!selected;$("undo").disabled=done===2||!selected;
- $("feedback").textContent=message|| (done===2?"You made a butterfly from two curved intersections.":"Select the region satisfying all three inequalities.");
- $("feedback").className="feedback "+tone;
+import {
+  WORLD,PICTURE,regionPaths,boundaryPoints,curvedCellAt,validatePicture
+} from "./curved-engine.mjs";
+
+const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
+const px=x=>PAD+(x-WORLD.xmin)*GRID/(WORLD.xmax-WORLD.xmin);
+const py=y=>PAD+(WORLD.ymax-y)*GRID/(WORLD.ymax-WORLD.ymin);
+const path=(points,close=false)=>points.map((p,i)=>
+  (i?"L":"M")+px(p.x).toFixed(2)+" "+py(p.y).toFixed(2)).join(" ")+(close?" Z":"");
+export const CURVE_SAVE_KEY="inequality-ink-curve-fill-prototype-v1";
+
+export function readCurveSave(storage){
+  try{
+    const raw=JSON.parse(storage.getItem(CURVE_SAVE_KEY));
+    if(raw&&Number.isInteger(raw.done)&&raw.done>=0&&raw.done<=PICTURE.pieces.length){
+      return {done:raw.done,replays:Number.isInteger(raw.replays)&&raw.replays>=0?raw.replays:0};
+    }
+  }catch{}
+  return {done:0,replays:0};
 }
-function pick(x,y){
- if(done===2)return;
- if(x<=-5||x>=5||y<=-5||y>=5)return;
- const part=PICTURE.pieces[done];
- // Distance tolerance avoids ambiguous taps exactly on a boundary.
- const near=part.rules.some(r=>r.kind==="vertical"?Math.abs(x-r.x)<.09:Math.abs(y-r.coeffs.reduce((s,c,i)=>s+c*x**i,0))<.12);
- if(near){message="Choose a point farther from the boundary.";tone="";selected=false;}
- else if(satisfiesAll(part.rules,x,y)){selected=true;message="Correct region selected! Press Check region.";tone="success";}
- else{selected=false;message="Not quite. This point does not satisfy every inequality. Try again.";tone="error";}
- render();
+
+export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
+  validatePicture();
+  const $=id=>doc.getElementById(id);
+  const graph=$("graphArtGraph"),preview=$("curvePreviewGraph"),reveal=$("curveReveal"),revealSvg=$("graphRevealSvg");
+  let saved=readCurveSave(storage),screen="picker",selected=null,flash=null,
+    cursor={x:0,y:0},message="",status="",hint="",flashTimer=null,revealTimers=[];
+
+  function persist(){try{storage.setItem(CURVE_SAVE_KEY,JSON.stringify(saved));}catch{}}
+  function notify(text,type=""){message=text;status=type;}
+  function current(){return PICTURE.pieces[saved.done]||null;}
+  function el(svg,tag,attrs={}){
+    const node=doc.createElementNS(NS,tag);
+    for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));
+    svg.append(node);
+    return node;
+  }
+  function label(svg,x,y,value,attrs={}){
+    const t=el(svg,"text",{x,y,...attrs});
+    t.textContent=value;return t;
+  }
+  function baseGraph(svg,{grid=true}={}){
+    svg.replaceChildren();
+    el(svg,"rect",{x:PAD,y:PAD,width:GRID,height:GRID,rx:9,
+      fill:"#fffcf8",stroke:"#d8dfd9","stroke-width":2});
+    if(!grid)return;
+    for(let n=-5;n<=5;n++){
+      el(svg,"line",{x1:px(n),y1:PAD,x2:px(n),y2:SIZE-PAD,stroke:"#7692a0",
+        "stroke-opacity":n===0?.48:.15,"stroke-width":n===0?2:1});
+      el(svg,"line",{x1:PAD,y1:py(n),x2:SIZE-PAD,y2:py(n),stroke:"#7692a0",
+        "stroke-opacity":n===0?.48:.15,"stroke-width":n===0?2:1});
+      if(n!==0&&n%2===0){
+        label(svg,px(n),py(0)+18,String(n).replace("-","−"),{
+          "font-size":13,"text-anchor":"middle",fill:"#8596a2"});
+        label(svg,px(0)-12,py(n)+5,String(n).replace("-","−"),{
+          "font-size":13,"text-anchor":"end",fill:"#8596a2"});
+      }
+    }
+    label(svg,px(5)-8,py(0)-10,"x",{"font-size":17,fill:"#546f80"});
+    label(svg,px(0)+11,py(5)+22,"y",{"font-size":17,fill:"#546f80"});
+  }
+  function drawPaths(svg,paths,attrs={},className=""){
+    for(const points of paths){
+      const node=el(svg,"path",{d:path(points,true),"pointer-events":"none",...attrs});
+      if(className)node.classList?.add(className);
+    }
+  }
+  function drawPiece(svg,part,attrs={},className=""){
+    drawPaths(svg,regionPaths(part.rules),attrs,className);
+  }
+  function drawBoundaries(svg,part){
+    for(const rule of part.rules){
+      const raw=boundaryPoints(rule);
+      const runs=rule.kind==="vertical"?[raw]:raw;
+      for(const points of runs){
+        if(points.length<2)continue;
+        el(svg,"path",{d:path(points),fill:"none",stroke:"#5b7890",
+          "stroke-width":2.6,"stroke-opacity":.91,
+          "stroke-dasharray":rule.inclusive?"":"8 7",
+          "pointer-events":"none"});
+      }
+    }
+  }
+  function miniature(){
+    baseGraph(preview,{grid:false});
+    for(const [i,part] of PICTURE.pieces.entries()){
+      const finished=i<saved.done;
+      drawPiece(preview,part,{fill:finished?part.color:"#bfcac7",
+        "fill-opacity":finished?1:.22,stroke:finished?"#fff9ee":"#bfcac7",
+        "stroke-dasharray":finished?"":"9 7","stroke-width":3});
+    }
+  }
+  function pickerView(){
+    miniature();
+    const done=saved.done,total=PICTURE.pieces.length;
+    $("curveGalleryProgress").textContent=(done===total?"1 of 1":"0 of 1")+" pictures finished";
+    $("curveCardTitle").textContent=done===total?PICTURE.name:PICTURE.clue;
+    $("curveCardProgressFill").style.width=(100*done/total)+"%";
+    $("curveCardAction").textContent=done===total?"✓ Finished · Play again":
+      done?"Continue · "+done+"/"+total+" pieces →":"Start picture →";
+    $("curvePictureCard").setAttribute("aria-label",(done===total?"Replay ":"Start or continue ")+PICTURE.name);
+  }
+  function draw(){
+    baseGraph(graph);
+    for(let i=0;i<saved.done;i++){
+      const part=PICTURE.pieces[i];
+      drawPiece(graph,part,{fill:part.color,stroke:"#fff9ec","stroke-width":3,
+        "data-region-layer":"finished-"+part.id});
+    }
+    const part=current();
+    if(!part)return;
+    drawBoundaries(graph,part);
+    if(selected)drawPaths(graph,selected.paths,{fill:part.color,"fill-opacity":.52,
+      stroke:part.color,"stroke-width":2,"data-region-layer":"selection"},"graph-good-flash");
+    if(flash)drawPaths(graph,flash.paths,{fill:"#e65d65","fill-opacity":.55,
+      stroke:"#ca343e","stroke-width":3,"data-region-layer":"wrong"},"graph-wrong-flash");
+    el(graph,"circle",{cx:px(cursor.x),cy:py(cursor.y),r:7,
+      fill:"none",stroke:"#408c7c","stroke-width":2,
+      "stroke-dasharray":"3 2","pointer-events":"none"});
+    graph.setAttribute("aria-label","Coordinate graph. "+saved.done+
+      " completed pieces. Move with arrow keys and press Enter to fill the region under the keyboard cursor.");
+  }
+  function playView(){
+    const part=current();
+    if(!part){setScreen("summary");return;}
+    $("graphPieceCount").textContent="Piece "+(saved.done+1)+" of "+PICTURE.pieces.length;
+    $("graphCanvasCount").textContent=saved.done+" / "+PICTURE.pieces.length;
+    $("graphProgressFill").style.width=(100*saved.done/PICTURE.pieces.length)+"%";
+    $("graphProgress").setAttribute("aria-valuenow",String(Math.round(100*saved.done/PICTURE.pieces.length)));
+    $("graphTaskKicker").textContent="PIECE "+(saved.done+1)+" OF "+PICTURE.pieces.length;
+    $("graphTaskTitle").textContent=part.name;
+    $("graphPieceSwatch").style.background=part.color;
+    $("graphRuleCount").textContent=part.rules.length+" inequalities";
+    const holder=$("graphRuleList");holder.replaceChildren();
+    for(const rr of part.rules){
+      const item=doc.createElement("div");
+      item.className="graph-rule-item";
+      const eq=doc.createElement("span");eq.textContent=rr.text;
+      const state=doc.createElement("span");state.className="rule-state";state.textContent="AND";
+      item.append(eq,state);holder.append(item);
+    }
+    $("graphFeedback").textContent=message||"Tap the region where all inequalities are true.";
+    $("graphFeedback").className="graph-feedback"+(status?" "+status:"");
+    $("graphHintText").textContent=hint;
+    $("graphHintText").hidden=!hint;
+    draw();
+  }
+  function summaryView(){ $("curveSummaryTitle").textContent=PICTURE.name; }
+  function setScreen(next){
+    screen=next;
+    $("curvePicker").hidden=next!=="picker";
+    $("curvePlay").hidden=next!=="play";
+    $("curveSummary").hidden=next!=="summary";
+    $("how-graph-art-works").hidden=next==="play";
+    if(next==="picker")pickerView();
+    if(next==="play")playView();
+    if(next==="summary")summaryView();
+  }
+  function stopFlash(){
+    if(flashTimer!==null){win.clearTimeout?.(flashTimer);flashTimer=null;}
+    flash=null;
+  }
+  function pickAt(x,y){
+    if(screen!=="play"||!current())return;
+    const candidate=curvedCellAt(current().rules,x,y);
+    if(!candidate){
+      notify("Tap a little farther from a boundary. Try the centre of a region.");
+      playView();return;
+    }
+    stopFlash();
+    if(!candidate.correct){
+      flash=candidate;selected=null;
+      notify("Not quite. That region fails at least one of the inequalities. Try another.","error");
+      playView();
+      const id=win.setTimeout?.(()=>{
+        if(flashTimer!==id)return;
+        flashTimer=null;flash=null;
+        if(screen==="play")playView();
+      },950);
+      flashTimer=id??null;
+      return;
+    }
+    selected=selected?null:candidate;
+    notify(selected?"Region filled. Press Check when you are ready.":
+      "Fill removed. Choose a region again.");
+    playView();
+  }
+  function clearSelection(){
+    stopFlash();selected=null;
+    notify("Fill cleared. Choose a region.");
+    if(screen==="play")playView();
+  }
+  function checkFill(){
+    if(screen!=="play"||!current())return;
+    if(!selected){notify("First fill the region satisfying all the inequalities.","error");playView();return;}
+    if(!selected.correct){notify("Check which inequalities are true.","error");playView();return;}
+    saved.done++;persist();selected=null;stopFlash();
+    cursor={x:0,y:0};hint="";
+    if(saved.done===PICTURE.pieces.length){
+      setScreen("summary");openReveal();
+    }else{
+      notify("Beautiful! That mathematical shape is now part of your picture.","success");
+      playView();
+    }
+  }
+  function restart(){
+    stopFlash();stopReveal();selected=null;cursor={x:0,y:0};hint="";
+    saved.done=0;saved.replays++;persist();
+    notify("Find the common region.");setScreen("play");
+  }
+  function stopReveal(){
+    for(const id of revealTimers)win.clearTimeout?.(id);
+    revealTimers=[];
+  }
+  function later(fn,ms){
+    const id=win.setTimeout?.(fn,ms);
+    if(id!=null)revealTimers.push(id);
+  }
+  function revealStage(count,finished=false){
+    baseGraph(revealSvg,{grid:false});
+    for(const part of PICTURE.pieces.slice(0,count)){
+      drawPiece(revealSvg,part,{fill:part.color,stroke:"#fff9ec","stroke-width":3.5});
+    }
+    $("graphRevealStatus").textContent=finished?
+      "Your "+PICTURE.name+" is complete! Both coloured wings are real intersections of quadratic inequalities.":
+      "Mathematical shape "+count+" of "+PICTURE.pieces.length+" revealed";
+    $("graphRevealTitle").textContent=finished?PICTURE.name+" ✦":"Your picture is coming to life!";
+    $("curveRevealSkip").hidden=finished;
+    $("curveRevealAgain").hidden=!finished;
+    $("curveDownload").hidden=!finished;
+  }
+  function showFinished(){stopReveal();revealStage(PICTURE.pieces.length,true);}
+  function playReveal(){
+    stopReveal();revealStage(0);
+    if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
+      showFinished();return;
+    }
+    PICTURE.pieces.forEach((_,i)=>later(()=>revealStage(i+1),600*(i+1)));
+    later(showFinished,600*(PICTURE.pieces.length+1));
+  }
+  function openReveal(){
+    if(reveal.showModal)reveal.showModal();
+    else reveal.setAttribute("open","");
+    playReveal();
+  }
+  function closeReveal(){
+    stopReveal();
+    if(reveal.close)reveal.close();
+    else reveal.removeAttribute?.("open");
+    setScreen("summary");
+  }
+  function savePNG(){
+    const xml=new XMLSerializer().serializeToString(revealSvg);
+    const canvas=doc.createElement("canvas");canvas.width=1100;canvas.height=1100;
+    const ctx=canvas.getContext?.("2d");
+    if(!ctx)return;
+    const blob=new Blob([xml],{type:"image/svg+xml;charset=utf-8"});
+    const url=URL.createObjectURL(blob),image=new Image();
+    image.onload=()=>{
+      ctx.fillStyle="#fffaf0";ctx.fillRect(0,0,1100,1100);
+      ctx.drawImage(image,0,0,1100,1100);URL.revokeObjectURL(url);
+      const a=doc.createElement("a");a.download="inequality-ink-"+PICTURE.id+".png";
+      a.href=canvas.toDataURL("image/png");a.click();
+    };
+    image.onerror=()=>URL.revokeObjectURL(url);
+    image.src=url;
+  }
+  function showHint(){
+    if(screen!=="play"||!current())return;
+    hint=saved.done===0?
+      "Try the test point (−1, 0). Check that it lies above the first parabola, below the second, and to the left of the y-axis.":
+      "Try the test point (1, 0). Check both parabolas and remember that the vertical boundary is strict.";
+    notify("A hint has appeared below.");
+    playView();
+  }
+  $("curvePictureCard").addEventListener("click",()=>{
+    stopFlash();selected=null;cursor={x:0,y:0};hint="";
+    if(saved.done===PICTURE.pieces.length){
+      saved.done=0;saved.replays++;persist();
+    }
+    notify("Find the common region.");setScreen("play");
+  });
+  $("curveBack").addEventListener("click",()=>{stopFlash();selected=null;setScreen("picker");});
+  $("graphUndoFill").addEventListener("click",clearSelection);
+  $("graphCheckFill").addEventListener("click",checkFill);
+  $("graphHint").addEventListener("click",showHint);
+  $("curveRestart").addEventListener("click",restart);
+  $("curveChooseAgain").addEventListener("click",()=>setScreen("picker"));
+  $("curveReplayReveal").addEventListener("click",openReveal);
+  $("curveRevealClose").addEventListener("click",closeReveal);
+  $("curveRevealSkip").addEventListener("click",showFinished);
+  $("curveRevealAgain").addEventListener("click",playReveal);
+  $("curveDownload").addEventListener("click",savePNG);
+  reveal.addEventListener("cancel",e=>{e.preventDefault?.();closeReveal();});
+  graph.addEventListener("click",ev=>{
+    const box=graph.getBoundingClientRect();
+    if(!box.width||!box.height)return;
+    const sx=(ev.clientX-box.left)/box.width*SIZE;
+    const sy=(ev.clientY-box.top)/box.height*SIZE;
+    const x=WORLD.xmin+(sx-PAD)/GRID*(WORLD.xmax-WORLD.xmin);
+    const y=WORLD.ymax-(sy-PAD)/GRID*(WORLD.ymax-WORLD.ymin);
+    pickAt(x,y);
+  });
+  graph.addEventListener("keydown",ev=>{
+    if(screen!=="play")return;
+    const dirs={ArrowLeft:[-.5,0],ArrowRight:[.5,0],
+      ArrowUp:[0,.5],ArrowDown:[0,-.5]};
+    if(dirs[ev.key]){
+      ev.preventDefault?.();
+      cursor.x=Math.max(-4.5,Math.min(4.5,cursor.x+dirs[ev.key][0]));
+      cursor.y=Math.max(-4.5,Math.min(4.5,cursor.y+dirs[ev.key][1]));
+      notify("Cursor at ("+cursor.x+", "+cursor.y+"). Press Enter to fill.");
+      playView();
+    }else if(ev.key==="Enter"||ev.key===" "){
+      ev.preventDefault?.();pickAt(cursor.x,cursor.y);
+    }
+  });
+  setScreen("picker");
+  return {pickAt,checkFill,readProgress:()=>({...saved}),render:()=>setScreen(screen),
+    start:()=>{$("curvePictureCard").click();},showFinished};
 }
-function reset(){done=0;selected=false;cursor={x:0,y:0};message="";tone="";localStorage.setItem(SAVE,JSON.stringify({done}));render();}
-$("check").addEventListener("click",()=>{if(!selected||done>=2)return;done++;selected=false;message=done===2?"Both wings complete — beautiful maths!":"Great! The first wing is painted. Now find the other wing.";tone="success";localStorage.setItem(SAVE,JSON.stringify({done}));render();});
-$("undo").addEventListener("click",()=>{selected=false;message="Selection cleared.";tone="";render();});
-$("reset").addEventListener("click",reset);$("replay").addEventListener("click",reset);
-$("hint").addEventListener("click",()=>{if(done===2)return;message=done===0?"Look between the two parabolas, to the LEFT of the y-axis. Try (−1, 0).":"Look between the two parabolas, to the RIGHT of the y-axis. Try (1, 0). The vertical line is dashed.";tone="";render();});
-svg.addEventListener("click",ev=>{const b=svg.getBoundingClientRect();if(!b.width)return;const x=-5+((ev.clientX-b.left)/b.width*S-P)*10/U;const y=5-((ev.clientY-b.top)/b.height*S-P)*10/U;pick(x,y);});
-svg.addEventListener("keydown",ev=>{const dirs={ArrowLeft:[-.5,0],ArrowRight:[.5,0],ArrowUp:[0,.5],ArrowDown:[0,-.5]};if(dirs[ev.key]){ev.preventDefault();cursor.x=Math.max(-4.5,Math.min(4.5,cursor.x+dirs[ev.key][0]));cursor.y=Math.max(-4.5,Math.min(4.5,cursor.y+dirs[ev.key][1]));message="Cursor at ("+cursor.x+", "+cursor.y+"). Press Enter to select.";tone="";render();}else if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();pick(cursor.x,cursor.y);}});
-render();
+if(typeof document!=="undefined"&&document.getElementById("curvePicker"))initCurveArt();

@@ -1,17 +1,160 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Curve &amp; Fill | Inequality Ink</title>
-<link rel="stylesheet" href="./curve-art.css">
-<script type="module" src="./curve-art.mjs"></script></head>
-<body><header class="top"><a href="./" class="back">← Graph Art</a><span>INEQUALITY <b>INK</b> · CURVE &amp; FILL</span><a href="../" class="back">Home</a></header>
-<main><section class="hero"><div class="eyebrow">GRAPH ART · PHASE 1 PROTOTYPE</div><h1>Curve <em>&amp; Fill</em></h1><p>The curves are the boundaries. Find their common region and paint a butterfly, one mathematical piece at a time.</p></section>
-<div class="workspace">
-<section class="panel canvas-panel"><div class="panel-head"><div><div class="eyebrow">YOUR MATHEMATICAL CANVAS</div><h2>Find the curved intersection</h2></div><span id="progress" class="pill"></span></div>
-<svg id="graph" viewBox="0 0 620 620" tabindex="0" role="group" aria-label="Coordinate graph. Click or tap a region; use arrow keys and Enter with keyboard."></svg>
-<p class="muted">Tap inside a region, away from the boundaries. Keyboard: arrow keys to move, Enter to select.</p></section>
-<section class="panel task-panel"><div class="eyebrow" id="pieceLabel">PIECE 1 OF 2</div><h2 id="pieceName">Left wing</h2><p>Find the region satisfying <strong>all</strong> these inequalities:</p><div id="rules" class="rules"></div><div class="key"><span><i class="solid"></i> Solid: equality included</span><span><i class="dashed"></i> Dashed: strict inequality</span></div>
-<div class="actions"><button id="undo" class="secondary">Clear selection</button><button id="check">Check region →</button></div>
-<p id="feedback" class="feedback" role="status" aria-live="polite"></p>
-<button id="hint" class="hint">✳ Give me a hint</button><button id="reset" class="reset">↺ Restart picture</button>
-<div id="complete" class="complete" hidden><h2>Butterfly complete! ✦</h2><p>Both coloured wings were made from real intersections of quadratic inequalities.</p><button id="replay">Make it again ↻</button></div>
-</section></div></main></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f1e9" />
+  <meta name="description" content="Create real graph art by finding curved regions bounded by quadratic inequalities." />
+  <title>Curve &amp; Fill | Graph Art | Inequality Ink</title>
+  <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
+  <link rel="stylesheet" href="./regions.css?v=five-stage-v4" />
+  <link rel="stylesheet" href="./curve-art.css?v=find-fill-parity-v2" />
+  <script type="module" src="./curve-art.mjs?v=find-fill-parity-v2"></script>
+</head>
+<body class="regions-page curve-page">
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="../" aria-label="Inequality Ink home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><strong>Inequality<span class="brand-accent">Ink</span></strong><small>Make maths into art</small></span>
+      </a>
+      <div class="top-actions">
+        <nav class="studio-switch" aria-label="Art style">
+          <a class="studio-tab" href="../"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.2"/><rect x="11" y="2" width="7" height="7" rx="1.2"/><rect x="2" y="11" width="7" height="7" rx="1.2"/><rect x="11" y="11" width="7" height="7" rx="1.2"/></svg></span><span>Pixel Art</span></a>
+          <a class="studio-tab is-active" href="./" aria-current="page"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M2.5 2.5v15h15"/><path d="m2.5 12 7.5-7 7.5 8v4.5h-15z" fill="currentColor" fill-opacity=".17"/><path d="m2.5 12 7.5-7 7.5 8" stroke-linejoin="round"/></svg></span><span>Graph Art</span></a>
+        </nav>
+        <a class="top-button graph-help-link" href="#how-graph-art-works">How it works <span aria-hidden="true">?</span></a>
+      </div>
+    </header>
+    <main class="region-main">
+      <section id="curvePicker" class="graph-picker" aria-labelledby="curvePickerTitle">
+        <div class="graph-landing-intro">
+          <div class="eyebrow"><span class="spark-dot"></span> GRAPH ART STUDIO · CURVE &amp; FILL</div>
+          <h1 id="curvePickerTitle">Shade the maths. <em>Make the art.</em></h1>
+          <p>Several inequalities. One shared curved region. Every region you find becomes a real piece of your picture.</p>
+        </div>
+        <section class="graph-picture-picker" aria-labelledby="curvePictureHeading">
+          <div class="graph-picker-heading">
+            <div><div class="eyebrow">A SMALL START. A BIG REVEAL.</div><h2 id="curvePictureHeading">Choose a picture</h2></div>
+            <p>Find the common region between curves.</p>
+          </div>
+          <div class="graph-journey-status">
+            <strong id="curveGalleryProgress" aria-live="polite">0 of 1 pictures finished</strong>
+            <span>Starter prototype · progress saves independently.</span>
+          </div>
+          <div class="graph-picture-grid curve-picture-grid" role="group" aria-label="Curve & Fill pictures">
+            <button type="button" class="graph-picture-card is-recommended" id="curvePictureCard" aria-label="Start Parabola Butterfly">
+              <svg id="curvePreviewGraph" viewBox="0 0 620 620" aria-hidden="true"></svg>
+              <span class="graph-picture-info">
+                <span class="graph-stage">1 · STARTER · 2 PIECES</span>
+                <strong id="curveCardTitle">Two wings, one picture</strong>
+                <small>Discover a colourful picture using intersecting parabolas.</small>
+                <span class="graph-card-maths">Quadratic inequalities · curved intersections</span>
+                <span class="graph-card-progress"><span id="curveCardProgressFill"></span></span>
+                <span class="graph-card-go" id="curveCardAction">Start picture →</span>
+              </span>
+            </button>
+          </div>
+          <p class="curve-gallery-footnote">One starter picture is available in this prototype. The full five-stage Curve &amp; Fill journey comes next.</p>
+        </section>
+      </section>
+      <section id="curvePlay" class="graph-play" hidden aria-label="Curve & Fill activity">
+        <div class="graph-game-top">
+          <button type="button" id="curveBack" class="graph-quiet-button">← Pictures</button>
+          <div class="graph-game-title">
+            <span class="eyebrow">CURVE &amp; FILL · STEP 1 · STARTER</span>
+            <h1>Parabola Butterfly</h1>
+            <span class="graph-game-focus">Quadratic inequalities · intersecting curves</span>
+          </div>
+          <span id="graphPieceCount" class="graph-piece-pill">Piece 1 of 2</span>
+        </div>
+        <div class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="graphProgress">
+          <div id="graphProgressFill"></div>
+        </div>
+        <div class="region-workspace graph-workspace">
+          <section class="panel graph-canvas-panel" aria-labelledby="graphCanvasHeading">
+            <div class="graph-panel-top">
+              <div><span class="panel-kicker">YOUR MATHEMATICAL CANVAS</span><h2 id="graphCanvasHeading">Find the overlap</h2></div>
+              <span class="graph-canvas-count" id="graphCanvasCount">0 / 2</span>
+            </div>
+            <div class="graph-frame">
+              <svg id="graphArtGraph" viewBox="0 0 620 620" tabindex="0" role="group" aria-label="Interactive coordinate graph. Tap a region or use arrow keys and Enter to fill it."></svg>
+            </div>
+            <div class="graph-canvas-footer">
+              <span>Tap the correct region, then press Check. Keyboard: arrows + Enter.</span>
+              <span class="graph-canvas-key">◌ Ghost boundary &nbsp; ▰ Painted piece</span>
+            </div>
+          </section>
+          <section class="panel graph-task-panel" aria-labelledby="graphTaskTitle">
+            <div class="graph-task-heading">
+              <div><span class="panel-kicker" id="graphTaskKicker">PIECE 1 OF 2</span><h2 id="graphTaskTitle">Left wing</h2></div>
+              <span id="graphPieceSwatch" class="graph-piece-swatch" aria-hidden="true"></span>
+            </div>
+            <p class="graph-task-lead">All these inequalities must be true together. Fill their common region.</p>
+            <div class="graph-rule-heading"><strong>All the inequalities for this shape</strong><span id="graphRuleCount">3 inequalities</span></div>
+            <div id="graphRuleList" class="graph-rule-list" aria-label="Inequalities defining this piece"></div>
+            <div class="graph-fill-controls">
+              <div class="graph-tool-hint">
+                <span aria-hidden="true">▨</span>
+                <div><strong>Fill tool selected</strong><small>Tap a region on the graph. A wrong region flashes red and clears; a correct one stays until you check.</small></div>
+              </div>
+              <div class="graph-commands">
+                <button type="button" id="graphUndoFill" class="button button-light">↶ Undo fill</button>
+                <button type="button" id="graphCheckFill" class="button button-primary">Check region →</button>
+              </div>
+            </div>
+            <p id="graphFeedback" class="graph-feedback" role="status" aria-live="polite">Tap the region where all inequalities are true.</p>
+            <div class="graph-help-actions">
+              <button type="button" id="graphHint" class="graph-quiet-button">✳ Give me a hint</button>
+              <span>No penalty for trying again</span>
+            </div>
+            <p id="graphHintText" class="graph-hint" hidden></p>
+          </section>
+        </div>
+      </section>
+      <section id="curveSummary" class="graph-summary" hidden aria-labelledby="curveSummaryTitle">
+        <div class="eyebrow">YOUR MATHEMATICAL ART IS COMPLETE ✦</div>
+        <h1 id="curveSummaryTitle">Parabola Butterfly</h1>
+        <p>You created each wing by finding the intersection of its curved inequalities.</p>
+        <div class="graph-summary-stats">2 curved regions · 6 inequalities · 1 finished picture</div>
+        <div class="graph-summary-buttons">
+          <button type="button" id="curveReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
+          <button type="button" id="curveRestart" class="button button-light">Make this picture again ↻</button>
+          <button type="button" id="curveChooseAgain" class="button button-light">Choose another picture</button>
+        </div>
+      </section>
+      <section id="how-graph-art-works" class="graph-how" aria-labelledby="graphHowTitle">
+        <div class="eyebrow">THE ART IS THE MATHEMATICS</div>
+        <h2 id="graphHowTitle">Every piece is a real curved intersection.</h2>
+        <div class="graph-how-grid">
+          <div><span>01</span><strong>Read the whole set</strong><p>All the inequalities defining a curved piece are shown together.</p></div>
+          <div><span>02</span><strong>Find the common region</strong><p>Tap the area satisfying every inequality. Incorrect regions flash and clear.</p></div>
+          <div><span>03</span><strong>Build the picture</strong><p>Correct regions remain filled, and the picture appears at the final reveal.</p></div>
+        </div>
+      </section>
+    </main>
+    <footer class="region-footer"><span>INEQUALITY INK ✳ GRAPH ART</span><a href="./">All Graph Art modes ↗</a></footer>
+  </div>
+  <dialog id="curveReveal" class="graph-reveal" aria-labelledby="graphRevealTitle" aria-describedby="graphRevealStatus">
+    <div class="graph-reveal-layout">
+      <header class="graph-reveal-head">
+        <div><span class="eyebrow">INEQUALITY INK ✦ THE BIG REVEAL</span><h2 id="graphRevealTitle">Your art is coming together!</h2></div>
+        <button type="button" id="curveRevealClose" class="graph-reveal-close" aria-label="Close picture reveal">×</button>
+      </header>
+      <div class="graph-reveal-board">
+        <svg id="graphRevealSvg" viewBox="0 0 620 620" role="img" aria-label="Completed butterfly made from coloured curved inequalities"></svg>
+      </div>
+      <div class="graph-reveal-foot">
+        <p id="graphRevealStatus" role="status" aria-live="polite">Watch your regions come together.</p>
+        <div class="graph-reveal-buttons">
+          <button type="button" id="curveRevealSkip">Show finished picture →</button>
+          <button type="button" id="curveRevealAgain" hidden>Replay ✦</button>
+          <button type="button" id="curveDownload" hidden>↓ Save PNG</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>

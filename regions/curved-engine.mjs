@@ -18,7 +18,8 @@ export function rangeAtX(rules,x,world=WORLD){
   let lo=world.ymin,hi=world.ymax;
   for(const r of rules){
     if(r.kind==="vertical"){
-      if(!satisfies(r,x,0))return null;
+      // Boundary membership is checked exactly by satisfies(); fills remain closed geometrically.
+      if(signedDifference(r,x,0)<-tol)return null;
     }else if(r.kind==="function"){
       const y=functionValue(r,x);
       if(r.side==="above")lo=Math.max(lo,y);
@@ -58,6 +59,28 @@ export function boundaryPoints(rule,world=WORLD,steps=320){
   }
   if(run.length>1)runs.push(run);
   return runs;
+}
+// The curved analogue of graphCellAt() in graph-art-pictures.mjs.
+// Every selection is a whole sign cell, never just a point. Wrong cells can
+// flash red with precisely the same feedback as linear Find & Fill.
+export function curvedCellAt(rules,x,y,tolerance=.09,world=WORLD){
+  if(!Number.isFinite(x)||!Number.isFinite(y)||
+    x<=world.xmin||x>=world.xmax||y<=world.ymin||y>=world.ymax)return null;
+  const near=rules.some(r=>{
+    if(r.kind==="vertical")return Math.abs(x-r.x)<tolerance;
+    const derivative=r.coeffs.reduce((sum,c,i)=>i?sum+i*c*x**(i-1):sum,0);
+    return Math.abs(y-functionValue(r,x))/Math.hypot(1,derivative)<tolerance;
+  });
+  if(near)return null;
+  const cellRules=rules.map(r=>{
+    const positive=signedDifference(r,x,y)>0;
+    const side=positive?r.side:r.kind==="vertical"?
+      (r.side==="left"?"right":"left"):(r.side==="above"?"below":"above");
+    return {...r,side,inclusive:true};
+  });
+  const paths=regionPaths(cellRules,world);
+  if(!paths.length)return null;
+  return {x,y,paths,correct:satisfiesAll(rules,x,y)};
 }
 export const PICTURE=Object.freeze({
   id:"parabola-butterfly",name:"Parabola Butterfly",clue:"Two wings from intersecting curves",

@@ -15,3 +15,13 @@ Implementation:
 - `curved-engine.test.mjs`: mathematical regression checks.
 
 Phase 2 would expand the curve rule model and gallery, and later consolidate the separate prototype into data-driven Graph Art modes. This phase deliberately leaves the original two galleries and their saves untouched.
+
+## Consistent Find & Fill experience (Phase 1 refinement)
+
+The Curve & Fill prototype now imports the same site-wide styles and Graph Art
+workspace, rule cards, feedback panel, picture picker, two-step completion
+summary and full-screen reveal as Find & Fill. The graph has matching grid and
+colours. Selecting a wrong **mathematically defined sign-cell region** flashes
+that whole region red then automatically clears after 950 ms. Correct selections
+fill the curved region translucent green/picture colour until the separate
+Check action; undo/toggle, hints and keyboard feedback mirror Find & Fill.
