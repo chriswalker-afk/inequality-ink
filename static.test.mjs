@@ -16,7 +16,8 @@ test("Public copy is independent of a particular exam or course",()=>{
    "PICTURE_PROGRESSION_PLAN.md":load("PICTURE_PROGRESSION_PLAN.md")
  }))assert.doesNotMatch(source,/\b(?:Foundation|4MA1)\b/i,
    file+" should not contain course-specific wording");
- assert.ok(html.includes("INEQUALITIES • PIXEL ART"));
+ assert.ok(html.includes('class="studio-tab is-active" href="./" aria-current="page"'));
+ assert.ok(html.includes('class="studio-tab" href="./regions/"'));
  assert.ok(html.includes("MATHS THROUGH PIXEL ART"));
  assert.ok(html.includes("Practise inequalities on interactive number lines"));
 });
