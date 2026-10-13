@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <meta name="theme-color" content="#f5f1e9" />
-  <meta name="description" content="Plot a parabola and a straight line, choose the boundaries and shade real mathematical regions to create an umbrella." />
+  <meta name="description" content="Sketch straight lines, parabolas, circles and absolute-value graphs to create five pictures from inequalities." />
   <title>Plot &amp; Shade | Graph Art | Inequality Ink</title>
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
   <link rel="stylesheet" href="./regions.css?v=five-stage-v4" />
-  <link rel="stylesheet" href="./plot-art.css?v=plot-prototype-v1" />
-  <script type="module" src="./plot-art.mjs?v=plot-prototype-v1"></script>
+  <link rel="stylesheet" href="./plot-art.css?v=plot-full-v2" />
+  <script type="module" src="./plot-art.mjs?v=plot-full-v2"></script>
 </head>
 <body class="regions-page plot-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -37,23 +37,16 @@
         </div>
         <section class="graph-picture-picker" aria-labelledby="plotPickerHeading">
           <div class="graph-picker-heading">
-            <div><div class="eyebrow">STARTER PROTOTYPE · TWO QUICK PIECES</div><h2 id="plotPickerHeading">Choose a picture</h2></div>
-            <p id="plotGalleryProgress" aria-live="polite">0 of 2 pieces painted</p>
+            <div><div class="eyebrow">FIVE PICTURES · GROWING CHALLENGE</div><h2 id="plotPickerHeading">Choose a picture</h2></div>
+            <p id="plotGalleryProgress" aria-live="polite">0 of 5 pictures finished</p>
           </div>
-          <div class="graph-picture-grid plot-picture-grid">
-            <button type="button" id="plotPictureCard" class="graph-picture-card is-recommended" aria-label="Start Little Umbrella">
-              <svg id="plotPreviewGraph" viewBox="0 0 620 620" aria-hidden="true"></svg>
-              <span class="graph-picture-info">
-                <span class="graph-stage">1 · STARTER · 2 PIECES</span>
-                <strong>Little Umbrella</strong>
-                <small>Sketch one parabola and one line. Shade an umbrella and puddle, then see the big reveal.</small>
-                <span class="graph-card-maths">Parabola · straight line · solid and dashed</span>
-                <span class="graph-card-progress"><span id="plotCardProgress"></span></span>
-                <span id="plotCardAction" class="graph-card-go">Start picture →</span>
-              </span>
-            </button>
+          <div class="graph-journey-status">
+            <strong>Choose any stage — no locked pictures</strong>
+            <span>Each picture and each partially drawn boundary saves independently.</span>
           </div>
-          <p class="plot-gallery-note">This is a small playable prototype to test the sketching controls before creating five original Plot &amp; Shade pictures.</p>
+          <div id="plotStageTrack" class="graph-stage-track" role="group" aria-label="Plot and Shade five-step progression"></div>
+          <div id="plotPictureCards" class="graph-picture-grid plot-picture-grid" role="group" aria-label="Five Plot and Shade pictures"></div>
+          <p class="plot-gallery-note">Starter → Step Up → Building → Challenge → Big Finish. Every piece is made from real simultaneous inequalities.</p>
         </section>
       </section>
 
@@ -61,9 +54,9 @@
         <div class="graph-game-top">
           <button type="button" id="plotBack" class="graph-quiet-button">← Pictures</button>
           <div class="graph-game-title">
-            <span class="eyebrow">PLOT &amp; SHADE · STARTER</span>
-            <h1>Little Umbrella</h1>
-            <span class="graph-game-focus">Construct the boundary · choose its style · shade</span>
+            <span class="eyebrow" id="plotGameMode">PLOT &amp; SHADE · STARTER</span>
+            <h1 id="plotGameTitle">Little Umbrella</h1>
+            <span class="graph-game-focus" id="plotGameFocus">Construct the boundary · choose its style · shade</span>
           </div>
           <span id="plotPieceCount" class="graph-piece-pill">Piece 1 of 2</span>
         </div>
@@ -92,7 +85,7 @@
               <span id="plotPieceSwatch" class="graph-piece-swatch" aria-hidden="true"></span>
             </div>
             <p class="graph-task-lead">The coloured shape satisfies <strong>all</strong> these inequalities.</p>
-            <div class="graph-rule-heading"><strong>Boundaries for this piece</strong><span>One to construct</span></div>
+            <div class="graph-rule-heading"><strong>Boundaries for this piece</strong><span id="plotBoundaryCount">Boundary 1 of 1</span></div>
             <div id="plotRuleList" class="graph-rule-list" aria-label="Inequalities defining this piece"></div>
             <div id="plotPhaseTrack" class="plot-phase-track" aria-label="Three steps: plot, boundary and shade">
               <span class="plot-phase is-current" data-step="plot">1 · Plot</span>
@@ -161,11 +154,12 @@
       <section id="plotSummary" class="graph-summary" hidden aria-labelledby="plotSummaryTitle">
         <div class="eyebrow">YOUR MATHEMATICAL ART IS COMPLETE ✦</div>
         <h1 id="plotSummaryTitle">Little Umbrella</h1>
-        <p>You constructed the graph boundaries yourself and found both true inequality regions.</p>
-        <div class="graph-summary-stats">2 painted pieces · 2 plotted boundaries · one original picture</div>
+        <p id="plotSummaryText">You constructed the graph boundaries and found their common regions.</p>
+        <div class="graph-summary-stats" id="plotSummaryStats">2 mathematical regions</div>
         <div class="graph-summary-buttons">
           <button type="button" id="plotReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
           <button type="button" id="plotRestart" class="button button-light">Make this picture again ↻</button>
+          <button type="button" id="plotNextPicture" class="button button-primary">Explore next picture →</button>
           <button type="button" id="plotChooseAgain" class="button button-light">Choose a picture</button>
         </div>
       </section>
@@ -174,7 +168,7 @@
         <div class="eyebrow">THE ART IS THE MATHEMATICS</div>
         <h2 id="howPlotTitle">Plot. Check. Shade.</h2>
         <div class="graph-how-grid">
-          <div><span>01</span><strong>Plot the boundary</strong><p>Use two mathematical points to sketch the missing line or parabola. Drag to edit; snapping takes care of precision.</p></div>
+          <div><span>01</span><strong>Plot the boundary</strong><p>Use key points to sketch lines, parabolas, circles and V-shaped graphs. Drag to edit; snapping takes care of precision.</p></div>
           <div><span>02</span><strong>Choose its style</strong><p>Equality included means a solid line. A strict inequality needs a dashed boundary.</p></div>
           <div><span>03</span><strong>Find the region</strong><p>Tap the intersection. Correct mathematical areas become picture pieces, then the big reveal adds finishing details.</p></div>
         </div>
@@ -188,7 +182,7 @@
         <div><span class="eyebrow">INEQUALITY INK ✦ THE BIG REVEAL</span><h2 id="plotRevealTitle">Your art is coming together!</h2></div>
         <button type="button" id="plotRevealClose" class="graph-reveal-close" aria-label="Close picture reveal">×</button>
       </header>
-      <div class="graph-reveal-board"><svg id="plotRevealSvg" viewBox="0 0 620 620" role="img" aria-label="Completed umbrella made of two mathematically shaded regions"></svg></div>
+      <div class="graph-reveal-board"><svg id="plotRevealSvg" viewBox="0 0 620 620" role="img" aria-label="Completed picture made of mathematically shaded regions"></svg></div>
       <div class="graph-reveal-foot">
         <p id="plotRevealStatus" role="status" aria-live="polite">Watch your regions come together.</p>
         <div class="graph-reveal-buttons">
