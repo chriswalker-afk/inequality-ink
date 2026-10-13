@@ -945,3 +945,69 @@ body.paint-session{overflow:hidden}
 .quest-worked-example summary{cursor:pointer;padding:10px 0;color:#4e7c74;font-size:.78rem;font-weight:800}
 .quest-worked-example p,.quest-worked-example li{font-size:.75rem;line-height:1.6;color:#546775}
 .quest-worked-example ol{padding-left:20px;margin:8px 0}
+
+
+/* Quadratic Quest's five-step picture journey is opt-in and saved separately. */
+.quest-picker-shell{
+  padding:20px;
+  margin:0 auto 18px;
+  max-width:980px;
+  border:1px solid #e5ded5;
+  border-radius:19px;
+  background:#fffdf9;
+  box-shadow:0 9px 30px #35495d0b;
+}
+.quest-picker-heading{
+  display:flex;align-items:start;justify-content:space-between;gap:15px;
+  flex-wrap:wrap;margin-bottom:16px;
+}
+.quest-picker-heading h2{font-size:clamp(1.45rem,3vw,2rem);margin:6px 0;
+  color:#293955;letter-spacing:-.045em}
+.quest-picker-heading p{margin:0;color:#6b7888;font-size:.81rem;
+  line-height:1.55;max-width:620px}
+.quest-picker-heading strong{font-size:.78rem;color:#3f8677;white-space:nowrap}
+.quest-picture-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;margin:15px 0;
+}
+.quest-picture-choice{
+  position:relative;display:flex;align-items:start;text-align:left;
+  gap:11px;min-width:0;padding:13px;
+  background:#fff;border:2px solid #e6e0da;border-radius:13px;
+  color:#344760;cursor:pointer;
+}
+.quest-picture-choice:hover{border-color:#a4c9c0;background:#f8fbf9}
+.quest-picture-choice.selected{border-color:#4b9990;background:#edf7f3}
+.quest-picture-choice--next:not(.selected){border-color:#a5cfc3}
+.quest-picture-choice:focus-visible{outline:3px solid #4b9990;outline-offset:2px}
+.quest-picture-number{
+  display:grid;place-items:center;flex:none;width:34px;height:35px;
+  background:#f4ece8;color:#ba7e72;border-radius:9px;font-size:.95rem;font-weight:900
+}
+.quest-picture-choice.selected .quest-picture-number{background:#d2ebe2;color:#2e8072}
+.quest-picture-content{display:grid;gap:3px;min-width:0}
+.quest-picture-content strong{font-size:.83rem}
+.quest-picture-content small{font-size:.69rem;font-weight:650;color:#69798b;line-height:1.35}
+.quest-picture-content em{font-size:.7rem;font-style:normal;color:#4b8a7f;font-weight:800}
+.quest-picture-status{margin-left:auto;color:#679b8d;font-size:.93rem;font-weight:900}
+.quest-picture-actions{
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+  gap:12px;background:#f7f4ef;border:1px solid #ece4dc;
+  padding:13px 15px;border-radius:12px
+}
+.quest-picture-actions strong{font-size:.86rem;color:#334761}
+.quest-picture-actions p{margin:5px 0 0;color:#697b88;font-size:.74rem}
+.quest-picture-actions .button{white-space:nowrap}
+.quest-picker-note{font-size:.7rem;color:#829097;line-height:1.5;margin:11px 0 0}
+.quest-progress[hidden],.quest-picker-shell[hidden]{display:none}
+@media(max-width:740px){
+  .quest-picker-shell{padding:13px;margin-bottom:12px}
+  .quest-picture-grid{grid-template-columns:1fr;gap:8px}
+  .quest-picture-choice{padding:11px}
+  .quest-picker-heading strong{font-size:.71rem}
+  .quest-picture-actions .button{width:100%}
+}
+
+/* Explicit hidden rules beat grid/flex display declarations in author CSS. */
+.quest-layout[hidden],.quest-progress[hidden],.quest-picker-shell[hidden],
+.quest-finish[hidden],.quest-screen[hidden]{display:none!important}

@@ -555,3 +555,29 @@ test("Quadratic Quest is an optional sixth section, not a new mandatory mode",()
  assert.ok(css.includes(".quest-reveal{"));
  assert.ok(css.includes(".quest-region-chooser"));
 });
+
+
+test("Quadratic Quest picture journey has five stages without affecting the original modes",()=>{
+  const quest=load("quadratic-quest-ui.mjs");
+  const maths=load("quadratic-quest.mjs");
+  for(const id of [
+    "questSelect","questJourneyProgress","questStepTrack","questPicturePicker",
+    "questSelectedTitle","questSelectedSummary","questStart","questNextPicture"
+  ])assert.ok(html.includes('id="'+id+'"'),"Missing quadratic selector: "+id);
+  assert.ok(html.includes('id="questSelect" class="quest-picker-shell"'));
+  assert.ok(html.includes('id="questPlaying" class="quest-layout" hidden'));
+  assert.ok(css.includes(".quest-picture-choice.selected"));
+  assert.ok(css.includes(".quest-layout[hidden]"));
+  assert.ok(quest.includes('function renderPicker(){'));
+  assert.ok(quest.includes('function nextPicture(){'));
+  assert.ok(quest.includes('function beginPicture(){'));
+  assert.ok(quest.includes('function showPicker(){'));
+  assert.ok(quest.includes("QUEST_SAVE_KEY_V2"));
+  assert.ok(quest.includes('storage.getItem(QUEST_SAVE_KEY)'));
+  assert.ok(quest.includes('storage.setItem(QUEST_SAVE_KEY_V2'));
+  assert.ok(maths.includes("QUEST_PICTURES=Object.freeze"));
+  assert.ok(maths.includes('"prism","Prism of Possibilities",1'));
+  assert.ok(maths.includes('"nova","Nova Finale",5'));
+  assert.equal([...html.matchAll(/data-level="(mirror|full|solve|mixed|paint)"/g)].length,5);
+  assert.ok(!html.includes('data-level="quadratic"'));
+});

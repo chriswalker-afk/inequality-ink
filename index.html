@@ -84,11 +84,11 @@
             <div class="quest-invite-copy">
               <span class="eyebrow">OPTIONAL EXTENSION ✦</span>
               <h2 id="questInviteTitle">Quadratic Quest</h2>
-              <p>Ready for a new challenge? Factorise quadratic inequalities, explore parabolas and uncover a bonus picture. Your normal picture journey is separate.</p>
+              <p>Five optional mystery pictures, from simple factorised quadratics to a full mixed challenge. Your normal picture journey stays separate.</p>
             </div>
             <div class="quest-invite-actions">
               <button type="button" id="questEnter" class="button button-light">Explore Quadratic Quest →</button>
-              <span id="questEntryProgress">6 questions · A separate adventure</span>
+              <span id="questEntryProgress">5 pictures · 6 to 14 questions · Separate progress</span>
             </div>
           </section>
         </div>
@@ -310,16 +310,36 @@
             <p>Solve the quadratic. Mark its entire solution on the number line. Each correct answer unlocks a row.</p>
           </div>
           <div class="quest-header-buttons">
-            <button type="button" class="button button-light" id="questBack">↶ Back to pictures</button>
-            <button type="button" class="button button-light" id="questRestart">↺ Start quest again</button>
+            <button type="button" class="button button-light" id="questBack">↶ Main challenges</button>
+            <button type="button" class="button button-light" id="questRestart" hidden>↺ Restart picture</button>
           </div>
         </header>
-        <div class="quest-progress" aria-label="Quadratic Quest progress">
+        <section id="questSelect" class="quest-picker-shell" aria-labelledby="questPickerTitle">
+          <div class="quest-picker-heading">
+            <div>
+              <span class="eyebrow">YOUR QUADRATIC JOURNEY</span>
+              <h2 id="questPickerTitle">Choose a picture</h2>
+              <p>Start with six accessible questions, then work towards fourteen. Choose any stage; the main challenges are unaffected.</p>
+            </div>
+            <strong id="questJourneyProgress" aria-live="polite">0 of 5 complete</strong>
+          </div>
+          <div id="questStepTrack" class="picture-step-track" aria-label="Five quadratic picture stages"></div>
+          <div id="questPicturePicker" class="quest-picture-grid" role="group" aria-label="Choose a quadratic mystery picture"></div>
+          <div class="quest-picture-actions">
+            <div>
+              <strong id="questSelectedTitle">Prism of Possibilities</strong>
+              <p id="questSelectedSummary">Starter · 6 questions · Find the roots</p>
+            </div>
+            <button type="button" class="button button-primary" id="questStart">Start picture ↗</button>
+          </div>
+          <p class="quest-picker-note">Each correct quadratic solution reveals one decorative row. You can switch pictures without losing your work.</p>
+        </section>
+        <div id="questProgress" class="quest-progress" aria-label="Quadratic Quest picture progress" hidden>
           <strong id="questProgressText">0 of 6 rows revealed</strong>
           <div class="progress-track"><div id="questProgressFill" class="progress-fill"></div></div>
           <span>Separate from your regular picture journey</span>
         </div>
-        <div id="questPlaying" class="quest-layout">
+        <div id="questPlaying" class="quest-layout" hidden>
           <section class="panel quest-art-panel" aria-labelledby="questCanvasTitle">
             <div class="panel-heading"><div><span class="panel-kicker">BONUS PICTURE</span><h2 id="questCanvasTitle">A picture takes shape</h2></div><span id="questArtCount" class="panel-pill">0 / 6</span></div>
             <div class="quest-art-frame">
@@ -443,13 +463,14 @@
         <section id="questFinished" class="quest-finish panel" hidden aria-labelledby="questFinishTitle">
           <span class="eyebrow">QUADRATIC QUEST COMPLETED ✦</span>
           <h2 id="questFinishTitle">Prism of Possibilities!</h2>
-          <p>You solved six quadratic inequalities and revealed your bonus picture.</p>
+          <p id="questFinishMessage">You solved six quadratic inequalities and revealed your bonus picture.</p>
           <svg id="questFinishedArt" viewBox="0 0 10 6" role="img" aria-label="Completed coloured prism pixel art"></svg>
           <p id="questFinalStats"></p>
           <details class="quest-solution-review"><summary>Review all six solutions</summary><ol id="questSolutions"></ol></details>
           <div class="finish-actions">
             <button type="button" class="button button-primary" id="questReplay">Play again ↻</button>
-            <button type="button" class="button button-light" id="questFinishBack">Back to pictures ↶</button>
+            <button type="button" class="button button-primary" id="questNextPicture" hidden>Next picture →</button>
+            <button type="button" class="button button-light" id="questFinishBack">Choose a picture ↶</button>
             <button type="button" class="button button-light" id="questRevealAgain">View reveal ✦</button>
           </div>
         </section>
@@ -527,7 +548,7 @@
       <span class="eyebrow">QUADRATIC QUEST · BIG REVEAL ✦</span>
       <h2 id="questRevealTitle">Your prism is complete!</h2>
       <svg id="questRevealArt" viewBox="0 0 10 6" role="img" aria-label="The completed Prism of Possibilities picture"></svg>
-      <p>Six quadratic inequalities. One bright discovery.</p>
+      <p id="questRevealCaption">Six quadratic inequalities. One bright discovery.</p>
       <button type="button" class="button button-primary" id="questRevealClose">See your results →</button>
     </div>
   </dialog>

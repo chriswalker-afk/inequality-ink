@@ -4,7 +4,7 @@ import {readFileSync} from "node:fs";
 import {identicalSolution} from "./model.mjs";
 import {pictureById,pictureWidth,makePictureQuestion,questionCount,picturePaintedValues} from "./picture-engine.mjs";
 import {paintTarget,makePaintQuestion} from "./paint-engine.mjs";
-import {QUEST_QUESTIONS,QUEST_SAVE_KEY,quadraticAnswer} from "./quadratic-quest.mjs";
+import {QUEST_QUESTIONS,QUEST_PICTURES,QUEST_SAVE_KEY_V2,quadraticAnswer} from "./quadratic-quest.mjs";
 
 // Dependency-free miniature DOM for exercising the actual app module in Node.
 // This is not a visual browser test, but it catches broken wiring, navigation,
@@ -1325,129 +1325,190 @@ test("Optional practice stays within small picture number lines and excludes Pai
 });
 
 
-test("Quadratic Quest is optional, resumes independently, and reveals its picture after six exact answers",()=>{
-  // The original five mode saves and currently selected pictures are protected.
+test("Quadratic Quest has five selectable stages, all complete correctly and retain main-game progress",()=>{
   $("chooseLevelButton").click();
-  const baseSave=localStorage.getItem("inequality-ink-v5");
-  assert.ok($("questInviteTitle"),"Optional extension card must exist");
-  assert.equal($("questEnter").textContent,"Explore Quadratic Quest →");
+  const mainSave=localStorage.getItem("inequality-ink-v5");
   assert.equal($("quadraticScreen").hidden,true);
   $("questEnter").click();
   assert.equal($("quadraticScreen").hidden,false);
   assert.equal($("introScreen").hidden,true);
-  assert.equal($("questQuestionStep").textContent,"QUESTION 1 OF 6");
-  assert.equal($("questEquationText").textContent,QUEST_QUESTIONS[0].expression);
-  assert.equal($("questProgressText").textContent,"0 of 6 rows revealed");
-  assert.equal($("questArt").children.length,60);
-  assert.equal($("questFinished").hidden,true);
-  // Check and hints work, but an incorrect region must not reveal pixels.
-  $("questOutside").click();
-  $("questCheck").click();
+  assert.equal($("questSelect").hidden,false);
+  assert.equal($("questPlaying").hidden,true);
+  assert.equal($("questPicturePicker").children.length,5);
+  assert.equal($("questJourneyProgress").textContent,"0 of 5 completed");
+  assert.equal($("questStart").textContent,"Start picture ↗");
+
+  // Switching to a later picture is allowed: stages are suggestions, not locks.
+  $("questPicturePicker").children[4].click();
+  assert.equal($("questSelectedTitle").textContent,"Nova Finale");
+  assert.equal($("questSelectedSummary").textContent.includes("14 questions"),true);
+  $("questPicturePicker").children[0].click();
+  assert.equal($("questSelectedTitle").textContent,"Prism of Possibilities");
+
+  function startCurrent(index){
+    const picture=QUEST_PICTURES[index];
+    assert.equal($("questSelectedTitle").textContent,picture.name);
+    $("questStart").click();
+    assert.equal($("questSelect").hidden,true);
+    assert.equal($("questPlaying").hidden,false);
+    assert.equal($("questProgress").hidden,false);
+    assert.equal($("questQuestionStep").textContent,
+      "QUESTION 1 OF "+picture.questions.length);
+    assert.equal($("questEquationText").textContent,picture.questions[0].expression);
+    assert.equal($("questArt").children.length,
+      picture.art.rows.length*picture.art.rows[0].length);
+    if(index>0)assert.equal($("questUpper").getAttribute("max"),
+      String(picture.axis.max));
+  }
+  startCurrent(0);
+  // Incorrect direction, hints, graph and handwritten/text maths are unmarked.
+  $("questOutside").click();$("questCheck").click();
   assert.match($("questFeedback").textContent,/parabola/);
-  assert.equal($("questProgressText").textContent,"0 of 6 rows revealed");
+  assert.equal($("questArtCount").textContent,"0 / 6");
   $("questHint").click();
   assert.equal($("questHintText").hidden,false);
-  assert.match($("questHintText").textContent,/bracket/);
   $("questGraphToggle").click();
   assert.equal($("questGraphPanel").hidden,false);
-  assert.equal($("questGraphToggle").getAttribute("aria-expanded"),"true");
-  assert.ok($("questGraph").children.some(node=>node.tagName==="path"),
-    "The helper must render an actual quadratic graph");
+  assert.ok($("questGraph").children.some(e=>e.tagName==="path"));
   $("questGraphToggle").click();
-  assert.equal($("questGraphPanel").hidden,true);
-  $("questWorkingDetails").open=true;
   $("questWorkingArea").value="(x-1)(x-3)<0";
-  for(const fn of $("questWorkingArea").listeners.get("input")||[])fn();
+  for(const listener of $("questWorkingArea").listeners.get("input")||[])listener();
   assert.ok($("questMathPreview").innerHTML.includes("<math "));
   $("questWorkDraw").click();
   assert.equal($("questDrawPanel").hidden,false);
   $("questWorkType").click();
-  assert.equal($("questWorkingArea").value,"(x-1)(x-3)<0",
-    "Switching working methods should retain typed maths");
+  assert.equal($("questWorkingArea").value,"(x-1)(x-3)<0");
 
-  function solveQuestQuestion(index){
-    const expected=quadraticAnswer(QUEST_QUESTIONS[index]);
-    $(expected.region==="outside"?"questOutside":"questBetween").click();
-    // Set the upper root first, allowing the lower root to cross zero.
-    $("questUpper").value=String(expected.upper);
-    $("questUpper").change();
-    $("questLower").value=String(expected.lower);
-    $("questLower").change();
-    $(expected.lowerIncluded?"questLowerClosed":"questLowerOpen").click();
-    $(expected.upperIncluded?"questUpperClosed":"questUpperOpen").click();
-    assert.equal(Number($("questLower").value),expected.lower);
-    assert.equal(Number($("questUpper").value),expected.upper);
+  function solveQuestQuestion(picture,index){
+    const answer=quadraticAnswer(picture.questions[index]);
+    $(answer.region==="between"?"questBetween":"questOutside").click();
+    // For roots on the negative side, move the left endpoint first to
+    // keep the editor's invariant left < right during entry.
+    const order=answer.upper<=0?[
+      ["questLower",answer.lower],["questUpper",answer.upper]
+    ]:[
+      ["questUpper",answer.upper],["questLower",answer.lower]
+    ];
+    for(const [id,value] of order){
+      $(id).value=String(value);$(id).change();
+    }
+    $(answer.lowerIncluded?"questLowerClosed":"questLowerOpen").click();
+    $(answer.upperIncluded?"questUpperClosed":"questUpperOpen").click();
+    assert.equal(Number($("questLower").value),answer.lower,
+      picture.id+" row "+index+" incorrect left");
+    assert.equal(Number($("questUpper").value),answer.upper,
+      picture.id+" row "+index+" incorrect right");
     assert.equal($("questOutside").getAttribute("aria-pressed"),
-      String(expected.region==="outside"));
-
+      String(answer.region==="outside"));
     const original=globalThis.setTimeout;
     let next=null;
     globalThis.setTimeout=(fn,delay)=>{
-      if(delay===320||delay===850){next=fn;return -890;}
+      if(delay===320||delay===850){next=fn;return -902;}
       return original(fn,delay);
     };
     try{
       $("questCheck").click();
-      assert.match($("questFeedback").textContent,/Correct!/);
-      assert.ok(next,"Correct Quest solutions should advance without a second button");
+      assert.match($("questFeedback").textContent,/Correct!/,
+        picture.id+" row "+index);
+      assert.ok(next,"Correct answers must advance automatically");
       assert.equal($("questProgressText").textContent,
-        (index+1)+" of 6 rows revealed");
-      assert.equal($("questArtCount").textContent,(index+1)+" / 6");
-      assert.equal(localStorage.getItem("inequality-ink-v5"),baseSave,
-        "Quest must not change a normal picture score");
+        (index+1)+" of "+picture.questions.length+" rows revealed");
+      assert.equal($("questArtCount").textContent,
+        (index+1)+" / "+picture.questions.length);
+      assert.equal(localStorage.getItem("inequality-ink-v5"),mainSave);
       next();
     }finally{globalThis.setTimeout=original;}
   }
-
-  solveQuestQuestion(0);
+  const prism=QUEST_PICTURES[0];
+  solveQuestQuestion(prism,0);
   assert.equal($("questQuestionStep").textContent,"QUESTION 2 OF 6");
-  assert.equal($("questWorkingArea").value,"",
-    "New question must have fresh optional working");
-  assert.equal($("questGraphPanel").hidden,true);
+  assert.equal($("questWorkingArea").value,"");
   $("questBack").click();
-  assert.equal($("introScreen").hidden,false);
-  assert.equal($("quadraticScreen").hidden,true);
-  assert.match($("questEnter").textContent,/Continue Quadratic Quest/);
-  const partiallySaved=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY));
-  assert.equal(partiallySaved.done,1);
-  assert.equal(partiallySaved.firstTry,0,"Hints make the first question assisted");
-  assert.equal(partiallySaved.hints,1);
-  $("questEnter").click();
+  assert.equal($("questSelect").hidden,false,
+    "Return from a question should lead to Quest pictures, not main modes");
+  assert.equal($("questStart").textContent,"Continue picture ↗");
+  assert.equal($("questPicturePicker").children[0].getAttribute("aria-pressed"),"true");
+  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY_V2)).progress.prism.done,1);
+  $("questStart").click();
   assert.equal($("questQuestionStep").textContent,"QUESTION 2 OF 6");
-  for(let i=1;i<6;i++)solveQuestQuestion(i);
-  assert.equal($("questPlaying").hidden,true);
+  for(let row=1;row<prism.questions.length;row++)solveQuestQuestion(prism,row);
   assert.equal($("questFinished").hidden,false);
-  assert.equal($("questReveal").open,true,"Successful Quest completes with full-screen reveal");
-  assert.equal($("questRevealArt").children.length,60);
+  assert.equal($("questReveal").open,true);
   assert.equal($("questSolutions").children.length,6);
+  assert.equal($("questRevealArt").children.length,60);
+  assert.equal($("questFinishTitle").textContent,"Prism of Possibilities!");
   assert.match($("questFinalStats").textContent,/5\/6/);
   $("questRevealClose").click();
   assert.equal($("questReveal").open,false);
+  assert.equal($("questNextPicture").hidden,false);
+
+  for(let stage=1;stage<5;stage++){
+    $("questNextPicture").click(); // Automatically begins the next picture.
+    const picture=QUEST_PICTURES[stage];
+    assert.equal($("questSelect").hidden,true);
+    assert.equal($("questPlaying").hidden,false);
+    assert.equal($("questQuestionStep").textContent,
+      "QUESTION 1 OF "+picture.questions.length);
+    assert.equal($("questEquationText").textContent,picture.questions[0].expression);
+    for(let row=0;row<picture.questions.length;row++)
+      solveQuestQuestion(picture,row);
+    assert.equal($("questFinished").hidden,false);
+    assert.equal($("questReveal").open,true,
+      "Picture "+picture.name+" needs its own full-screen reveal");
+    assert.equal($("questFinishTitle").textContent,picture.name+"!");
+    assert.equal($("questSolutions").children.length,picture.questions.length);
+    assert.equal($("questRevealArt").children.length,
+      picture.art.rows.length*picture.art.rows[0].length);
+    assert.equal($("questNextPicture").hidden,stage===4);
+    $("questRevealClose").click();
+  }
+  assert.equal($("questEntryProgress").textContent,
+    "5 of 5 pictures complete · Replay any picture");
+  let save=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY_V2));
+  assert.equal(QUEST_PICTURES.every(p=>
+    save.progress[p.id].done===p.questions.length),true);
+  assert.equal(save.progress.prism.firstTry,5);
+  assert.equal(save.progress.prism.hints,1);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),mainSave);
+
   $("questFinishBack").click();
-  assert.equal($("introScreen").hidden,false);
-  assert.equal($("questEntryProgress").textContent.includes("All 6"),true);
-  assert.equal(localStorage.getItem("inequality-ink-v5"),baseSave);
-  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)).done,6);
-  // Completion is revisit-able, and replay affects Quest only.
-  $("questEnter").click();
+  assert.equal($("questSelect").hidden,false);
+  assert.equal($("questJourneyProgress").textContent,"5 of 5 completed");
+  assert.equal($("questPicturePicker").children.length,5);
+  $("questPicturePicker").children[2].click();
+  assert.equal($("questStart").textContent,"View completed picture ↗");
+  $("questStart").click();
   assert.equal($("questFinished").hidden,false);
+  assert.equal($("questFinishTitle").textContent,"Skyline Arc!");
   $("questReplay").click();
-  assert.equal($("questQuestionStep").textContent,"QUESTION 1 OF 6");
-  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)).done,0);
-  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY)).replay,1);
+  assert.equal($("questQuestionStep").textContent,"QUESTION 1 OF 10");
+  save=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY_V2));
+  assert.equal(save.progress.skyline.done,0);
+  assert.equal(save.progress.skyline.replay,1);
+  assert.equal(save.progress.nova.done,14);
+  assert.equal(save.progress.prism.done,6);
   $("questBack").click();
-  assert.equal(localStorage.getItem("inequality-ink-v5"),baseSave);
+  assert.equal($("questSelect").hidden,false);
+  $("questBack").click();
+  assert.equal($("introScreen").hidden,false);
+  assert.equal($("quadraticScreen").hidden,true);
+  assert.equal(localStorage.getItem("inequality-ink-v5"),mainSave);
 });
 
-test("Quadratic Quest root circles allow precise keyboard toggling and pointer gestures",()=>{
+test("Quadratic Quest includes keyboard-toggle, drag, and independent selector navigation",()=>{
   $("questEnter").click();
-  const svg=$("questLine");
-  const circles=svg.children.filter(e=>e.tagName==="g");
+  assert.equal($("questSelect").hidden,false);
+  $("questPicturePicker").children[0].click();
+  $("questStart").click();
+  // The completed Prism opens its own finish view. Replay preserves other stages.
+  assert.equal($("questFinished").hidden,false);
+  $("questReplay").click();
+  const svg=$("questLine"),circles=svg.children.filter(e=>e.tagName==="g");
   assert.equal(circles.length,2);
   assert.equal(circles[0].getAttribute("role"),"button");
   assert.equal(circles[0].getAttribute("tabindex"),"0");
-  const toggle={key:"Enter",preventDefault(){}};
-  for(const listener of circles[0].listeners.get("keydown")||[])listener(toggle);
+  for(const listener of circles[0].listeners.get("keydown")||[])
+    listener({key:"Enter",preventDefault(){}});
   assert.equal($("questLowerClosed").getAttribute("aria-pressed"),"true");
   const before=$("questLower").value;
   const gesture={pointerType:"touch",button:0,pointerId:700,
@@ -1458,11 +1519,15 @@ test("Quadratic Quest root circles allow precise keyboard toggling and pointer g
   assert.equal($("questLowerOpen").getAttribute("aria-pressed"),"true");
   assert.equal($("questLower").value,before);
   const again=svg.children.filter(e=>e.tagName==="g")[0];
-  for(const listener of again.listeners.get("pointerdown")||[])listener({...gesture,pointerId:701});
+  for(const listener of again.listeners.get("pointerdown")||[])
+    listener({...gesture,pointerId:701});
   for(const listener of svg.listeners.get("pointermove")||[])
     listener({...gesture,pointerId:701,clientX:50});
   for(const listener of svg.listeners.get("pointerup")||[])
     listener({...gesture,pointerId:701,clientX:50});
-  assert.notEqual($("questLower").value,before,"Dragging a circle changes its root");
+  assert.notEqual($("questLower").value,before);
   $("questBack").click();
+  assert.equal($("questSelect").hidden,false);
+  $("questBack").click();
+  assert.equal($("introScreen").hidden,false);
 });
