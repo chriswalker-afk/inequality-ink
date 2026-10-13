@@ -1,4 +1,7 @@
-# Curve & Fill — Phase 1 prototype
+# Curve & Fill — Phase 1 historical prototype
+
+**Phase 2 is now a complete five-picture mode.** See [Phase 2](CURVE_ART_PHASE2.md).
+This page documents the original two-wing prototype, which remains intact.
 
 Visit [Curve & Fill](https://chriswalker-afk.github.io/inequality-ink/regions/curve.html) from Graph Art.
 
