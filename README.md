@@ -107,16 +107,36 @@ The pure question data, generated algebra notation and strict real-domain valida
 | **Mirror Mode** | One-sided inequalities. Each correct ray paints one row of a half-image. The completed half-image unfolds across a vertical axis at the end. | **Whisker Wink**; **Full of Feeling**; **Seaside Sidestep**; **Night Watch** |
 | **Full Picture** | Read and draw bounded inequalities, including open and closed endpoints. | **Woodland Wonder**; **Blast Off**; **In Full Bloom**; **Bubbling Brew**; **Sweet Scoop** |
 | **Solve & Paint** | Solve compound inequalities (including reversing signs with negative coefficients), then draw the exact interval. | All five full pictures |
-| **Mixed Challenge** | Read, draw and solve inequalities, including one-sided rays reflected for suitable symmetrical rows. | All five full pictures |
+| **Mixed Challenge** | Each picture combines mirrored one-sided rays, bounded intervals and algebra, including negative-coefficient sign reversals at higher stages. | **Pocket Guardian**, **Visitor from Above**, **Against the Clock**, **Flutter By**, **Here Be Dragons** (five original pictures) |
 | **Paint by Inequalities** | Read 2–4 colour inequalities per row and directly paint the integer-labelled squares. Only the current row can be edited; correct rows lock with their numbers removed. | **To the Moon**, **Petal Parade**, **Beep Beep Buddy** |
 
-The library now contains **twenty-four unique pictures** offering **42 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+The library now contains **twenty-nine unique pictures** offering **47 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
 
 ### Start a picture immediately, or practise separately
 
 **Start picture / Continue picture** now always opens the next genuine picture question, in **every stage and bonus picture**. There is no compulsory tutorial and no need to press “Skip practice”. For the four number-line challenges (Mirror, Full, Solve and Mixed), **Just for practice** offers two optional number-line questions. These examples are clamped to the selected picture's visible number-line range and return to the picture picker when complete. Students can also leave practice early using **Back to pictures**.
 
 Practice is separate from picture play: it does not fill rows, change scores, affect completion, or alter saved picture progress. The first completed picture can be earned after exactly the advertised number of picture questions. Paint by Inequalities continues to start directly in its colour studio, without an unrelated number-line practice option.
+
+### Mixed Challenge: an independent three-skill picture journey
+
+Unlike the other modes, the core Mixed Challenge no longer reuses the same
+Star, Gift, Ball and Flower starter silhouettes. It has five **unique** full
+pictures—Little Shield (6 rows), Flying Saucer (8), Golden Hourglass (10),
+Butterfly (12), and Dragon Guardian (14). Every picture interleaves four
+question types: **read a mirrored ray**, **draw a mirrored ray**, **draw a
+bounded inequality**, and **solve and draw a transformed inequality**.
+Each picture contains at least one instance of every skill, rather than
+assigning one mathematical topic per picture. Algebra grows harder at later
+stages, including guaranteed negative-coefficient sign reversals in the
+Big Finish.
+
+The previous shared Mixed pictures—including **Bubbling Brew**—still appear
+under **More pictures**. Their IDs, inequalities, first-play answers and
+`inequality-ink-v5` progress records are unchanged. Full Picture and
+Solve & Paint retain their existing five-picture journeys. The Mixed
+picker and question screen now indicate when students are practising Mirror,
+Full Picture or Solve & Paint skills.
 
 ### New quick wins and colour progression
 
@@ -125,14 +145,14 @@ Every mode now has a **Starter → Step Up → Building → Challenge → Big Fi
 - **Mirror:** Twinkle Time → Heart in a Hurry → Bounce Around → Petal Pop → Whisker Wink.
 - **Full:** Star in a Flash → Wrapped with Wonder → Bouncy Business → Flower Burst → Woodland Wonder.
 - **Solve:** The same four small silhouettes, ending with Blast Off.
-- **Mixed:** The same four small silhouettes, ending with Bubbling Brew.
+- **Mixed:** Pocket Guardian → Visitor from Above → Against the Clock → Flutter By → Here Be Dragons. **All five pictures are exclusive to Mixed Challenge.**
 - **Paint:** Sweet Heart (2 colours) → Star Splash (2) → Daisy Days (3) → Ready for Launch (4) → Beep Beep Buddy (5).
 
 The large existing pictures are **not removed**. Bonus titles stay accessible in **More pictures** with their saved progress and replay statistics. Existing v1–v5 scores keep their original picture IDs. The site automatically suggests the next unfinished stage but **does not lock** later pictures.
 
 ### Mathematical progression (first pass)
 
-The five picture stages now also set mode-specific mathematical difficulty. Starter questions use simple closed endpoints first, then introduce open endpoints; Solve & Paint begins with addition/subtraction and multiplication, ending its six-row picture with one simple negative-coefficient sign reversal. Step Up, Building and Challenge progressively vary endpoints, coefficients and sign reversals. Mixed Challenge follows the same profiles while retaining its read/draw/solve variety. Paint by Inequalities introduces open colour-rule boundaries gradually while preserving the painted target of every row.
+The five picture stages now also set mode-specific mathematical difficulty. Starter questions use simple closed endpoints first, then introduce open endpoints; Solve & Paint begins with addition/subtraction and multiplication, ending its six-row picture with one simple negative-coefficient sign reversal. Step Up, Building and Challenge progressively vary endpoints, coefficients and sign reversals. Mixed Challenge has its own five-stage picture sequence. **Every** mixed picture uses all three skills: one-sided rays that reflect across the centre (Mirror Mode), two-ended bounded intervals (Full Picture), and transformed algebraic inequalities (Solve & Paint). Higher stages introduce more open endpoints and negative-coefficient sign reversals; the Big Finish includes two such reversals even after replaying. Paint by Inequalities introduces open colour-rule boundaries gradually while preserving the painted target of every row.
 
 **Compatibility:** Big Finish and bonus pictures keep their previous mathematical generators, including any authored first-play answers. The new profiles do not change picture IDs, picture geometry, completion records, controls or reveals. Tests exercise all row/replay combinations and exact inequality marking.
 
@@ -170,7 +190,8 @@ The game no longer needs a separate question-writing routine or illustration ren
 - **`pictures.mjs`** — the **declarative picture library**: names, permitted difficulties, number-line windows, row silhouettes, palettes, background and finishing details.
 - **`picture-engine.mjs`** — reusable picture-independent mathematical engine: question creation, replay variants, integer-column sampling, mirror symmetry, colouring, connectivity and content validation.
 - **`paint-pictures.mjs`** — three authored multi-colour pixel grids and palettes.
-- **`starter-pictures.mjs`** — eight small, validated mathematical silhouettes for Mirror, Full, Solve and Mixed.
+- **`starter-pictures.mjs`** — eight small, validated mathematical silhouettes for Mirror and shared Full/Solve play. The four former Mixed starter pictures remain available as historical bonuses.
+- **`mixed-pictures.mjs`** — five distinct, horizontally symmetric, fully connected Mixed-only silhouettes with independent colours, stage details and 6/8/10/12/14-row progression.
 - **`paint-starters.mjs`** — four short colour puzzles introducing two, three and four swatches.
 - **`paint-engine.mjs`** — generates exact non-overlapping colour inequalities for every row and verifies painting.
 - **`app.mjs`** — one shared browser interface for selecting, playing, saving and revealing any picture.
