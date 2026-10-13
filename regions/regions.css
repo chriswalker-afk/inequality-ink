@@ -385,3 +385,185 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
   .graph-restart-button{padding:5px 7px;font-size:.67rem}
   .graph-game-title h1{font-size:clamp(1.17rem,5vw,1.5rem)}
 }
+
+
+/* Graph Art hub · Pass 2
+   One compact three-decision workspace, following Pixel Art's desktop layout.
+   Game and reveal screens retain their existing styling. */
+.graph-hub-picker .graph-landing-intro{
+  text-align:left;max-width:none;margin:2px 0 15px;
+}
+.graph-hub-picker .graph-landing-intro h1{
+  margin:5px 0 4px;font-size:clamp(2rem,3.3vw,2.8rem);
+  letter-spacing:-.07em;line-height:1.12;
+}
+.graph-hub-picker .graph-landing-intro p{
+  margin:0;max-width:850px;font-size:.82rem;line-height:1.5;
+}
+.graph-hub-workspace{
+  display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,1.08fr) minmax(0,.96fr);
+  gap:13px;align-items:start;
+}
+.graph-hub-workspace>.graph-picker-modes,
+.graph-hub-workspace>.graph-picture-picker,
+.graph-hub-preview{
+  min-width:0;margin:0;padding:16px;border:1px solid #e4e2d9;
+  border-radius:18px;background:#fffcf8;
+  box-shadow:0 7px 28px #384f4210;
+}
+.graph-hub-panel-heading{min-width:0;margin-bottom:11px}
+.graph-hub-panel-heading .eyebrow{color:#b67f71;font-size:.64rem}
+.graph-hub-panel-heading h2{font-size:1.06rem;margin:5px 0 0;color:#304760;line-height:1.2}
+.graph-hub-picture-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:7px;min-width:0;
+}
+.graph-hub-picture-heading h2{min-width:0}
+.graph-hub-picture-heading span{white-space:nowrap;font-size:.63rem;font-weight:800;color:#438a76}
+.graph-hub-modes .graph-mode-grid{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:8px;
+}
+.graph-hub-modes .graph-mode-card{
+  min-height:68px;width:100%;text-align:left;
+  gap:11px;padding:11px;
+  border-width:1.5px;border-radius:12px;align-items:center;
+}
+.graph-hub-modes .graph-mode-card strong{font-size:.85rem;margin:0 0 4px}
+.graph-hub-modes .graph-mode-card small{font-size:.67rem;line-height:1.36}
+.graph-hub-modes .graph-mode-icon{
+  flex:0 0 35px;display:grid;place-items:center;width:35px;height:35px;
+  border-radius:10px;background:#e8f4ec;font-size:1.25rem;color:#3b907b;
+}
+.graph-hub-modes .graph-mode-card[aria-pressed="true"]{
+  background:#eaf6ee;border-color:#65ae98;
+  box-shadow:0 0 0 2px #b9e2cf61;
+}
+.graph-hub-modes .graph-mode-card[aria-pressed="true"] .graph-mode-icon{
+  color:#247561;background:#d7eddf;
+}
+.graph-hub-modes .graph-mode-tick{font-size:.83rem}
+.graph-hub-mode-description{
+  color:#7b8590;font-size:.71rem;line-height:1.47;margin:11px 3px 1px;
+}
+.graph-hub-pictures .graph-stage-track{margin:3px 0 12px;gap:4px}
+.graph-hub-pictures .graph-step-node{font-size:.55rem;gap:2px}
+.graph-hub-pictures .graph-step-number{width:25px;height:25px;font-size:.71rem}
+.graph-hub-pictures .graph-picture-grid{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:7px;margin:0;
+}
+.graph-hub-pictures .graph-picture-card{
+  display:flex;flex-direction:row;align-items:center;
+  text-align:left;gap:9px;min-height:68px;padding:7px 9px;
+  border-radius:12px;width:100%;box-shadow:none;
+}
+.graph-hub-pictures .graph-picture-card>svg{
+  flex:0 0 54px;width:54px;height:54px;max-height:none;
+  margin:0;aspect-ratio:1;border-radius:7px;
+}
+.graph-hub-pictures .graph-picture-info{gap:2px;flex:1}
+.graph-hub-pictures .graph-picture-card .graph-stage{
+  font-size:.58rem;min-height:0;
+}
+.graph-hub-pictures .graph-picture-card strong{
+  font-size:.81rem;min-height:0;margin:0;line-height:1.22;
+}
+.graph-hub-pictures .graph-picture-card small{
+  display:none;min-height:0;
+}
+.graph-hub-pictures .graph-card-maths{
+  display:none;min-height:0;
+}
+.graph-hub-pictures .graph-card-progress{margin-top:3px;height:3px}
+.graph-hub-pictures .graph-card-go{
+  font-size:.62rem;padding:0;line-height:1.24;
+}
+.graph-hub-pictures .graph-picture-card.is-recommended{
+  background:#f5f9f3;border-color:#c6d9c9;box-shadow:none;
+}
+.graph-hub-pictures .graph-picture-card.is-selected{
+  background:#e8f7ed;border-color:#5cab91;
+  box-shadow:0 0 0 2px #a8d5bd54;
+}
+.graph-hub-pictures .graph-picture-card.is-selected .graph-card-go{color:#297661}
+.graph-hub-pictures .graph-more-pictures{margin-top:11px;padding-top:9px}
+.graph-hub-pictures .graph-extra-grid{
+  grid-template-columns:minmax(0,1fr);gap:6px;
+  margin-top:9px;
+}
+.graph-hub-preview{display:flex;flex-direction:column;gap:0}
+.graph-hub-art-frame{
+  position:relative;padding:12px;
+  border-radius:15px;background:#f2f1e7;
+  border:1px solid #e4e3d8;overflow:hidden;
+}
+.graph-hub-art-frame>svg{
+  display:block;width:100%;height:auto;
+  aspect-ratio:1;background:#fffdf8;border-radius:10px;
+  box-shadow:0 6px 18px #37564b1a;
+}
+.graph-hub-art-sticker{
+  position:absolute;right:4px;top:3px;
+  padding:5px 8px;border-radius:8px;background:#f1d59c;
+  color:#765d3b;font-size:.6rem;font-weight:900;
+  transform:rotate(5deg);pointer-events:none;
+}
+.graph-hub-art-info{padding:13px 2px 10px}
+.graph-hub-art-info>strong{
+  display:block;color:#35526a;letter-spacing:-.03em;
+  font-size:1rem;line-height:1.27;
+}
+.graph-hub-art-info p{line-height:1.5;margin:6px 0 0;color:#788791;font-size:.72rem}
+.graph-hub-art-info #graphPreviewProgress{font-weight:850;color:#348775}
+.graph-hub-start{width:100%;font-size:.88rem;min-height:48px;margin-top:auto}
+.graph-hub-reassurance{
+  margin:10px 0 0;text-align:center;color:#91a09d;
+  line-height:1.4;font-size:.63rem;
+}
+.graph-hub-picker .graph-more-pictures summary{font-size:.72rem}
+@media(min-width:781px) and (max-width:1100px){
+  .graph-hub-workspace{
+    grid-template-columns:minmax(0,1fr) minmax(0,1.04fr);
+    grid-template-areas:"modes preview" "pictures preview";
+  }
+  .graph-hub-modes{grid-area:modes}
+  .graph-hub-pictures{grid-area:pictures}
+  .graph-hub-preview{grid-area:preview;position:sticky;top:12px}
+  .graph-hub-modes .graph-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .graph-hub-modes .graph-mode-card{min-height:74px;padding:9px}
+  .graph-hub-modes .graph-mode-icon{flex-basis:27px;width:27px;height:27px;font-size:1.05rem}
+  .graph-hub-modes .graph-mode-card strong{font-size:.77rem}
+  .graph-hub-modes .graph-mode-card small{font-size:.61rem}
+  .graph-hub-preview .graph-hub-art-frame>svg{max-height:min(42vh,360px)}
+}
+@media(max-width:780px){
+  .graph-hub-picker .graph-landing-intro{
+    text-align:left;margin:7px 0 15px;
+  }
+  .graph-hub-picker .graph-landing-intro h1{font-size:clamp(2.05rem,6vw,2.75rem)}
+  .graph-hub-workspace{grid-template-columns:minmax(0,1fr);gap:11px}
+  .graph-hub-workspace>.graph-picker-modes,
+  .graph-hub-workspace>.graph-picture-picker,
+  .graph-hub-preview{padding:14px}
+  .graph-hub-modes .graph-mode-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .graph-hub-modes .graph-mode-card{min-height:85px;padding:10px;gap:9px}
+  .graph-hub-modes .graph-mode-card strong{font-size:.82rem}
+  .graph-hub-modes .graph-mode-card small{font-size:.65rem}
+  .graph-hub-pictures .graph-picture-grid{grid-template-columns:minmax(0,1fr)}
+  .graph-hub-pictures .graph-picture-card{min-height:61px}
+  .graph-hub-pictures .graph-picture-card>svg{width:47px;height:47px;flex-basis:47px}
+  .graph-hub-preview .graph-hub-art-frame>svg{
+    width:min(100%,310px);margin:0 auto;
+  }
+}
+@media(max-width:420px){
+  .graph-hub-modes .graph-mode-card{
+    gap:6px;min-height:74px;padding:8px;
+  }
+  .graph-hub-modes .graph-mode-icon{
+    flex:0 0 26px;width:26px;height:26px;font-size:1rem;
+  }
+  .graph-hub-modes .graph-mode-card strong{font-size:.75rem}
+  .graph-hub-modes .graph-mode-card small{font-size:.61rem;line-height:1.3}
+  .graph-hub-modes .graph-mode-tick{display:none}
+  .graph-hub-picture-heading span{font-size:.58rem}
+}
