@@ -939,3 +939,9 @@ body.paint-session{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .quest-reveal svg{animation:none}
 }
+
+/* Optional worked example is never a gate before a student's first picture row. */
+.quest-worked-example{margin:9px 0 11px;border:1px solid #e2e5e0;background:#f9faf6;border-radius:10px;padding:0 11px}
+.quest-worked-example summary{cursor:pointer;padding:10px 0;color:#4e7c74;font-size:.78rem;font-weight:800}
+.quest-worked-example p,.quest-worked-example li{font-size:.75rem;line-height:1.6;color:#546775}
+.quest-worked-example ol{padding-left:20px;margin:8px 0}
