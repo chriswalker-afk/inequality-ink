@@ -103,6 +103,8 @@ test("Desktop Paint by Inequalities keeps the artwork and tools properly sized",
   assert.ok(start>0&&end>start,"Expected desktop paint styles before phone overrides");
   const desktop=css.slice(start,end);
   assert.ok(desktop.includes("@media(min-width:741px)"));
+  assert.ok(desktop.includes('"artwork ."'),
+    "Center the palette and painting tools alongside the tall artwork");
   assert.ok(desktop.includes('"artwork palette"'));
   assert.ok(desktop.includes('"artwork focus"'));
   assert.ok(desktop.includes('"artwork actions"'));
@@ -111,6 +113,8 @@ test("Desktop Paint by Inequalities keeps the artwork and tools properly sized",
   assert.ok(desktop.includes("grid-area:artwork"));
   assert.ok(desktop.includes("max-height:min(100%,65dvh,53vw)"),
     "Artwork should use available height without becoming too wide");
+  assert.ok(desktop.includes("max-height:min(235px,31dvh)"),
+    "Large desktops should keep short palettes compact instead of stretching them");
   assert.ok(desktop.includes("repeat(auto-fit,minmax(175px,1fr))"),
     "Compact palette tiles must flow across the desktop column");
   assert.ok(desktop.includes(".paint-focus-row{width:100%;max-width:660px}"),
