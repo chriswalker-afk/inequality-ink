@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="../help/how-to-play.css?v=guide-v1" />
   <script type="module" src="../help/how-to-play.mjs?v=guide-v2"></script>
-  <script type="module" src="./regions-app.mjs?v=studio-pass3"></script>
+  <script type="module" src="./regions-app.mjs?v=phase4-v1"></script>
 </head>
 <body class="regions-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -69,6 +69,10 @@
               </button>
             </div>
             <p id="graphModeDescription" class="graph-hub-mode-description">Read all the inequalities, then fill their common region.</p>
+            <details class="graph-learning-route">
+              <summary>New to Graph Art? Suggested learning route</summary>
+              <p><strong>Build &amp; Shade → Find &amp; Fill → Curve &amp; Fill → Plot &amp; Shade.</strong> Start anywhere; all challenges and pictures remain available.</p>
+            </details>
           </section>
 
           <section class="graph-picture-picker graph-hub-pictures" aria-labelledby="graphPictureHeading">
@@ -103,6 +107,7 @@
             <div class="graph-hub-art-info">
               <strong id="graphPreviewName">Mystery picture</strong>
               <p id="graphPreviewFocus">Choose a picture to begin.</p>
+              <p id="graphPreviewSkills" class="graph-skill-note"></p>
               <p id="graphPreviewProgress" aria-live="polite">A quick win to get you started.</p>
             </div>
             <button type="button" class="button button-primary graph-hub-start" id="graphStartPicture">Start picture ↗</button>
@@ -161,15 +166,16 @@
               </fieldset>
               <button type="button" id="graphAddLine" class="button button-primary graph-full-button">Add this boundary →</button>
               <p id="graphBuildWaiting" class="graph-build-waiting" hidden aria-live="polite">Watch the arrows meet in the common region…</p>
-              <div class="graph-overlap-note" aria-label="Why the intersection is shaded">
-                <span class="graph-overlap-symbol" aria-hidden="true">∩</span>
-                <div><strong>Why this region?</strong>
-                  <p id="graphOverlapText">Each arrow shows one valid half-plane. The shared region satisfies every inequality.</p>
-                </div>
-              </div>
+              <details class="graph-overlap-note" aria-label="Why the intersection is shaded">
+                <summary><span class="graph-overlap-symbol" aria-hidden="true">∩</span><strong>Why this region?</strong></summary>
+                <p id="graphOverlapText">Each arrow shows one valid half-plane. The shared region satisfies every inequality.</p>
+              </details>
               <button type="button" id="graphNextPiece" class="button button-primary graph-full-button graph-next-piece" hidden>Next piece →</button>
             </div>
             <p id="graphFeedback" class="graph-feedback" role="status" aria-live="polite">Select the common region to start.</p>
+            <details id="graphWhy" class="graph-why" hidden>
+              <summary>Why this choice?</summary><p id="graphWhyText"></p>
+            </details>
             <div class="graph-help-actions">
               <button type="button" id="graphHint" class="graph-quiet-button">✳ Give me a hint</button>
               <span>No penalty for trying again</span>
