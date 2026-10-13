@@ -5,7 +5,10 @@ export const MATH_PROFILE_NAMES=Object.freeze([
   "Starter","Step Up","Building","Challenge","Big Finish"
 ]);
 export function mathematicalStage(picture,level){
-  const step=picture.progression?.[level];
+  // Progression describes the five visible core stages. An earlier core
+  // picture may now appear under More pictures; preserve its original maths
+  // rather than silently changing its strict endpoints or algebra.
+  const step=picture.progression?.[level]??picture.legacyMathStage?.[level];
   return Number.isInteger(step)&&step>=1&&step<=5?step:5;
 }
 

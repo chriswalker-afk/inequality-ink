@@ -1,5 +1,6 @@
 import {PAINT_PICTURES} from "./paint-pictures.mjs";
 import {STARTER_PICTURES} from "./starter-pictures.mjs";
+import {MIXED_PICTURES} from "./mixed-pictures.mjs";
 import {PAINT_STARTERS} from "./paint-starters.mjs";
 // Picture data lives here, separate from question generation and screen logic.
 // Rows are top-to-bottom, each [firstPixel,lastPixel] inclusive. A half-picture's
@@ -37,6 +38,9 @@ const mushroomInitial=[
 
 export const PICTURE_DEFINITIONS = Object.freeze([
   ...STARTER_PICTURES,
+  // Mixed Challenge now has a completely independent five-picture journey.
+  // Existing Full/Solve artworks still support Mixed as preserved bonus art.
+  ...MIXED_PICTURES,
   {
     id:"cat-cameo",name:"Cat Cameo",clue:"Whisker Wink",
     progression:{mirror:5},
@@ -220,7 +224,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
   },
   {
     id:"enchanted-potion",name:"Enchanted Potion",clue:"Bubbling Brew",
-    progression:{mixed:5},
+    // Former Mixed finale stays playable as a bonus with its existing save.
     description:"A sparkling magical object appears at the end.",
     family:"full",levels:["full","solve","mixed"],
     window:{min:-8,max:8},axis:{min:-9,max:8},height:16,

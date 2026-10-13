@@ -178,7 +178,7 @@ test("Site remains dependency-free and keyboard/mobile friendly",()=>{
    "app.mjs","styles.css","index.html","picture-engine.test.mjs"]){
    assert.ok(existsSync(join(root,path)),"Missing "+path);
  }
- assert.ok(html.includes('type="module" src="./app.mjs"'));
+ assert.match(html,/type="module" src="\.\/app\.mjs(?:\?[^"]*)?"/);
  assert.match(html,/href="\.\/styles\.css(?:\?[^"]*)?"/);
  assert.ok(css.includes('max-width:740px')||css.includes('max-width:740px'));
  assert.ok(css.includes('.picture-picker'));

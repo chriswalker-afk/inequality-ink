@@ -61,6 +61,20 @@ try{
    }
  }
 }catch{}
+// On the first visit after the new Mixed-only gallery is introduced, an old
+// unstarted shared-stage selection should lead into the new Starter instead.
+// Completed/partly painted old pictures and ALL their save keys remain intact;
+// those familiar pictures are still available through More pictures.
+const PREVIOUS_MIXED_PATH=new Set([
+  "full-star-starter","full-gift-step","full-ball-building",
+  "full-flower-challenge","enchanted-potion"
+]);
+const previousMixedSelection=state.selectedPictures.mixed;
+const previousMixedRecord=state.progress[progressKey("mixed",previousMixedSelection)];
+if(PREVIOUS_MIXED_PATH.has(previousMixedSelection)&&
+   !previousMixedRecord?.done&&!previousMixedRecord?.completed){
+  state.selectedPictures.mixed=defaultPictureForLevel("mixed").id;
+}
 const activePicture=()=>pictureById(state.selectedPictures[state.activeLevel]);
 const activeKey=()=>progressKey(state.activeLevel,activePicture().id);
 let save=state.progress[activeKey()]||(state.progress[activeKey()]=blank());
@@ -249,8 +263,13 @@ function initProgress({animate=false,redraw=true}={}){
  $("progressText").textContent=save.done+" of "+total;
  $("canvasProgress").textContent=save.done+" / "+total;
  $("progressFill").style.width=(save.done/total*100)+"%";
- $("phaseText").textContent=q?.mode==="read"?"READ THE LINE":
-   q?.mode==="solve"?"SOLVE & DRAW":q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
+ $("phaseText").textContent=
+   state.activeLevel==="mixed"&&!practiceOnly&&q?
+     (q.artMode==="mirror"?"MIRROR MODE":
+       q.mode==="solve"?"SOLVE & PAINT":"FULL PICTURE"):
+     q?.mode==="read"?"READ THE LINE":
+       q?.mode==="solve"?"SOLVE & DRAW":
+       q?.mode==="tutorial"?"PRACTICE":"DRAW THE LINE";
  $("activeRowText").textContent=q?.mode==="tutorial"?
    "Practice — canvas unchanged":"Current row: "+q?.row;
  $("canvasProgress").setAttribute("aria-label",
@@ -291,11 +310,20 @@ function question(){
  document.querySelector('[data-direction="between"]').hidden=picture.family==="half";
  $("questionStep").textContent=tutorial?"PRACTICE "+(practiceIndex+1)+" OF "+practice.length:
    "ROW "+(save.done+1)+" OF "+questionCount(picture);
+ const mixedTask=state.activeLevel==="mixed"&&!tutorial;
  $("questionHeading").textContent=tutorial?"Practise number lines":
+   mixedTask&&q.artMode==="mirror"?
+     (q.mode==="read"?"Read a mirrored ray":"Draw a mirrored ray"):
+   mixedTask&&q.mode==="solve"?"Solve, then paint":
+   mixedTask?"Draw a bounded interval":
    q.mode==="read"?"Read the number line":q.mode==="solve"?"Solve, then draw":
    q.artMode==="mirror-half"?"Draw the inequality":"Draw the interval";
  $("questionPrompt").textContent=q.prompt;
- $("modeTag").textContent=tutorial?"PRACTICE":q.mode.toUpperCase();
+ // The three source skills are called out explicitly at each mixed row.
+ $("modeTag").textContent=tutorial?"PRACTICE":
+   mixedTask?(q.artMode==="mirror"?"MIRROR":
+     q.mode==="solve"?"SOLVE & PAINT":"FULL PICTURE"):
+     q.mode.toUpperCase();
  $("equationCard").hidden=q.mode==="read";
  $("equationText").textContent=q.equation||"";
  $("readArea").hidden=q.mode!=="read";$("drawArea").hidden=q.mode==="read";
@@ -311,7 +339,9 @@ function question(){
  $("playEyebrow").textContent=picture.clue.toUpperCase()+
    " / "+LEVELS[state.activeLevel].name.toUpperCase();
  $("playTitle").firstChild.textContent="Mystery Picture";
- $("playSubtitle").textContent=LEVELS[state.activeLevel].detail;
+ $("playSubtitle").textContent=state.activeLevel==="mixed"?
+   "One picture, three skills: mirrored rays, bounded intervals and algebra.":
+   LEVELS[state.activeLevel].detail;
  if(q.mode==="read"){renderLine($("readLine"),q.answer,true);renderOptions();}
  else setDraft(draft,{preview:false});
  initProgress();
@@ -340,7 +370,9 @@ function renderPicturePicker(){
    (extras.length===1?" more picture":" more pictures");
  $("pictureJourneyHelp").textContent=level==="paint"?
    "Start with two colours and work up to five. Every finished picture counts.":
-   "Start with six quick questions. Each picture grows a little bigger.";
+   level==="mixed"?
+     "Five original pictures. Each needs Mirror Mode, Full Picture and Solve & Paint skills.":
+     "Start with six quick questions. Each picture grows a little bigger.";
  const complete=core.filter(p=>
    state.progress[progressKey(level,p.id)]?.completed).length;
  const next=core.find(p=>!state.progress[progressKey(level,p.id)]?.completed);
@@ -364,7 +396,8 @@ function renderPicturePicker(){
      step=progressionStep(picture,level),total=questionCount(picture),
      colours=picture.paint?Object.keys(picture.paint.colours).length:null;
    const meta=(step?PICTURE_TIERS[step-1]:"More pictures")+" · "+
-     (colours===null?"":colours+" colours · ")+total+" rows";
+     (colours===null?"":colours+" colours · ")+total+" rows"+
+     (level==="mixed"&&step?" · 3 skills":"");
    const card=document.createElement("button");
    card.type="button";
    card.className="picture-option"+(selected?" selected":"")+
@@ -430,7 +463,8 @@ function updateLevelSelector(){
  const colours=picture.paint?Object.keys(picture.paint.colours).length:null;
  $("pictureSummary").textContent=(step?PICTURE_TIERS[step-1]:"More pictures")+
    " · "+(colours===null?"":colours+" colours · ")+total+
-   " rows"+(step===1?" · Quick win":"")+" · No login needed";
+   " rows"+(state.activeLevel==="mixed"?" · 3 skills":"")+
+   (step===1?" · Quick win":"")+" · No login needed";
  renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
  $("startButton").textContent=save.completed?"View completed picture ↗":

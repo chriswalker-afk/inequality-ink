@@ -10,9 +10,9 @@ import {
 } from "./picture-engine.mjs";
 import {identicalSolution,isInInterval} from "./model.mjs";
 
-test("All 24 artworks validate with a five-picture quick-win path in each mode",()=>{
+test("All 29 artworks validate with a separate five-picture path in each mode",()=>{
  const reports=validatePictureLibrary();
- assert.equal(reports.length,24);
+ assert.equal(reports.length,29);
  for(const report of reports){
    assert.ok([6,8,10,12,14].includes(report.rows));
    assert.ok(report.width>=6);
@@ -25,8 +25,8 @@ test("All 24 artworks validate with a five-picture quick-win path in each mode",
      "full-flower-challenge","mushroom-mystery"],
    solve:["full-star-starter","full-gift-step","full-ball-building",
      "full-flower-challenge","rocket-launch"],
-   mixed:["full-star-starter","full-gift-step","full-ball-building",
-     "full-flower-challenge","enchanted-potion"],
+   mixed:["mixed-shield-starter","mixed-saucer-step",
+     "mixed-hourglass-building","mixed-butterfly-challenge","mixed-dragon-finale"],
    paint:["paint-heart-starter","paint-star-step","paint-daisy-building",
      "paint-rocket-challenge","paint-robot"]
  };
@@ -40,7 +40,7 @@ test("All 24 artworks validate with a five-picture quick-win path in each mode",
    assert.equal(defaultPictureForLevel(level).id,ids[0]);
  }
  for(const [level,expected] of Object.entries({
-   mirror:3,full:4,solve:4,mixed:4,paint:2
+   mirror:3,full:4,solve:4,mixed:9,paint:2
  })){
    assert.equal(extraPicturesForLevel(level).length,expected);
    assert.ok(extraPicturesForLevel(level).every(p=>!p.progression?.[level]));
@@ -55,6 +55,11 @@ test("Every picture has a unique playful clue which hides its final name",()=>{
     "mirror-heart-step":"Heart in a Hurry",
     "mirror-ball-building":"Bounce Around",
     "mirror-flower-challenge":"Petal Pop",
+    "mixed-shield-starter":"Pocket Guardian",
+    "mixed-saucer-step":"Visitor from Above",
+    "mixed-hourglass-building":"Against the Clock",
+    "mixed-butterfly-challenge":"Flutter By",
+    "mixed-dragon-finale":"Here Be Dragons",
     "full-star-starter":"Star in a Flash",
     "full-gift-step":"Wrapped with Wonder",
     "full-ball-building":"Bouncy Business",
@@ -225,10 +230,11 @@ test("Five new pictures are registered with exactly the intended modes and dimen
     ["enchanted-potion","full",16,16,["full","solve","mixed"]],
     ["ice-cream-treat","full",16,16,["full","solve","mixed"]]
   ];
-  assert.equal(PICTURE_LIBRARY.length,24);
+  assert.equal(PICTURE_LIBRARY.length,29);
   assert.equal(picturesForLevel("mirror").length,8);
-  for(const mode of ["full","solve","mixed"])
+  for(const mode of ["full","solve"])
     assert.equal(picturesForLevel(mode).length,9);
+  assert.equal(picturesForLevel("mixed").length,14);
   for(const [id,family,halfWidth,fullWidth,levels] of expected){
     const picture=pictureById(id);
     assert.equal(picture.family,family);
@@ -242,8 +248,77 @@ test("Five new pictures are registered with exactly the intended modes and dimen
       id+" needs visually meaningful finishing details");
   }
   const combinations=PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0);
-  assert.equal(combinations,42);
+  assert.equal(combinations,47);
 });
+
+test("Mixed Challenge core contains five original pictures, no reused silhouettes",()=>{
+ const mixed=progressionForLevel("mixed");
+ const otherIds=new Set(["mirror","full","solve","paint"].flatMap(level=>
+   picturesForLevel(level).map(p=>p.id)));
+ assert.equal(mixed.length,5);
+ assert.deepEqual(mixed.map(p=>p.rows.length),[6,8,10,12,14]);
+ assert.deepEqual(mixed.map(p=>pictureWidth(p)),[8,10,12,14,16]);
+ for(const [index,p] of mixed.entries()){
+   assert.equal(p.family,"full");
+   assert.deepEqual(p.levels,["mixed"],"These pictures belong to Mixed Challenge alone");
+   assert.ok(!otherIds.has(p.id),"Mixed core must never reuse another mode's picture");
+   assert.equal(pictureHeight(p),questionCount(p)+2);
+   assert.equal(p.progression.mixed,index+1);
+   const distinctWidths=new Set(p.rows.map(([a,b])=>b-a+1));
+   assert.ok(distinctWidths.size>=3,
+     p.id+" should vary the intervals rather than repeat one rectangle");
+   for(const [left,right] of p.rows)
+     assert.equal(left+right,pictureWidth(p)-1,
+       "Mirrored ray rows must remain symmetric");
+ }
+ // Historical work must be available as bonus pictures with unchanged IDs.
+ for(const id of ["full-star-starter","full-gift-step","full-ball-building",
+   "full-flower-challenge","enchanted-potion"]){
+   assert.ok(extraPicturesForLevel("mixed").some(p=>p.id===id),
+     "Old Mixed artwork must remain accessible to saved students: "+id);
+   assert.equal(pictureById(id).progression?.mixed,undefined);
+ }
+ for(const id of ["full-star-starter","full-gift-step",
+   "full-ball-building","full-flower-challenge"]){
+   assert.ok(["full","solve"].every(level=>
+     progressionForLevel(level).some(p=>p.id===id)),
+     "Full/Solve progression must remain unchanged");
+ }
+});
+
+test("Every new Mixed picture actually requires all three skills on every replay",()=>{
+ for(const picture of progressionForLevel("mixed")){
+   for(let replay=0;replay<12;replay++){
+     const questions=Array.from({length:questionCount(picture)},(_,i)=>
+       makePictureQuestion(picture,i,replay,"mixed"));
+     const mirrorRead=questions.filter(q=>q.artMode==="mirror"&&q.mode==="read");
+     const mirrorDraw=questions.filter(q=>q.artMode==="mirror"&&q.mode==="draw");
+     const fullDraw=questions.filter(q=>q.artMode==="full"&&q.mode==="draw");
+     const solve=questions.filter(q=>q.artMode==="full"&&q.mode==="solve");
+     for(const [skill,arr] of Object.entries({mirrorRead,mirrorDraw,fullDraw,solve}))
+       assert.ok(arr.length>0,picture.id+" missing "+skill+" in replay "+replay);
+     const kind=questions.map(q=>q.artMode+"/"+q.mode);
+     assert.deepEqual(kind.slice(0,4),[
+       "mirror/read","mirror/draw","full/draw","full/solve"
+     ]);
+     for(const q of questions){
+       const row=picturedRow(picture,q.index);
+       const expected=Array.from({length:pictureWidth(picture)},(_,x)=>
+         x+picture.window.min).filter((_,x)=>x>=row.from&&x<=row.to);
+       assert.deepEqual(picturePaintedValues(picture,q),expected);
+     }
+     if(picture.progression.mixed>1){
+       assert.ok(solve.some(q=>q.transformed.a<0),
+         picture.id+" must require reversal of a negative coefficient inequality");
+     }
+     if(picture.progression.mixed===5){
+       assert.ok(solve.filter(q=>q.transformed.a<0).length>=2,
+         "Big Finish should have at least two sign reversals on every replay");
+     }
+   }
+ }
+});
+
 test("New Mirror Mode pictures balance both ray directions and open/closed circles",()=>{
   for(const id of ["coral-crab","twilight-owl"]){
     const picture=pictureById(id);

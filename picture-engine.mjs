@@ -212,7 +212,13 @@ export function makePictureQuestion(picture,index,replay=0,level="mirror"){
       "Represent this inequality on the number line.",
     equation:formatInterval(answer)};
   const preferred=picture.initial?.[row.y-1]?.transform;
-  const {a,b}=solveTransformation(stage,index,replay,preferred);
+  const transformation=solveTransformation(stage,index,replay,preferred);
+  // Original bonus questions keep their exact transformations. The new Mixed
+  // Big Finish deliberately includes two negative-coefficient inequalities
+  // requiring reversal when solving, on every replay (rows 4 and 12).
+  const a=level==="mixed"&&picture.progression?.mixed===5&&index%8===3?
+    -Math.abs(transformation.a):transformation.a;
+  const b=transformation.b;
   return {...basic,prompt:"Solve the inequality, then draw your solution.",
     equation:formatLinear(answer,a,b),transformed:{a,b}};
 }
@@ -285,6 +291,12 @@ export function validatePicture(picture){
     if(!picture.levels.includes(level)||!Number.isInteger(step)||
        step<1||step>PICTURE_TIERS.length)
       throw Error(picture.id+": invalid progression stage for "+level);
+  }
+  for(const [level,step] of Object.entries(picture.legacyMathStage||{})){
+    if(!picture.levels.includes(level)||!Number.isInteger(step)||
+       step<1||step>PICTURE_TIERS.length||
+       Number.isInteger(picture.progression?.[level]))
+      throw Error(picture.id+": invalid preserved maths stage for "+level);
   }
   if(picture.family==="half"&&(picture.levels.length!==1||picture.levels[0]!=="mirror"))
     throw Error(picture.id+": half pictures require Mirror Mode");
