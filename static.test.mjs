@@ -179,7 +179,7 @@ test("Site remains dependency-free and keyboard/mobile friendly",()=>{
    assert.ok(existsSync(join(root,path)),"Missing "+path);
  }
  assert.ok(html.includes('type="module" src="./app.mjs"'));
- assert.ok(html.includes('href="./styles.css"'));
+ assert.match(html,/href="\.\/styles\.css(?:\?[^"]*)?"/);
  assert.ok(css.includes('max-width:740px')||css.includes('max-width:740px'));
  assert.ok(css.includes('.picture-picker'));
  assert.ok(css.includes('prefers-reduced-motion:reduce'));
