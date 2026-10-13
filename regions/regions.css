@@ -79,6 +79,22 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
 .graph-help-actions{display:flex;align-items:center;justify-content:space-between;gap:7px}
 .graph-help-actions span{font-size:.68rem;color:#929da5}
 .graph-hint{font-size:.77rem;background:#fff6e9;padding:11px;border-radius:10px;color:#795f3d}
+/* Every arrow is an explicit SVG shaft and polygon head, not a browser marker.
+   The note connects arrow direction to the AND/intersection idea. */
+.graph-overlap-note{
+  display:flex;align-items:flex-start;gap:10px;margin-top:12px;
+  padding:10px 12px;border:1px solid #cce5da;border-radius:10px;
+  background:#edf8f2;color:#365e54;
+}
+.graph-overlap-symbol{
+  font-size:1.5rem;line-height:1;flex:none;font-weight:800;color:#24866b
+}
+.graph-overlap-note strong{display:block;font-size:.75rem;color:#27725c}
+.graph-overlap-note p{margin:3px 0 0;font-size:.72rem;line-height:1.5}
+.graph-rule-item:disabled{opacity:1;cursor:default}
+.graph-full-button:disabled{opacity:.67;cursor:wait}
+.graph-choice-row button:disabled{cursor:default;opacity:.7}
+
 .graph-summary{text-align:center;padding:50px 15px;background:#fffcf8;border-radius:19px;margin-top:24px}
 .graph-summary h1{font-size:clamp(2rem,5vw,3.4rem);color:#335370;margin:12px 0}
 .graph-summary p{color:#74848e}
@@ -109,10 +125,31 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
 .graph-reveal-buttons button:hover{background:#ffffff35}
 @keyframes graph-wrong{0%,100%{fill-opacity:.3}45%{fill:#dc454d;fill-opacity:.8}}
 @keyframes graph-good{0%,100%{fill-opacity:.3}50%{fill:#55c994;fill-opacity:.9}}
-@keyframes graph-arrow-pulse{0%,100%{opacity:.75}50%{opacity:1;filter:drop-shadow(0 0 4px #67dbab)}}
+/* Newly solved arrows slide a short distance into their satisfying half-plane.
+   On the final line all arrows agree while the common region glows green. */
+@keyframes graph-arrow-enter{
+  from{opacity:.25;transform:translate(var(--graph-enter-x),var(--graph-enter-y))}
+  70%{opacity:1;transform:translate(2px,0)}
+  to{opacity:1;transform:translate(0,0)}
+}
+@keyframes graph-arrow-converge{
+  0%{opacity:.7;transform:translate(var(--graph-enter-x),var(--graph-enter-y))}
+  34%{opacity:1;transform:translate(0,0)}
+  55%{filter:drop-shadow(0 0 6px #63e6af)}
+  80%{filter:drop-shadow(0 0 2px #63e6af)}
+  100%{opacity:1;filter:none;transform:translate(0,0)}
+}
+@keyframes graph-common-highlight{
+  0%{fill-opacity:0;stroke-opacity:0}
+  33%{fill-opacity:.22;stroke-opacity:1}
+  60%{fill-opacity:.65;stroke-opacity:1}
+  100%{fill-opacity:.36;stroke-opacity:.84}
+}
 .graph-wrong-flash{animation:graph-wrong .7s ease-in-out 2}
 .graph-good-flash{animation:graph-good .8s ease-in-out 2}
-.graph-arrow-pulse{animation:graph-arrow-pulse .8s ease-in-out 2}
+.graph-arrow-enter{animation:graph-arrow-enter .65s cubic-bezier(.16,.8,.2,1) both}
+.graph-arrow-converge{animation:graph-arrow-converge 1.5s ease-in-out both}
+.graph-common-pulse{animation:graph-common-highlight 1.5s ease-in-out both}
 @media(max-width:780px){
  .graph-mode-grid,.graph-picture-grid,.graph-how-grid{grid-template-columns:1fr}
  .region-workspace{grid-template-columns:1fr;gap:10px}
@@ -143,6 +180,8 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
  .graph-reveal-buttons button{padding:9px}
 }
 @media(prefers-reduced-motion:reduce){
- .graph-wrong-flash,.graph-good-flash,.graph-arrow-pulse{animation:none!important}
+ .graph-wrong-flash,.graph-good-flash,.graph-arrow-enter,
+ .graph-arrow-converge,.graph-common-pulse{animation:none!important}
+ .graph-common-pulse{fill-opacity:.45}
  #graphProgressFill{transition:none}
 }
