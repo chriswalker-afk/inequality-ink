@@ -1,7 +1,7 @@
 import {
-  QUEST_SAVE_KEY,QUEST_AXIS,QUEST_ART,QUEST_QUESTIONS,QUEST_TOTAL,
-  quadraticAnswer,sameQuadraticAnswer,quadraticSolutionText,quadraticHints,
-  quadraticExplanation,quadraticValue,validateQuadraticQuest
+  QUEST_SAVE_KEY,QUEST_SAVE_KEY_V2,QUEST_PICTURES,questPictureById,
+  questPictureForStep,quadraticAnswer,sameQuadraticAnswer,quadraticSolutionText,
+  quadraticHints,quadraticExplanation,quadraticValue,validateQuadraticQuest
 } from "./quadratic-quest.mjs";
 import {initWorkingPad} from "./working-space.mjs";
 
@@ -9,18 +9,56 @@ const SVG="http://www.w3.org/2000/svg";
 const clamp=(n,lo,hi)=>Math.min(hi,Math.max(lo,n));
 const shortNum=n=>n<0?"−"+Math.abs(n):String(n);
 const fresh=()=>({done:0,firstTry:0,attempts:0,hints:0,replay:0});
+function validProgress(raw,picture){
+  const total=picture.questions.length;
+  if(!raw||typeof raw!=="object"||
+    !Number.isInteger(raw.done)||raw.done<0||raw.done>total||
+    !Number.isInteger(raw.firstTry)||raw.firstTry<0||raw.firstTry>raw.done||
+    !Number.isInteger(raw.attempts)||raw.attempts<0||
+    !Number.isInteger(raw.hints)||raw.hints<0||
+    !Number.isInteger(raw.replay)||raw.replay<0)return fresh();
+  return {done:raw.done,firstTry:raw.firstTry,attempts:raw.attempts,
+    hints:raw.hints,replay:raw.replay};
+}
+function initialState(){
+  return {selectedPicture:"prism",
+    progress:Object.fromEntries(QUEST_PICTURES.map(p=>[p.id,fresh()]))};
+}
+function suggestedPicture(state){
+  const selected=questPictureById(state.selectedPicture);
+  // Preserve an ongoing chosen picture; otherwise suggest the first unfinished.
+  if(selected){
+    const done=state.progress[selected.id].done;
+    if(done>0&&done<selected.questions.length)return selected.id;
+  }
+  return QUEST_PICTURES.find(p=>
+    state.progress[p.id].done<p.questions.length)?.id||"nova";
+}
 export function readQuadraticSave(storage){
+  const state=initialState();
   try{
-    const data=JSON.parse(storage.getItem(QUEST_SAVE_KEY));
-    if(!data||typeof data!=="object"||
-       !Number.isInteger(data.done)||data.done<0||data.done>QUEST_TOTAL||
-       !Number.isInteger(data.firstTry)||data.firstTry<0||data.firstTry>data.done||
-       !Number.isInteger(data.attempts)||data.attempts<0||
-       !Number.isInteger(data.hints)||data.hints<0||
-       !Number.isInteger(data.replay)||data.replay<0)return fresh();
-    return {done:data.done,firstTry:data.firstTry,attempts:data.attempts,
-      hints:data.hints,replay:data.replay};
-  }catch{return fresh();}
+    const current=storage.getItem(QUEST_SAVE_KEY_V2);
+    if(current!==null){
+      const parsed=JSON.parse(current);
+      if(parsed&&typeof parsed==="object"&&parsed.progress&&
+        typeof parsed.progress==="object"){
+        for(const p of QUEST_PICTURES)
+          state.progress[p.id]=validProgress(parsed.progress[p.id],p);
+        if(questPictureById(parsed.selectedPicture))
+          state.selectedPicture=parsed.selectedPicture;
+      }
+    }else{
+      // One-way migration: keep the existing Prism-of-Possibilities prototype
+      // record exactly as it was. Never clear or rewrite the legacy v1 key.
+      const legacy=storage.getItem(QUEST_SAVE_KEY);
+      if(legacy!==null)
+        state.progress.prism=validProgress(JSON.parse(legacy),QUEST_PICTURES[0]);
+    }
+  }catch{
+    // Corrupt individual saves must never stop the site loading.
+  }
+  state.selectedPicture=suggestedPicture(state);
+  return state;
 }
 function mk(doc,tag,attributes={},parent=null){
   const node=doc.createElementNS(SVG,tag);
@@ -43,38 +81,110 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     workPen:"questPen",workEraser:"questEraser",
     workUndo:"questUndo",workClear:"questClear"
   });
-  let progress=readQuadraticSave(storage),question=null,draft=null,
-    locked=false,attempts=0,hintsShown=0,timer=null,pointer=null;
-  const totalWidth=QUEST_ART.rows[0].length;
-  const xFor=n=>50+(n-QUEST_AXIS.min)*54;
+  let state=readQuadraticSave(storage),
+    picture=questPictureById(state.selectedPicture),
+    progress=state.progress[state.selectedPicture],
+    question=null,draft=null,
+    locked=false,attempts=0,hintsShown=0,timer=null,pointer=null,
+    view="picker";
+  const axis=()=>picture.axis;
+  const xFor=n=>50+(n-axis().min)*540/(axis().max-axis().min);
   const xOf=clientX=>{
     const rect=$("questLine").getBoundingClientRect();
-    return clamp(QUEST_AXIS.min+Math.round(
-      ((clientX-(rect.left||0))/Math.max(rect.width||0,1)*640-50)/54),
-      QUEST_AXIS.min,QUEST_AXIS.max);
+    const x=(clientX-(rect.left||0))/Math.max(rect.width||0,1)*640;
+    return clamp(Math.round(axis().min+(x-50)*(axis().max-axis().min)/540),
+      axis().min,axis().max);
   };
   function store(){
-    try{storage.setItem(QUEST_SAVE_KEY,JSON.stringify(progress));}catch{}
+    try{storage.setItem(QUEST_SAVE_KEY_V2,JSON.stringify(state));}catch{}
   }
   function cancelTimer(){
     if(timer!==null){clearTimeout(timer);timer=null;}
     pointer=null;
   }
+  function completedCount(){
+    return QUEST_PICTURES.filter(p=>
+      state.progress[p.id].done===p.questions.length).length;
+  }
   function updateEntry(){
-    $("questEnter").textContent=progress.done===QUEST_TOTAL?
-      "View completed Quest ↗":progress.done?
-      "Continue Quadratic Quest ↗":"Explore Quadratic Quest →";
-    $("questEntryProgress").textContent=progress.done===QUEST_TOTAL?
-      "All 6 questions completed · Play again whenever you like":
-      progress.done?progress.done+" of 6 bonus rows revealed · Progress saved separately":
-      "6 questions · A separate adventure";
+    const finished=completedCount(),any=QUEST_PICTURES.some(p=>state.progress[p.id].done>0);
+    $("questEnter").textContent=finished===5?
+      "View Quadratic Quest ↗":any?"Continue Quadratic Quest ↗":
+      "Explore Quadratic Quest →";
+    $("questEntryProgress").textContent=finished===5?
+      "5 of 5 pictures complete · Replay any picture":
+      finished+" of 5 pictures complete · Separate progress";
+  }
+  function setPicture(id,{save=true}={}){
+    const next=questPictureById(id);
+    if(!next)throw Error("Unknown Quadratic Quest picture "+id);
+    picture=next;
+    state.selectedPicture=id;
+    progress=state.progress[id];
+    if(save)store();
+    renderPicker();
+  }
+  function renderPicker(){
+    const done=completedCount();
+    $("questJourneyProgress").textContent=done+" of 5 completed";
+    const suggested=QUEST_PICTURES.find(p=>
+      state.progress[p.id].done<p.questions.length);
+    const track=$("questStepTrack");
+    track.replaceChildren();
+    for(const p of QUEST_PICTURES){
+      const el=doc.createElement("span");
+      el.className="picture-step"+(state.progress[p.id].done===p.questions.length?
+        " picture-step--done":suggested?.id===p.id?" picture-step--next":"");
+      el.textContent=String(p.stage);
+      el.setAttribute("title",p.stageLabel);
+      track.append(el);
+    }
+    const picker=$("questPicturePicker");
+    picker.replaceChildren();
+    for(const p of QUEST_PICTURES){
+      const save=state.progress[p.id],doneRows=save.done,
+        finished=doneRows===p.questions.length;
+      const button=doc.createElement("button");
+      button.type="button";
+      button.className="quest-picture-choice"+
+        (p.id===picture.id?" selected":"")+
+        (p.id===suggested?.id?" quest-picture-choice--next":"");
+      button.setAttribute("aria-pressed",String(p.id===picture.id));
+      const number=doc.createElement("span");
+      number.className="quest-picture-number";
+      number.textContent=String(p.stage);
+      const content=doc.createElement("span");
+      content.className="quest-picture-content";
+      const name=doc.createElement("strong");
+      name.textContent=p.name;
+      const focus=doc.createElement("small");
+      focus.textContent=p.focus;
+      const label=doc.createElement("em");
+      label.textContent=p.stageLabel+" · "+p.questions.length+" questions"+
+        (finished?" · Complete":doneRows?" · "+doneRows+" done":"");
+      content.append(name,focus,label);
+      const status=doc.createElement("span");
+      status.className="quest-picture-status";
+      status.textContent=finished?"●":p.id===picture.id?"◉":"○";
+      status.setAttribute("aria-hidden","true");
+      button.append(number,content,status);
+      button.addEventListener("click",()=>setPicture(p.id));
+      picker.append(button);
+    }
+    $("questSelectedTitle").textContent=picture.name;
+    $("questSelectedSummary").textContent=picture.stageLabel+
+      " · "+picture.questions.length+" questions · "+picture.focus;
+    $("questStart").textContent=progress.done===picture.questions.length?
+      "View completed picture ↗":progress.done?"Continue picture ↗":"Start picture ↗";
+    updateEntry();
   }
   function renderArt(target,done,{final=false}={}){
-    const svg=$(target);svg.replaceChildren();
-    svg.setAttribute("viewBox","0 0 "+totalWidth+" "+QUEST_ART.rows.length);
-    const h=QUEST_ART.rows.length;
-    for(let y=0;y<h;y++)for(let x=0;x<totalWidth;x++){
-      const colour=QUEST_ART.colours[QUEST_ART.rows[y][x]];
+    const svg=$(target),{art}=picture;
+    svg.replaceChildren();
+    const width=art.rows[0].length,h=art.rows.length;
+    svg.setAttribute("viewBox","0 0 "+width+" "+h);
+    for(let y=0;y<h;y++)for(let x=0;x<width;x++){
+      const colour=art.colours[art.rows[y][x]];
       const show=final||y>=h-done;
       mk(doc,"rect",{x,y,width:1,height:1,
         fill:colour&&show?colour:"#e9e5df",
@@ -82,15 +192,16 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
         "stroke-width":0.05},svg);
     }
     svg.setAttribute("aria-label",final?
-      "Completed prism picture with blue and turquoise pixel facets":
-      done+" of 6 rows of a hidden pixel picture revealed");
+      "Completed "+picture.name+" pixel art":
+      done+" of "+h+" rows of "+picture.name+" revealed");
   }
   function renderProgress(){
-    $("questProgressText").textContent=progress.done+" of "+QUEST_TOTAL+" rows revealed";
-    $("questProgressFill").style.width=(progress.done/QUEST_TOTAL*100)+"%";
-    $("questArtCount").textContent=progress.done+" / "+QUEST_TOTAL;
+    const total=picture.questions.length;
+    $("questProgressText").textContent=progress.done+" of "+total+" rows revealed";
+    $("questProgressFill").style.width=(progress.done/total*100)+"%";
+    $("questArtCount").textContent=progress.done+" / "+total;
     renderArt("questArt",progress.done);
-    updateEntry();
+    renderPicker();
   }
   function updateLine(){
     const svg=$("questLine"),y=58;
