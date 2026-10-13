@@ -6,6 +6,48 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Two art studios: Pixel Art / Graph Art
+
+A compact, shared **Pixel Art / Graph Art** switch at the top of the site lets
+students move between two intentionally **separate applications**:
+
+- **Pixel Art** is the existing number-line inequality game, its five modes
+  and optional Quadratic Quest. It still opens by default and retains all
+  existing student work, saved progress and the mobile one-screen painting
+  workflow.
+- **Graph Art** is an independent coordinate-graph experiment at
+  [regions/](regions/). It has its own modules, stylesheet, interaction
+  controls and `inequality-ink-graph-art-v1` save key. The first experiment is
+  **Aurora Crystal**, a stained-glass picture consisting of **five coloured,
+  mathematically genuine regions**: four triangular intersections of three
+  half-planes and a central diamond formed by four strict inequalities.
+
+In Graph Art, the **shaded regions themselves form the picture**. The student
+chooses the correct side of a supplied boundary and chooses a solid or dashed
+line (or taps a side of the coordinate graph directly). A live preview
+intersects their candidate region with previously solved inequalities. Each
+correct decision narrows the region; completing the facet commits its actual
+computed polygon in colour. The first facet includes one worked/given
+inequality, so it takes only two decisions to complete, followed by three,
+three, three and four decisions. That's **15 decisions to complete five
+facets**, all visually drawn by mathematical half-plane clipping. The final
+crystal is not unrelated artwork unlocked for a correct answer.
+
+A small explanatory panel teaches the differences between half-planes,
+intersections, and strict versus inclusive boundaries. Test-point hints and
+no-penalty retries support independence. Finished decisions — even part-way
+through a facet — save locally. Students can resume or restart this experiment
+without touching Pixel Art or Quadratic Quest records.
+
+This is deliberately **one prototype, not another full five-stage course**.
+The boundary lines are provided to keep attention on shading; line-drawing
+and more complicated feasible regions can be explored after classroom testing.
+The engine lives at `regions/regions-engine.mjs` with a pure convex polygon
+clipper and real-valued inequality evaluator; `regions/regions-app.mjs`
+provides the responsive, keyboard-friendly UI. `regions.test.mjs` verifies
+the exact five polygon areas, the full diamond geometry, solid/dashed logic,
+both studio links and a 15-decision simulated student run.
+
 ## Optional extension: Quadratic Quest — full five-picture journey
 
 **Quadratic Quest** is an optional, independent mathematical extension beneath the site's five familiar modes. It has its own **Choose a picture** screen, five-step progression, saved results, reveals and replay controls. Students who have not studied quadratic inequalities can continue the complete main game without entering it.

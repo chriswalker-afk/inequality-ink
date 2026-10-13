@@ -1011,3 +1011,38 @@ body.paint-session{overflow:hidden}
 /* Explicit hidden rules beat grid/flex display declarations in author CSS. */
 .quest-layout[hidden],.quest-progress[hidden],.quest-picker-shell[hidden],
 .quest-finish[hidden],.quest-screen[hidden]{display:none!important}
+
+
+/* Shared navigation between self-contained Pixel Art and Graph Art experiences.
+   The main game logic and layout stay separate from regions/ entirely. */
+.studio-switch{
+  display:flex;align-items:stretch;gap:3px;padding:4px;
+  border-radius:13px;border:1px solid #e1dcd6;
+  background:#ece9e4;white-space:nowrap
+}
+.studio-tab{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:37px;padding:8px 14px;border-radius:9px;
+  font-size:.81rem;font-weight:850;letter-spacing:-.01em;
+  text-decoration:none;color:#68768a;
+  transition:background .13s ease,color .13s ease
+}
+.studio-tab:hover{background:#f6f7f4;color:#344a64}
+.studio-tab.is-active,.studio-tab[aria-current="page"]{
+  background:#fffdfa;color:#2e655f;
+  box-shadow:0 2px 7px #36465615
+}
+.studio-tab:focus-visible{outline:3px solid #5c9d94;outline-offset:2px}
+@media(max-width:740px){
+  .topbar{flex-wrap:wrap}
+  .top-actions{flex:1 1 100%;justify-content:space-between;gap:8px}
+  .studio-switch{flex:1 1 auto}
+  .studio-tab{flex:1 1 50%;font-size:.76rem;min-height:36px;padding:7px 9px}
+  .top-actions .top-button{flex:0 0 auto}
+  /* Protect the carefully tuned one-screen mobile painting workspace. */
+  body.paint-session .studio-switch{display:none}
+  body.paint-session .top-actions{flex:0 0 auto}
+}
+@media(max-width:380px){
+  .studio-tab{font-size:.71rem;padding:6px 4px}
+}

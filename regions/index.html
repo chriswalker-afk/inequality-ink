@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f1e9" />
+  <meta name="description" content="Create real geometric art by shading intersecting linear inequalities on coordinate graphs. An optional Inequality Ink prototype." />
+  <title>Graph Art | Inequality Ink</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M9 32 32 8 55 32 32 56Z' fill='%237cc2af'/%3E%3Cpath d='M9 32 32 8 32 32Z' fill='%23f6a17e'/%3E%3Cpath d='M32 32 55 32 32 56Z' fill='%238ba5d3'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="./regions.css" />
+  <script type="module" src="./regions-app.mjs"></script>
+</head>
+<body class="regions-page">
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="../" aria-label="Inequality Ink home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span><strong>Inequality<span class="brand-accent">Ink</span></strong><small>Make maths into art</small></span>
+      </a>
+      <div class="top-actions">
+        <nav class="studio-switch" aria-label="Art style">
+          <a class="studio-tab" href="../">▦ Pixel Art</a>
+          <a class="studio-tab is-active" href="./" aria-current="page">◇ Graph Art</a>
+        </nav>
+        <a class="top-button graph-help-link" href="#how-graph-art-works">How it works <span aria-hidden="true">?</span></a>
+      </div>
+    </header>
+    <main class="region-main">
+      <section class="region-hero" aria-labelledby="regionTitle">
+        <div class="region-hero-copy">
+          <div class="eyebrow"><span class="spark-dot"></span> GRAPH ART · FIRST EXPERIMENT</div>
+          <h1 id="regionTitle">Shade the maths.<br /><em>Make the art.</em></h1>
+          <p>Choose which side of each line satisfies an inequality. See overlapping regions come together to form a stained-glass crystal — using the actual mathematics.</p>
+          <div class="region-hero-facts"><span>◇ One crystal</span><span>◫ Five coloured facets</span><span>✳ Fifteen decisions</span></div>
+        </div>
+        <div class="region-hero-note">
+          <span class="region-note-icon" aria-hidden="true">✧</span>
+          <div><strong>This is a separate experiment</strong><p>Pixel Art and Quadratic Quest are exactly where you left them. Complete crystal facets are saved here independently.</p></div>
+        </div>
+      </section>
+
+      <section class="region-stage" aria-label="Graph Art progression">
+        <div class="region-stage-heading">
+          <div><span class="eyebrow">YOUR STAINED-GLASS CREATION</span><strong id="regionJourneyLabel">Facet 1 of 5</strong></div>
+          <span id="regionStepCount" aria-live="polite">0 of 15 decisions</span>
+        </div>
+        <div id="regionProgressDots" class="region-progress-dots" aria-label="Crystal facet progression"></div>
+        <div class="region-progress-track"><div id="regionProgressFill" class="region-progress-fill"></div></div>
+      </section>
+
+      <div class="region-workspace">
+        <section class="panel region-graph-panel" aria-labelledby="regionCanvasHeading">
+          <div class="region-panel-heading">
+            <div><span class="panel-kicker">THE ART IS THE MATHEMATICS</span><h2 id="regionCanvasHeading">Your coordinate canvas</h2></div>
+            <span id="regionCanvasCount" class="panel-pill">0 / 5 facets</span>
+          </div>
+          <div class="region-graph-frame">
+            <svg id="regionGraph" viewBox="0 0 620 620" role="img"
+              aria-label="Coordinate graph. Tap a side of the active boundary to select the shading region."></svg>
+          </div>
+          <div class="region-canvas-legend">
+            <span><i class="region-key region-key--finished"></i>Finished coloured region</span>
+            <span><i class="region-key region-key--preview"></i>Current intersection</span>
+            <span><i class="region-key region-key--boundary"></i>Active boundary</span>
+          </div>
+          <p class="region-canvas-note">Every coloured facet is the real intersection of the inequalities you solved. Tap the graph to choose a side, or use the buttons.</p>
+        </section>
+        <section class="panel region-task-panel" id="regionTaskPanel" aria-labelledby="regionFacetTitle">
+          <div class="region-panel-heading">
+            <div><span class="panel-kicker" id="regionFacetStep">FACET 1 OF 5</span><h2 id="regionFacetTitle">Sunlit facet</h2></div>
+            <span id="regionFacetSwatch" class="region-facet-swatch" aria-hidden="true"></span>
+          </div>
+          <p id="regionFacetIntro" class="region-facet-intro"></p>
+          <div id="regionRuleTrail" class="region-rule-trail" aria-label="Boundary decisions in this facet"></div>
+          <div class="region-current-rule">
+            <span class="equation-label" id="regionRuleLabel">BOUNDARY 1 OF 2</span>
+            <div id="regionEquation" class="region-equation">x ≤ 0</div>
+            <p id="regionGiven" class="region-given">Already shaded: y ≥ 0</p>
+          </div>
+          <p class="region-task-instruction">The boundary is drawn for you. Shade the correct side, then decide whether the line should be solid or dashed.</p>
+          <fieldset class="region-choice-set">
+            <legend>1. Which side satisfies the inequality?</legend>
+            <div class="region-choice-pair" role="group" aria-label="Choose side of boundary">
+              <button type="button" id="regionSideA" aria-pressed="false">Left</button>
+              <button type="button" id="regionSideB" aria-pressed="false">Right</button>
+            </div>
+            <p class="region-mini-hint">You can also tap directly on the coordinate graph.</p>
+          </fieldset>
+          <fieldset class="region-choice-set">
+            <legend>2. Should the boundary line be included?</legend>
+            <div class="region-choice-pair" role="group" aria-label="Choose boundary style">
+              <button type="button" id="regionSolid" aria-pressed="false"><span class="region-solid-glyph">━━━</span> Solid</button>
+              <button type="button" id="regionDashed" aria-pressed="false"><span class="region-dashed-glyph">┄┄┄</span> Dashed</button>
+            </div>
+          </fieldset>
+          <div class="region-response">
+            <p id="regionFeedback" role="status" aria-live="polite">Choose a side and boundary style to get started.</p>
+          </div>
+          <div class="region-actions">
+            <button type="button" id="regionHintButton" class="button button-light">✳ Give me a hint</button>
+            <button type="button" id="regionCheckButton" class="button button-primary">Check shading →</button>
+          </div>
+          <div id="regionHintBox" class="region-hint-box" hidden></div>
+          <p class="region-unmarked">No penalties for trying again. Each correct decision changes the graph itself.</p>
+        </section>
+        <section id="regionFinishPanel" class="panel region-finish-panel" hidden aria-labelledby="regionFinishTitle">
+          <div class="eyebrow">YOUR STAINED GLASS IS COMPLETE ✦</div>
+          <h2 id="regionFinishTitle">Aurora Crystal</h2>
+          <p>You've created a picture entirely from the intersections of linear inequalities. Every coloured shape on the graph is a genuine mathematical region.</p>
+          <div id="regionFinishStats" class="region-finish-stats">5 facets · 15 decisions</div>
+          <details class="region-review">
+            <summary>Review the inequalities that made this picture</summary>
+            <div id="regionReviewContent"></div>
+          </details>
+          <button type="button" class="button button-primary" id="regionPlayAgain">Create the crystal again ↻</button>
+          <a class="button button-light region-return" href="../">Back to Pixel Art ↗</a>
+        </section>
+      </div>
+      <section id="how-graph-art-works" class="region-how" aria-labelledby="regionHowHeading">
+        <span class="eyebrow">WHY THIS IS REAL MATHEMATICAL ART</span>
+        <h2 id="regionHowHeading">Every piece is an overlap.</h2>
+        <div class="region-how-grid">
+          <div><span>01</span><strong>Choose a half-plane</strong><p>For each inequality, decide which side of the boundary contains its solutions.</p></div>
+          <div><span>02</span><strong>Keep only the overlap</strong><p>The preview shows the intersection with inequalities you have already answered.</p></div>
+          <div><span>03</span><strong>Build the stained glass</strong><p>Each completed intersection becomes a coloured facet of the picture — no unrelated image is unlocked.</p></div>
+        </div>
+        <p class="region-how-footnote">In this first experiment, the boundary lines are supplied. Solid lines are for ≤ and ≥; dashed lines are for &lt; and &gt;. The shaded shapes show the same interiors for strict and inclusive inequalities, but their boundaries are distinguished mathematically.</p>
+      </section>
+    </main>
+    <footer class="region-footer"><span>INEQUALITY INK ✳ GRAPH ART</span><a href="../">Try Pixel Art instead ↗</a></footer>
+  </div>
+</body>
+</html>
