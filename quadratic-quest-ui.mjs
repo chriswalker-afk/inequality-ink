@@ -210,8 +210,11 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
       const x=QUEST_AXIS.min+i*(QUEST_AXIS.max-QUEST_AXIS.min)/200;
       sampled.push({x,y:quadraticValue(q,x)});
     }
-    const high=Math.max(1,...sampled.map(p=>Math.abs(p.y)));
-    const yScale=y=>clamp(axisY-y*90/high,13,217);
+    // Scale around the turning point rather than extreme window values.
+    // Otherwise the relevant arch between roots looks almost flat.
+    const vertex=(q.roots[0]+q.roots[1])/2;
+    const amplitude=Math.max(2.5,Math.abs(quadraticValue(q,vertex)))*1.35;
+    const yScale=y=>clamp(axisY-y*90/amplitude,13,217);
     mk(doc,"rect",{x:45,y:20,width:550,height:96,fill:"#eaf5f4",opacity:.7},svg);
     mk(doc,"rect",{x:45,y:116,width:550,height:100,fill:"#f9ebe8",opacity:.55},svg);
     mk(doc,"line",{x1:45,y1:axisY,x2:595,y2:axisY,
