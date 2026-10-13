@@ -479,6 +479,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     const stage=scope===hintKey?hintStage:0;
     $("graphHint").textContent=stage>=3?"✳ All hints shown":
       stage?"✳ More help ("+(stage+1)+"/3)":"✳ Give me a hint";
+    $("graphHint").disabled=(mode()==="build"&&allBuilt)||stage>=3;
     draw();
   }
   function pickAt(x,y){
