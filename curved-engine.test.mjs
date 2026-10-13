@@ -21,7 +21,7 @@ test("boundaries and rendered regions match quadratic intersection",()=>{
  assert.equal(rangeAtX(right.rules,-1),null);
  assert.ok(regionPaths(left.rules)[0].length>100);
  assert.ok(regionPaths(right.rules)[0].length>100);
- assert.ok(boundaryPoints(left.rules[0]).length>100);
+ assert.ok(boundaryPoints(left.rules[0])[0].length>100);
  assert.equal(boundaryPoints(right.rules[2]).length,2);
 });
 test("strict side is excluded without removing interior area",()=>{
