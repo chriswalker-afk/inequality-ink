@@ -1,4 +1,9 @@
-# Plot & Shade — Phase 3 small playable prototype
+# Plot & Shade — historical Phase 3 prototype
+
+The complete five-picture mode is now implemented.
+See [PLOT_SHADE_FULL_MODE.md](PLOT_SHADE_FULL_MODE.md).
+The notes below describe the original Little Umbrella prototype, whose
+mathematics and previous progress are preserved.
 
 **Prototype page:** https://chriswalker-afk.github.io/inequality-ink/regions/plot.html
 

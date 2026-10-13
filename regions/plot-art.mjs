@@ -1,7 +1,7 @@
 import {
-  WORLD,regionPaths,boundaryPoints,curvedCellAt
+  WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
-import {PLOT_PICTURE,plotRule,validatePlotPicture} from "./plot-pictures.mjs";
+import {PLOT_PICTURES,PLOT_PICTURE,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs";
 import {
   POINT_STEP,snapPoint,samePoint,constructBoundary,checkConstruction,
   checkBoundaryStyle,previewPaths,validSavedPoints
@@ -13,48 +13,79 @@ const py=y=>PAD+(WORLD.ymax-y)*GRID/(WORLD.ymax-WORLD.ymin);
 const path=(points,close=false)=>points.map((p,i)=>
   (i?"L":"M")+px(p.x).toFixed(2)+" "+py(p.y).toFixed(2)).join(" ")+(close?" Z":"");
 const nice=n=>String(n).replace("-","−");
+// Read-only prototype save imported on first use; never overwrite it.
 export const PLOT_SAVE_KEY="inequality-ink-plot-shade-prototype-v1";
-const fresh=()=>({done:0,phase:"plot",points:[],styleChoice:null,replays:0});
-
+export const PLOT_SAVE_KEY_V2="inequality-ink-plot-shade-v2";
+const fresh=()=>({done:0,phase:"plot",points:[],styleChoice:null,replays:0,
+  plotIndex:0,verified:[]});
+function safeJson(storage,key){
+  try{return JSON.parse(storage.getItem(key));}catch{return null;}
+}
+function cleanRecord(raw,p,legacy=false){
+  const r=fresh();
+  if(!raw||!Number.isInteger(raw.done)||raw.done<0||raw.done>p.pieces.length)return r;
+  r.done=raw.done;
+  r.replays=Number.isInteger(raw.replays)&&raw.replays>=0&&raw.replays<1e6?
+    raw.replays:0;
+  if(r.done===p.pieces.length)return r;
+  const part=p.pieces[r.done],steps=plotSteps(part);
+  const verified=Array.isArray(raw.verified)?raw.verified:[];
+  for(let i=0;i<Math.min(steps.length,verified.length);i++){
+    const row=verified[i],step=steps[i],rule=plotRule(part,i);
+    if(row?.ruleId!==step.ruleId||!validSavedPoints(row.points)||
+      !checkConstruction({kind:step.kind,rule},row.points).correct||
+      !checkBoundaryStyle(rule,row.style).correct)break;
+    r.verified.push({ruleId:row.ruleId,points:row.points.map(pt=>({...pt})),style:row.style});
+  }
+  if(legacy&&raw.phase==="shade"&&steps.length===1&&
+     !r.verified.length&&validSavedPoints(raw.points)&&
+     checkConstruction({kind:steps[0].kind,rule:plotRule(part)},raw.points).correct&&
+     checkBoundaryStyle(plotRule(part),raw.styleChoice).correct)
+    r.verified.push({ruleId:steps[0].ruleId,
+      points:raw.points.map(pt=>({...pt})),style:raw.styleChoice});
+  r.plotIndex=r.verified.length;
+  if(r.plotIndex===steps.length){r.phase="shade";return r;}
+  r.points=validSavedPoints(raw.points)?raw.points.map(pt=>({...pt})):[];
+  if(raw.phase==="style"&&r.points.length===2&&
+     checkConstruction({kind:steps[r.plotIndex].kind,
+       rule:plotRule(part,r.plotIndex)},r.points).correct){
+    r.phase="style";
+    r.styleChoice=["solid","dashed"].includes(raw.styleChoice)?
+      raw.styleChoice:null;
+  }
+  return r;
+}
 export function readPlotSave(storage){
-  const state=fresh();
-  try{
-    const raw=JSON.parse(storage.getItem(PLOT_SAVE_KEY));
-    if(!raw||!Number.isInteger(raw.done)||raw.done<0||
-       raw.done>PLOT_PICTURE.pieces.length)return state;
-    state.done=raw.done;
-    state.replays=Number.isInteger(raw.replays)&&raw.replays>=0?raw.replays:0;
-    if(state.done===PLOT_PICTURE.pieces.length)return state;
-    const p=PLOT_PICTURE.pieces[state.done];
-    state.points=validSavedPoints(raw.points)?raw.points.map(pt=>({x:pt.x,y:pt.y})):[];
-    if(raw.phase==="style"||raw.phase==="shade"){
-      const checked=checkConstruction({kind:p.plot.kind,rule:plotRule(p)},state.points);
-      if(checked.correct){
-        state.phase=raw.phase;
-        if(raw.styleChoice==="solid"||raw.styleChoice==="dashed")
-          state.styleChoice=raw.styleChoice;
-        if(state.phase==="shade"&&!checkBoundaryStyle(plotRule(p),state.styleChoice).correct){
-          state.phase="style";state.styleChoice=null;
-        }
-      }
-    }
-  }catch{}
-  return state;
+  const raw=safeJson(storage,PLOT_SAVE_KEY_V2),records={};
+  for(const p of PLOT_PICTURES)if(raw?.records?.[p.id])
+    records[p.id]=cleanRecord(raw.records[p.id],p);
+  if(!records["little-umbrella"]){
+    const legacy=safeJson(storage,PLOT_SAVE_KEY);
+    if(legacy&&Number.isInteger(legacy.done)&&legacy.done>=0&&legacy.done<=2)
+      records["little-umbrella"]=cleanRecord(legacy,PLOT_PICTURE,true);
+  }
+  const picture=plotPicture(raw?.picture)?.id||PLOT_PICTURES[0].id;
+  return {picture,records,...(records[picture]||fresh())};
 }
 
 export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
-  validatePlotPicture();
+  validatePlotGallery();
   const $=id=>doc.getElementById(id),svg=$("plotGraph"),
-    preview=$("plotPreviewGraph"),reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
-  let save=readPlotSave(storage),screen="picker",selected=null,wrong=null,
+    reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
+  const restored=readPlotSave(storage);
+  let saved={picture:restored.picture,records:restored.records};
+  let save=saved.records[saved.picture]||fresh();
+  let screen="picker",selected=null,wrong=null,
     cursor={x:0,y:0},activePoint=save.points.length-1,drag=null,
     message="",status="",hint="",flashTimer=null,revealTimers=[];
-
+  function picture(){return plotPicture(saved.picture);}
   function persist(){
-    try{storage.setItem(PLOT_SAVE_KEY,JSON.stringify(save));}catch{}
+    saved.records[saved.picture]=save;
+    try{storage.setItem(PLOT_SAVE_KEY_V2,JSON.stringify(saved));}catch{}
   }
-  function current(){return PLOT_PICTURE.pieces[save.done]||null;}
-  function targetRule(){return current()?plotRule(current()):null;}
+  function current(){return picture().pieces[save.done]||null;}
+  function step(){return current()?plotSteps(current())[save.plotIndex]||null:null;}
+  function targetRule(){return step()?plotRule(current(),save.plotIndex):null;}
   function notify(text,type=""){message=text;status=type;}
   function el(root,tag,attrs={}){
     const node=doc.createElementNS(NS,tag);
@@ -103,9 +134,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
         "pointer-events":"none",...attrs});
     }
   }
-  function drawDetails(root,maxStage=Infinity,enterStage=0){
+  function drawDetails(root,p,maxStage=Infinity,enterStage=0){
     const unit=GRID/(WORLD.xmax-WORLD.xmin);
-    for(const d of PLOT_PICTURE.details){
+    for(const d of p.details){
       if(d.stage>maxStage)continue;
       const attrs={"data-plot-detail":d.id,"data-detail-stage":d.stage,
         "pointer-events":"none"};let node;
@@ -137,48 +168,116 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       if(node&&d.stage===enterStage)node.classList?.add("plot-detail-enter");
     }
   }
-  function renderPreview(){
-    baseGraph(preview,{grid:false});
-    for(const [i,part] of PLOT_PICTURE.pieces.entries()){
-      const painted=i<save.done;
-      drawPiece(preview,part,{fill:painted?part.color:"#cbd5d2",
-        "fill-opacity":painted?1:.17,
+  function miniature(svg,p,progress){
+    baseGraph(svg,{grid:false});
+    for(const [i,part]of p.pieces.entries()){
+      const painted=i<progress;
+      drawPiece(svg,part,{
+        fill:painted?part.color:"#cbd5d2",
+        "fill-opacity":painted?1:(i<2?.18:.06),
         stroke:painted?"#fff9ee":"#acbdb9",
-        "stroke-dasharray":painted?"":"9 7","stroke-width":painted?3:1.5});
+        "stroke-dasharray":painted?"":"9 7",
+        "stroke-width":painted?3:1.5
+      });
     }
-    if(save.done===PLOT_PICTURE.pieces.length)drawDetails(preview);
-    $("plotGalleryProgress").textContent=save.done+" of 2 pieces painted"+
-      (save.done===2?" · Picture complete!":"");
-    $("plotCardProgress").style.width=(save.done/2*100)+"%";
-    $("plotCardAction").textContent=save.done===2?"✓ Finished · Play again":
-      save.done?"Continue · 1/2 pieces →":"Start picture →";
+    if(progress===p.pieces.length)drawDetails(svg,p);
+  }
+  function renderPreview(){
+    const completed=PLOT_PICTURES.filter(p=>
+      saved.records[p.id]?.done===p.pieces.length).length;
+    const recommended=PLOT_PICTURES.find(p=>
+      saved.records[p.id]?.done!==p.pieces.length)||PLOT_PICTURES[4];
+    $("plotGalleryProgress").textContent=completed+" of 5 pictures finished · "+
+      (completed===5?"All five stages complete!":"Next: "+recommended.stage);
+    const stages=$("plotStageTrack");stages.replaceChildren();
+    for(const p of PLOT_PICTURES){
+      const done=saved.records[p.id]?.done||0;
+      const stage=doc.createElement("div");
+      stage.className="graph-step-node"+
+        (done===p.pieces.length?" is-complete":"")+
+        (p.id===recommended.id?" is-recommended":"");
+      stage.setAttribute("aria-label",p.stage+", "+done+" of "+p.pieces.length+" pieces");
+      const dot=doc.createElement("span");dot.className="graph-step-number";
+      dot.textContent=done===p.pieces.length?"✓":String(p.step);
+      const caption=doc.createElement("span");caption.textContent=p.stage;
+      stage.append(dot,caption);stages.append(stage);
+    }
+    const cards=$("plotPictureCards");cards.replaceChildren();
+    for(const p of PLOT_PICTURES){
+      const r=saved.records[p.id]||fresh();
+      const finished=r.done===p.pieces.length;
+      const card=doc.createElement("button");
+      card.type="button";
+      card.className="graph-picture-card"+(p.id===recommended.id?" is-recommended":"");
+      card.setAttribute("data-plot-picture",p.id);
+      card.setAttribute("aria-label",(finished?"Replay ":"Start or continue ")+p.name+
+        ". "+r.done+" of "+p.pieces.length+" pieces complete.");
+      const svgPreview=doc.createElementNS(NS,"svg");
+      svgPreview.setAttribute("viewBox","0 0 620 620");
+      svgPreview.setAttribute("aria-hidden","true");
+      miniature(svgPreview,p,r.done);
+      const info=doc.createElement("span");info.className="graph-picture-info";
+      const badge=doc.createElement("span");badge.className="graph-stage";
+      badge.textContent=p.step+" · "+p.stage.toUpperCase()+" · "+p.pieces.length+" PIECES";
+      const name=doc.createElement("strong");
+      name.textContent=finished?p.name:p.clue;
+      const description=doc.createElement("small");description.textContent=p.description;
+      const focus=doc.createElement("span");
+      focus.className="graph-card-maths";focus.textContent=p.focus;
+      const progress=doc.createElement("span");progress.className="graph-card-progress";
+      const bar=doc.createElement("span");
+      bar.style.width=(100*r.done/p.pieces.length)+"%";progress.append(bar);
+      const go=doc.createElement("span");go.className="graph-card-go";
+      go.textContent=finished?"✓ Finished · Play again":
+        r.done?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":"Start picture →";
+      info.append(badge,name,description,focus,progress,go);
+      card.append(svgPreview,info);
+      card.addEventListener("click",()=>choosePicture(p.id));
+      cards.append(card);
+    }
+  }
+  function choosePicture(id){
+    const p=plotPicture(id);if(!p)return;
+    clearFlash();stopReveal();selected=null;drag=null;hint="";
+    saved.picture=p.id;
+    save=saved.records[p.id]||fresh();
+    if(save.done===p.pieces.length){
+      const replays=save.replays;
+      save=fresh();save.replays=replays+1;
+    }
+    activePoint=save.points.length-1;cursor={x:0,y:0};
+    persist();notify("Begin by plotting the next boundary.");setScreen("play");
   }
   function currentConstruction(){
-    return constructBoundary(current()?.plot.kind,save.points);
+    return constructBoundary(step()?.kind,save.points);
   }
   function drawCanvas(){
     baseGraph(svg);
-    for(const [i,part] of PLOT_PICTURE.pieces.entries()){
-      if(i>=save.done)break;
-      drawPiece(svg,part,{fill:part.color,stroke:"#fff9ed","stroke-width":3,
-        "data-region-layer":"finished-"+part.id});
-    }
-    const part=current();
+    const p=picture(),part=current();
+    for(let i=0;i<save.done;i++)
+      drawPiece(svg,p.pieces[i],{fill:p.pieces[i].color,
+        stroke:"#fff9ed","stroke-width":3,
+        "data-region-layer":"finished-"+p.pieces[i].id});
     if(!part)return;
-    for(const rule of part.rules)
-      if(rule.id!==part.plot.ruleId)drawBoundary(svg,rule,{
-        "data-plot-boundary":"given"});
-    if(save.points.length===2){
+    const future=new Set(plotSteps(part).slice(save.plotIndex).map(t=>t.ruleId));
+    for(const rule of part.rules){
+      if(future.has(rule.id))continue;
+      const verified=save.verified.find(v=>v.ruleId===rule.id);
+      drawBoundary(svg,rule,{
+        stroke:verified?"#388d80":"#5b7890",
+        "stroke-width":verified?3.25:2.6,
+        "data-plot-boundary":verified?"constructed":"given"
+      });
+    }
+    if(save.points.length===2&&(save.phase==="plot"||save.phase==="style")){
       const made=currentConstruction();
-      if(made.valid){
-        const dash=save.phase==="plot"?"7 7":
-          save.styleChoice==="solid"?"":"8 7";
-        drawBoundary(svg,made.rule,{
-          stroke:save.phase==="plot"?"#d18b72":"#388d80",
-          "stroke-width":save.phase==="plot"?3:3.3,
-          "stroke-dasharray":dash,
-          "data-plot-boundary":"constructed"});
-      }
+      if(made.valid)drawBoundary(svg,made.rule,{
+        stroke:save.phase==="plot"?"#d18b72":"#388d80",
+        "stroke-width":save.phase==="plot"?3:3.3,
+        "stroke-dasharray":save.phase==="plot"?"7 7":
+          save.styleChoice==="solid"?"":"8 7",
+        "data-plot-boundary":"constructed"
+      });
     }
     if(save.phase==="shade"){
       if(selected)drawPolygons(svg,selected.paths,{
@@ -190,80 +289,96 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
         "data-region-layer":"wrong"},"graph-wrong-flash");
     }
     if(save.phase==="plot"){
-      for(const [index,p]of save.points.entries()){
+      for(const [index,pt]of save.points.entries()){
         const active=index===activePoint;
-        const circle=el(svg,"circle",{cx:px(p.x),cy:py(p.y),
+        const circle=el(svg,"circle",{cx:px(pt.x),cy:py(pt.y),
           r:active?9:7,fill:active?"#dc8b69":"#3f988c",
           stroke:"#fffcf8","stroke-width":3,
           "data-plot-point":index,"pointer-events":"none"});
         circle.classList?.add("plot-preview-point");
-        const lx=Math.min(SIZE-PAD-8,px(p.x)+13);
-        const ly=Math.max(PAD+17,py(p.y)-11);
-        label(svg,lx,ly,(index+1)+": ("+nice(p.x)+", "+nice(p.y)+")",{
+        const lx=Math.min(SIZE-PAD-8,px(pt.x)+13);
+        const ly=Math.max(PAD+17,py(pt.y)-11);
+        label(svg,lx,ly,(index+1)+": ("+nice(pt.x)+", "+nice(pt.y)+")",{
           fill:"#516a73","font-size":14,"font-weight":800,
           "paint-order":"stroke",stroke:"#fffcf8","stroke-width":4,
           "pointer-events":"none"});
       }
     }
-    if(save.phase==="plot"||save.phase==="shade"){
+    if(save.phase==="plot"||save.phase==="shade")
       el(svg,"circle",{cx:px(cursor.x),cy:py(cursor.y),r:7,
         stroke:"#3f8f7d",fill:"none","stroke-width":2,
         "stroke-dasharray":"3 3","pointer-events":"none"});
-    }
     svg.setAttribute("aria-label",save.phase==="plot"?
-      "Place two points on the boundary. Arrow keys move a cursor; Enter places a point. Drag an existing point to edit.":
+      "Plot boundary "+(save.plotIndex+1)+" of "+plotSteps(part).length+
+      ". Arrow keys move a cursor, Enter places a point. Drag to edit.":
       save.phase==="style"?"Choose solid or dashed in the controls.":
-      "Tap a region satisfying all inequalities, or use arrow keys and Enter.");
+      "Tap the region satisfying all inequalities, or use arrow keys and Enter.");
     svg.style.touchAction=save.phase==="plot"?"none":"manipulation";
   }
   function pointText(p){return p?"("+nice(p.x)+", "+nice(p.y)+")":"not placed";}
   function playView(){
-    const part=current();if(!part){setScreen("summary");return;}
-    $("plotPieceCount").textContent="Piece "+(save.done+1)+" of 2";
-    $("plotCanvasCount").textContent=save.done+" / 2";
-    $("plotProgressFill").style.width=(save.done*50)+"%";
-    $("plotProgress").setAttribute("aria-valuenow",String(save.done*50));
-    $("plotTaskKicker").textContent="PIECE "+(save.done+1)+" OF 2";
+    const p=picture(),part=current();
+    if(!part){setScreen("summary");return;}
+    const task=step(),total=plotSteps(part).length;
+    $("plotGameMode").textContent="PLOT & SHADE · STEP "+p.step+" · "+p.stage.toUpperCase();
+    $("plotGameTitle").textContent=p.name;
+    $("plotGameFocus").textContent=p.focus;
+    $("plotPieceCount").textContent="Piece "+(save.done+1)+" of "+p.pieces.length;
+    $("plotCanvasCount").textContent=save.done+" / "+p.pieces.length;
+    $("plotProgressFill").style.width=(100*save.done/p.pieces.length)+"%";
+    $("plotProgress").setAttribute("aria-valuenow",
+      String(Math.round(100*save.done/p.pieces.length)));
+    $("plotTaskKicker").textContent="PIECE "+(save.done+1)+" OF "+p.pieces.length;
     $("plotTaskTitle").textContent=part.name;
     $("plotPieceSwatch").style.background=part.color;
-    $("plotMobileEquation").textContent=
-      (save.phase==="plot"?"Plot: ":"Find the region: ")+targetRule().text;
+    $("plotBoundaryCount").textContent=save.phase==="shade"?
+      "All "+total+" plotted":"Boundary "+(save.plotIndex+1)+" of "+total;
+    $("plotMobileEquation").textContent=save.phase==="shade"?
+      "Fill the common region":(save.phase==="plot"?"Plot: ":"Boundary: ")+targetRule().text;
     $("plotCanvasTitle").textContent=save.phase==="plot"?"Plot the boundary":
       save.phase==="style"?"Choose its style":"Find the overlap";
     $("plotCanvasInstruction").textContent=save.phase==="plot"?
       "Tap or drag points. Coordinates snap to 0.5. Arrow keys + Enter work too.":
       save.phase==="style"?"Study your graph, then decide solid or dashed.":
       "Tap the common region. Correct fills stay until you check.";
+    const tasks=plotSteps(part),built=new Set(save.verified.map(t=>t.ruleId));
+    const reused=previousBoundaries(p,save.done);
     const rules=$("plotRuleList");rules.replaceChildren();
     for(const r of part.rules){
-      const plotted=r.id===part.plot.ruleId;
+      const taskIndex=tasks.findIndex(t=>t.ruleId===r.id);
+      const isTarget=taskIndex>=0,done=built.has(r.id);
+      const active=isTarget&&taskIndex===save.plotIndex&&save.phase!=="shade";
       const item=doc.createElement("div");
-      item.className="graph-rule-item "+(plotted?"plot-rule-plot":"plot-rule-given");
+      item.className="graph-rule-item "+(active?"plot-rule-plot":"plot-rule-given");
       const txt=doc.createElement("span");txt.textContent=r.text;
       const flag=doc.createElement("span");flag.className="rule-state";
-      flag.textContent=plotted?(save.phase==="plot"?"PLOT":"SKETCHED"):"GIVEN";
+      flag.textContent=done?"BUILT":active?"PLOT":
+        isTarget?"NEXT":reused.has(ruleSignature(r))?"REUSED":"GIVEN";
       item.append(txt,flag);rules.append(item);
     }
     for(const name of ["plot","style","shade"]){
-      const node=$("plotPhaseTrack").children.find?.(n=>n.getAttribute("data-step")===name)
-        ||[...$("plotPhaseTrack").children].find(n=>n.getAttribute("data-step")===name);
-      if(node){
-        const index={plot:0,style:1,shade:2};
-        node.className="plot-phase"+(name===save.phase?" is-current":
-          index[name]<index[save.phase]?" is-done":"");
-      }
+      const node=[...$("plotPhaseTrack").children].find(
+        child=>child.getAttribute("data-step")===name);
+      if(!node)continue;
+      const index={plot:0,style:1,shade:2};
+      node.className="plot-phase"+(name===save.phase?" is-current":
+        index[name]<index[save.phase]?" is-done":"");
     }
     $("plotPlotControls").hidden=save.phase!=="plot";
     $("plotStyleControls").hidden=save.phase!=="style";
     $("plotShadeControls").hidden=save.phase!=="shade";
-    const count=save.points.length;
-    $("plotInstruction").textContent=count===0?
-      (part.plot.kind==="parabola"?"Place the turning point first.":"Place your first point on the line."):
+    const count=save.points.length,kind=task?.kind;
+    const first={parabola:"Place the turning point first.",
+      absolute:"Place the V's vertex first.",
+      circle:"Place the circle's centre first.",
+      line:"Place your first point on the line."};
+    $("plotInstruction").textContent=count===0?(first[kind]||"Place the first point."):
       count===1?"Now place a second point on the boundary.":"Both points placed. Check your sketch.";
-    $("plotGuidance").textContent=part.plot.guidance;
+    $("plotGuidance").textContent=task?.guidance||"All boundaries built. Now shade.";
     $("plotPointReadout").textContent=
-      (part.plot.kind==="parabola"?"Vertex: ":"Point 1: ")+pointText(save.points[0])+
-      " · Point 2: "+pointText(save.points[1]);
+      (kind==="parabola"||kind==="absolute"?"Vertex: ":
+       kind==="circle"?"Centre: ":"Point 1: ")+pointText(save.points[0])+
+      " · "+(kind==="circle"?"Edge point: ":"Point 2: ")+pointText(save.points[1]);
     $("plotNudgeControls").hidden=count===0;
     $("plotNudgeLabel").textContent=activePoint<0?"Select a point to adjust":
       "Adjust point "+(activePoint+1)+" by 0.5";
@@ -281,6 +396,17 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       save.phase==="style"?"Check boundary →":"Check region →";
     drawCanvas();
   }
+  function summaryView(){
+    const p=picture();
+    $("plotSummaryTitle").textContent=p.name;
+    $("plotSummaryText").textContent=
+      "You constructed mathematical boundaries and found "+p.pieces.length+
+      " real regions. Watch the artwork come to life!";
+    $("plotSummaryStats").textContent=p.pieces.length+" regions · "+
+      p.pieces.reduce((n,part)=>n+plotSteps(part).length,0)+
+      " graph constructions · "+p.stage;
+    $("plotNextPicture").hidden=p.step===PLOT_PICTURES.length;
+  }
   function setScreen(next){
     screen=next;
     $("plotPicker").hidden=next!=="picker";
@@ -289,6 +415,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     $("how-plot-works").hidden=next==="play";
     if(next==="picker")renderPreview();
     if(next==="play")playView();
+    if(next==="summary")summaryView();
   }
   function clearFlash(){
     if(flashTimer!=null){win.clearTimeout?.(flashTimer);flashTimer=null;}
@@ -334,7 +461,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function checkPlot(){
     if(save.phase!=="plot"||screen!=="play")return;
-    const checked=checkConstruction({kind:current().plot.kind,
+    const checked=checkConstruction({kind:step().kind,
       rule:targetRule()},save.points);
     if(!checked.correct){
       notify(checked.message,"error");playView();return;
@@ -356,8 +483,20 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     if(save.phase!=="style")return;
     const result=checkBoundaryStyle(targetRule(),save.styleChoice);
     if(!result.correct){notify(result.message,"error");playView();return;}
-    save.phase="shade";hint="";persist();
-    notify(result.message,"success");playView();
+    save.verified.push({ruleId:step().ruleId,style:save.styleChoice,
+      points:save.points.map(pt=>({...pt}))});
+    save.plotIndex++;save.points=[];save.styleChoice=null;
+    activePoint=-1;cursor={x:0,y:0};hint="";
+    const total=plotSteps(current()).length;
+    if(save.plotIndex<total){
+      save.phase="plot";
+      notify("Correct boundary! "+save.plotIndex+" of "+total+
+        " built. Now plot the next missing graph.","success");
+    }else{
+      save.phase="shade";
+      notify("All boundaries constructed! Now fill their common region.","success");
+    }
+    persist();playView();
   }
   function pickAt(x,y){
     if(screen!=="play"||save.phase!=="shade")return;
@@ -399,7 +538,8 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       notify("Check which inequalities are true.","error");playView();return;
     }
     save.done++;save.phase="plot";save.points=[];
-    save.styleChoice=null;persist();selected=null;clearFlash();
+    save.styleChoice=null;save.plotIndex=0;save.verified=[];
+    persist();selected=null;clearFlash();drag=null;
     activePoint=-1;cursor={x:0,y:0};hint="";
     if(!current()){setScreen("summary");openReveal();}
     else{
@@ -408,18 +548,13 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }
   }
   function restart(){
-    clearFlash();stopReveal();
-    save=fresh();save.replays=readPlotSave(storage).replays+1;
+    clearFlash();stopReveal();drag=null;
+    const replays=save.replays;
+    save=fresh();save.replays=replays+1;
     selected=null;activePoint=-1;cursor={x:0,y:0};hint="";
     persist();notify("Begin by plotting the missing graph.");setScreen("play");
   }
-  function begin(){
-    if(save.done===PLOT_PICTURE.pieces.length)restart();
-    else{
-      clearFlash();selected=null;hint="";notify("Continue your mathematical picture.");
-      setScreen("play");
-    }
-  }
+  function begin(){choosePicture(saved.picture);}
   function stopReveal(){
     for(const id of revealTimers)win.clearTimeout?.(id);
     revealTimers=[];
@@ -429,40 +564,46 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     if(id!=null)revealTimers.push(id);
   }
   function revealStage(count,detailsStage=0,finished=false){
+    const p=picture(),n=p.pieces.length;
     baseGraph(revealSvg,{grid:false});
-    for(const [i,part]of PLOT_PICTURE.pieces.slice(0,count).entries()){
+    for(const [i,part]of p.pieces.slice(0,count).entries()){
       drawPiece(revealSvg,part,{fill:part.color,
         stroke:"#fff9ed","stroke-width":3.5,
         "data-reveal-piece":part.id},
         !finished&&detailsStage===0&&i===count-1?"plot-piece-enter":"");
     }
-    if(count===PLOT_PICTURE.pieces.length&&detailsStage)
-      drawDetails(revealSvg,detailsStage,finished?0:detailsStage);
-    $("plotRevealTitle").textContent=finished?"Little Umbrella ✦":
+    if(count===n&&detailsStage)drawDetails(revealSvg,p,detailsStage,
+      finished?0:detailsStage);
+    $("plotRevealTitle").textContent=finished?p.name+" ✦":
       detailsStage?"Your picture is coming to life!":"Your art is coming together!";
     $("plotRevealStatus").textContent=finished?
-      "Your Little Umbrella is complete! Both coloured pieces came from your constructed mathematical boundaries.":
-      count<2?"Mathematical region "+count+" of 2 revealed":
-      detailsStage===1?"Umbrella patterns are appearing…":
-      detailsStage===2?"The handle and puddle ripples are taking shape…":
-      detailsStage===3?"Raindrops and finishing touches complete the scene!":
-      "Both curved regions are complete. Here come the finishing details…";
+      "Your "+p.name+" is complete! Every coloured piece was made with real constructed boundaries.":
+      count<n?"Mathematical region "+count+" of "+n+" revealed":
+      detailsStage===1?"Patterns and highlights are appearing…":
+      detailsStage===2?"The picture's finishing details are taking shape…":
+      detailsStage===3?"Final sparkles complete the scene!":
+      "All real inequality regions are complete. Here come the finishing details…";
     $("plotRevealSkip").hidden=finished;
     $("plotRevealAgain").hidden=!finished;
     $("plotDownload").hidden=!finished;
+    revealSvg.setAttribute("aria-label",count===n?
+      "Completed Plot & Shade art: "+p.name:"Mathematical picture being revealed");
   }
-  function showFinished(){stopReveal();revealStage(2,3,true);}
+  function showFinished(){
+    stopReveal();revealStage(picture().pieces.length,3,true);
+  }
   function playReveal(){
     stopReveal();revealStage(0);
     if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
       showFinished();return;
     }
-    later(()=>revealStage(1),610);
-    later(()=>revealStage(2),1220);
-    later(()=>revealStage(2,1),1810);
-    later(()=>revealStage(2,2),2300);
-    later(()=>revealStage(2,3),2790);
-    later(showFinished,3280);
+    const p=picture(),n=p.pieces.length;
+    const gap=n>=7?400:n>=5?480:570,details=440;
+    p.pieces.forEach((_,i)=>later(()=>revealStage(i+1),gap*(i+1)));
+    const start=gap*(n+1);
+    for(let stage=1;stage<=3;stage++)
+      later(()=>revealStage(n,stage),start+details*(stage-1));
+    later(showFinished,start+details*3+180);
   }
   function openReveal(){
     if(reveal.showModal)reveal.showModal();
@@ -487,7 +628,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       context.drawImage(image,0,0,1100,1100);
       URL.revokeObjectURL(url);
       const a=doc.createElement("a");
-      a.download="inequality-ink-little-umbrella.png";
+      a.download="inequality-ink-"+picture().id+".png";
       a.href=canvas.toDataURL("image/png");
       a.click();
     };
@@ -496,13 +637,20 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function giveHint(){
     if(screen!=="play"||!current())return;
-    if(save.phase==="plot")
-      hint=save.points.length?current().plot.hints[1]:current().plot.hints[0];
-    else if(save.phase==="style")
-      hint="Use a solid boundary when equality is included (≤ or ≥). Use dashed for a strict inequality (< or >).";
-    else hint=save.done===0?
-      "Try the point (0, 2). Is it below the parabola and above the horizontal line?":
-      "Try the point (0, −3.5). Is it above the lower parabola and below the line?";
+    if(save.phase==="plot"){
+      const hints=step()?.hints||[];
+      hint=save.points.length?(hints[1]||hints[0]):(hints[0]||"Use key points on the graph.");
+    }else if(save.phase==="style")
+      hint="Solid means equality is included (≤ or ≥). Strict inequality (< or >) means dashed.";
+    else{
+      let answer=null;
+      for(let x=-4.5;x<=4.5&&!answer;x+=.5)
+        for(let y=-4.5;y<=4.5;y+=.5)
+          if(satisfiesAll(current().rules,x,y)){answer={x,y};break;}
+      hint=answer?"Try the point ("+nice(answer.x)+", "+nice(answer.y)+
+        "). Does it satisfy every inequality?":
+        "Test a point away from every boundary, then check each inequality.";
+    }
     notify("A hint has appeared below.");playView();
   }
   function worldAt(ev){
@@ -575,7 +723,6 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       ev.preventDefault?.();undoPoint();
     }
   });
-  $("plotPictureCard").addEventListener("click",begin);
   $("plotBack").addEventListener("click",()=>{
     clearFlash();drag=null;selected=null;setScreen("picker");
   });
@@ -605,6 +752,10 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   $("plotReplayReveal").addEventListener("click",openReveal);
   $("plotRestart").addEventListener("click",restart);
   $("plotChooseAgain").addEventListener("click",()=>setScreen("picker"));
+  $("plotNextPicture").addEventListener("click",()=>{
+    const next=PLOT_PICTURES[picture().step];
+    if(next)choosePicture(next.id);else setScreen("picker");
+  });
   $("plotRevealClose").addEventListener("click",closeReveal);
   $("plotRevealSkip").addEventListener("click",showFinished);
   $("plotRevealAgain").addEventListener("click",playReveal);
@@ -613,8 +764,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   setScreen("picker");
   return {
     addPoint,movePoint,checkPlot,checkStyle,checkRegion,pickAt,undoPoint,
-    chooseStyle,giveHint,readProgress:()=>({
-      ...save,points:save.points.map(p=>({...p}))
+    chooseStyle,giveHint,choose:choosePicture,readProgress:()=>({
+      ...save,picture:saved.picture,records:saved.records,
+      points:save.points.map(p=>({...p}))
     }),start:begin,render:()=>setScreen(screen),showFinished
   };
 }

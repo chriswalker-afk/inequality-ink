@@ -23,21 +23,32 @@ Paint by Inequalities one-screen workspace is unchanged. The layout
 reorganises markup and CSS only: student saves, questions, artwork,
 mathematical marking, Quadratic Quest and Graph Art remain independent.
 
-## Plot & Shade — Phase 3 playable prototype
+## Plot & Shade — full five-stage Graph Art mode
 
-[Try Plot & Shade](regions/plot.html) from the fourth card in Graph Art. This
-starter prototype contains an original two-piece **Little Umbrella**. Students
-plot a parabola from its vertex and another valid point, then plot a line using
-any two correct points; they choose solid/dashed line styles and select the
-common region. Incorrect shading flashes red, correct shading stays until
-Check, and the picture finishes with a staged Big Reveal.
+[Open Plot & Shade](regions/plot.html) from the fourth Graph Art mode card.
+Students create **21 real mathematical pieces** across five distinct pictures.
+The construction challenge progresses from a single missing parabola or line
+to **multiple boundaries per piece**, including lines, translated parabolas,
+circles and absolute-value graphs. The workflow is Plot → Boundary → Shade,
+with repeated plotting steps when the region requires multiple curves.
 
-Point placement snaps to half units, supports drag, keyboard coordinate cursor
-and half-unit nudge buttons, and gives specific plotting feedback. The mobile
-view keeps a compact action bar close to the graph. Progress saves under its
-own key without touching Pixel Art or the three existing Graph Art modes.
+All correct mathematical constructions are accepted (not just model points).
+Graphs are edited with draggable, half-unit-snapped points, keyboard placement,
+and nudge controls on touch screens. Incorrect shading flashes red and clears;
+correct regions persist until Check. Reused graph boundaries are highlighted,
+each picture has its own progress record and staged finishing-details Big Reveal,
+and the original two-piece Little Umbrella progress is imported without erasure.
 
-See [Plot & Shade prototype notes](PLOT_SHADE_PROTOTYPE.md).
+| Stage | Picture | Pieces | Focus |
+| --- | --- | ---: | --- |
+| Starter | Little Umbrella | 2 | Parabola and horizontal line |
+| Step Up | Ice Cream Dream | 3 | Sloping line and two circles |
+| Building | Rainbow Gate | 4 | Multiple parabolic bands and reused boundaries |
+| Challenge | Moonlight Lantern | 5 | V-shaped graphs, circles and an arched roof |
+| Big Finish | Rocket Launch | 7 | Mixed, multi-step construction with twelve graph tasks |
+
+See [full Plot & Shade design notes](PLOT_SHADE_FULL_MODE.md).
+The historical [Phase 3 prototype](PLOT_SHADE_PROTOTYPE.md) remains available.
 
 ## Two art studios: Pixel Art / Graph Art
 
