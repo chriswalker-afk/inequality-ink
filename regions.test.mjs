@@ -126,7 +126,7 @@ test("The two studio pages remain independent, navigable and accessible",()=>{
   assert.ok(region.includes('class="studio-tab" href="../"'));
   assert.ok(region.includes('class="studio-tab is-active" href="./" aria-current="page"'));
   assert.ok(region.includes('src="./regions-app.mjs"'));
-  assert.ok(region.includes('href="../styles.css"'));
+  assert.match(region,/href="\.\.\/styles\.css(?:\?[^"]*)?"/);
   assert.ok(region.includes('href="./regions.css"'));
   assert.ok(!region.includes('src="../app.mjs"'));
   assert.ok(css.includes(".studio-switch{"));
