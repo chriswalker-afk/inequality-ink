@@ -305,7 +305,9 @@ test("Graph page exposes a real five-step journey, accessible controls and revea
   const ids=[...page.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   assert.equal(new Set(ids).size,ids.length);
   for(const id of ["graphPicker","graphPlay","graphArtGraph",
-    "graphModeFill","graphModeBuild","graphGalleryProgress","graphStageTrack",
+    "graphModeFill","graphModeBuild","graphModeCurve","graphModePlot",
+    "graphStartPicture","graphPreviewSvg","graphPreviewStage",
+    "graphGalleryProgress","graphStageTrack",
     "graphPictureCards","graphMorePictures","graphExtraCards","graphGameFocus",
     "graphRuleList","graphCheckFill","graphUndoFill","graphSideA","graphSideB",
     "graphSolid","graphDashed","graphAddLine","graphNextPiece",
@@ -382,6 +384,11 @@ function session(initial={}){
   const app=initRegionsApp({doc,storage,win});
   return {doc,store,storage,timers,win,app,$:doc.getElementById};
 }
+// Gallery cards choose a picture; the preview's primary button starts it.
+function selectAndStart(s,index){
+  s.$("graphPictureCards").children[index].click();
+  s.$("graphStartPicture").click();
+}
 function answerRules(s,part){
   const {$}=s;
   for(const rr of part.rules){
@@ -428,7 +435,7 @@ test("Five unique cards switch between modes, track stage status and show saved 
 test("Find & Fill completes its quick-win picture without changing other modes",()=>{
   const s=session(),{$,app,store}=s;
   assert.equal($("graphPicker").hidden,false);
-  $("graphPictureCards").children[0].click();
+  selectAndStart(s,0);
   assert.equal($("graphPlay").hidden,false);
   assert.equal($("graphRuleList").children.length,4);
   app.pickAt(4,-1);
@@ -461,7 +468,7 @@ test("Find & Fill completes its quick-win picture without changing other modes",
 
 test("Fill mode completes challenging 9-piece rocket from actual region centroids",()=>{
   const s=session(),{$,app}=s;
-  $("graphPictureCards").children[4].click();
+  selectAndStart(s,4);
   const p=modePictures("fill")[4];
   assert.equal(p.pieces.length,9);
   for(const [i,part] of p.pieces.entries()){
@@ -480,7 +487,7 @@ test("Fill mode completes challenging 9-piece rocket from actual region centroid
 
 test("Build & Shade teaches and pauses after each of its first two regions",()=>{
   const s=session(),{$,app,timers}=s;
-  $("graphModeBuild").click();$("graphPictureCards").children[0].click();
+  $("graphModeBuild").click();selectAndStart(s,0);
   const gift=modePictures("build")[0];
   for(const [i,part] of gift.pieces.entries()){
     answerRules(s,part);
@@ -505,7 +512,7 @@ test("Build & Shade teaches and pauses after each of its first two regions",()=>
 
 test("All eight big-finish castle pieces re-enable the controls after Next",()=>{
   const s=session(),{$,app}=s;
-  $("graphModeBuild").click();$("graphPictureCards").children[4].click();
+  $("graphModeBuild").click();selectAndStart(s,4);
   const castle=modePictures("build")[4];
   for(const [i,part] of castle.pieces.entries()){
     assert.equal($("graphAddLine").disabled,false);
@@ -530,7 +537,7 @@ test("All eight big-finish castle pieces re-enable the controls after Next",()=>
 
 test("Interrupted and reloaded Build review retains the completed boundary",()=>{
   const s=session(),{$,app,timers,storage}=s;
-  $("graphModeBuild").click();$("graphPictureCards").children[3].click();
+  $("graphModeBuild").click();selectAndStart(s,3);
   const part=modePictures("build")[3].pieces[0];
   answerRules(s,part);
   const obsolete=timers.at(-1);
@@ -540,13 +547,13 @@ test("Interrupted and reloaded Build review retains the completed boundary",()=>
     {done:0,line:3,replays:0});
   obsolete();
   assert.equal(app.readProgress().records["build:aurora-crystal"].done,0);
-  $("graphPictureCards").children[3].click();
+  selectAndStart(s,3);
   assert.equal($("graphNextPiece").hidden,false);
   assert.equal($("graphAddLine").hidden,true);
   $("graphNextPiece").click();
   assert.equal(app.readProgress().records["build:aurora-crystal"].done,1);
   $("graphBack").click();
-  $("graphPictureCards").children[4].click();
+  selectAndStart(s,4);
   assert.equal($("graphAddLine").disabled,false);
   const doc=fakeDoc(),fresh=initRegionsApp({doc,storage,win:s.win});
   assert.equal(fresh.readProgress().records["build:aurora-crystal"].done,1);
@@ -555,14 +562,14 @@ test("Interrupted and reloaded Build review retains the completed boundary",()=>
 
 test("Keyboard fill navigation and incorrect Build choices remain usable",()=>{
   const s=session(),{$,app,store}=s;
-  $("graphPictureCards").children[1].click(); // Original Little House.
+  selectAndStart(s,1); // Original Little House.
   $("graphArtGraph").fire("keydown",{key:"ArrowRight"});
   assert.match($("graphFeedback").textContent,/Cursor at/);
   $("graphArtGraph").fire("keydown",{key:"Enter"});
   assert.ok($("graphArtGraph").children.some(x=>
     x.getAttribute("data-region-layer")==="selection"));
   $("graphBack").click();
-  $("graphModeBuild").click();$("graphPictureCards").children[0].click();
+  $("graphModeBuild").click();selectAndStart(s,0);
   const rr=modePictures("build")[0].pieces[0].rules[0];
   const wrong=[$("graphSideA"),$("graphSideB")]
     .find(b=>b.dataset.side!==regionSide(rr));
@@ -578,7 +585,7 @@ test("Keyboard fill navigation and incorrect Build choices remain usable",()=>{
 
 test("Real arrowheads and stage-specific finishing details remain visible",()=>{
   const s=session(),{$,app}=s;
-  $("graphModeBuild").click();$("graphPictureCards").children[0].click();
+  $("graphModeBuild").click();selectAndStart(s,0);
   const rr=modePictures("build")[0].pieces[0].rules[0];
   [$("graphSideA"),$("graphSideB")].find(b=>
     b.dataset.side===regionSide(rr)).click();
@@ -598,7 +605,7 @@ test("Real arrowheads and stage-specific finishing details remain visible",()=>{
 test("Reduced-motion users can review finished regions without waiting",()=>{
   const s=session(),{$,app,win,timers}=s;
   win.matchMedia=()=>({matches:true});
-  $("graphModeBuild").click();$("graphPictureCards").children[0].click();
+  $("graphModeBuild").click();selectAndStart(s,0);
   answerRules(s,modePictures("build")[0].pieces[0]);
   assert.equal(timers.length,0);
   assert.equal(app.readProgress().records["build:wrapped-gift"].done,0);
@@ -637,9 +644,11 @@ test("Completed Graph Art cards open view-only; replay needs confirmation",()=>{
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(initial)}),{$}=s;
   const card=$("graphPictureCards").children[0];
   assert.match(card.className,/is-complete/);
-  assert.match(card.getAttribute("aria-label"),/View completed picture/);
-  assert.match(card.children[1].children.at(-1).textContent,/View picture/);
+  assert.match(card.getAttribute("aria-label"),/Completed:/);
+  assert.match(card.children[1].children.at(-1).textContent,/Completed/);
   card.click();
+  assert.match($("graphStartPicture").textContent,/View completed picture/);
+  $("graphStartPicture").click();
   assert.equal($("graphSummary").hidden,false);
   assert.equal($("graphReveal").getAttribute("open"),"");
   assert.equal(s.app.readProgress().records["fill:"+finished.id].done,
@@ -660,7 +669,7 @@ test("Completed Graph Art cards open view-only; replay needs confirmation",()=>{
 
 test("The in-game Restart control can be cancelled without losing progress",()=>{
   const s=session(),{$}=s;
-  $("graphPictureCards").children[0].click();
+  selectAndStart(s,0);
   const p=modePictures("fill")[0];
   // The button must work even before any piece is checked.
   let confirmations=0;
