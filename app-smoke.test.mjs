@@ -269,7 +269,8 @@ test("Choose a picture shows five quick-win steps with accurate row and colour c
    selectStage(level,1);
    const first=$("picturePicker").children[0];
    const expected=pictureById(level==="mirror"?"mirror-star-starter":
-     level==="paint"?"paint-heart-starter":"full-star-starter");
+     level==="paint"?"paint-heart-starter":
+     level==="mixed"?"mixed-shield-starter":"full-star-starter");
    const heading=first.children[1].children[0].textContent;
    const description=first.children[1].children[1].textContent;
    const meta=first.children[1].children[2].textContent;
@@ -284,7 +285,7 @@ test("Choose a picture shows five quick-win steps with accurate row and colour c
    assert.ok($("pictureSummary").textContent.includes("Quick win"));
    const legacy=LEGACY_ORDER[level];
    assert.equal($("extraPicturePicker").children.length,
-     level==="mirror"?3:level==="paint"?2:4);
+     level==="mirror"?3:level==="paint"?2:level==="mixed"?9:4);
    for(const id of legacy){
      const pic=pictureById(id);
      const selectable=[...$("picturePicker").children,
@@ -987,7 +988,8 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
  const modes=["mirror","full","solve","mixed"];
  for(const level of modes){
    selectStage(level,1);
-   const picture=pictureById(level==="mirror"?"mirror-star-starter":"full-star-starter");
+   const picture=pictureById(level==="mirror"?"mirror-star-starter":
+     level==="mixed"?"mixed-shield-starter":"full-star-starter");
    const completedBefore=Number($("picturePathProgress").textContent.split(" ")[0]);
    assert.ok(completedBefore>=0&&completedBefore<5);
    assert.ok($("pictureSummary").textContent.includes("6 rows"));
@@ -1025,7 +1027,8 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
    assert.equal($("firstTryStat").textContent,"6/6");
    assert.equal($("finishTitle").textContent,picture.name+"!");
    assert.equal($("nextPictureButton").hidden,false);
-   const next=level==="mirror"?"mirror-heart-step":"full-gift-step";
+   const next=level==="mirror"?"mirror-heart-step":
+     level==="mixed"?"mixed-saucer-step":"full-gift-step";
    assert.ok($("nextPictureButton").textContent.includes(pictureById(next).clue));
    $("nextPictureButton").click();
    assert.equal($("introScreen").hidden,false);
@@ -1102,7 +1105,7 @@ test("Eight, ten and twelve row inequality pictures all advance and reveal in fu
  for(const [level,stage,id] of [
    ["mirror",2,"mirror-heart-step"],
    ["full",3,"full-ball-building"],
-   ["mixed",4,"full-flower-challenge"]
+   ["mixed",4,"mixed-butterfly-challenge"]
  ]){
    selectStage(level,stage);
    const picture=pictureById(id),n=questionCount(picture);
@@ -1531,3 +1534,61 @@ test("Quadratic Quest includes keyboard-toggle, drag, and independent selector n
   $("questBack").click();
   assert.equal($("introScreen").hidden,false);
 });
+
+
+test("Five Mixed-only stages complete with all three skills and independent progress",()=>{
+ const ids=["mixed-shield-starter","mixed-saucer-step",
+   "mixed-hourglass-building","mixed-butterfly-challenge","mixed-dragon-finale"];
+ // Stage 1 was already finished in the six-question cross-mode smoke test.
+ const initial=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+ assert.equal(initial.progress["mixed:"+ids[0]]?.completed,true);
+ for(let stage=2;stage<=5;stage++){
+   selectStage("mixed",stage);
+   const picture=pictureById(ids[stage-1]);
+   const total=questionCount(picture);
+   assert.equal(total,4+2*stage);
+   assert.ok($("pictureJourneyHelp").textContent.includes("Mirror Mode"));
+   assert.ok($("pictureSummary").textContent.includes("3 skills"));
+   $("startButton").click();
+   assert.equal($("playScreen").hidden,false);
+   const tasks=new Set();
+   for(let i=0;i<total;i++){
+     const q=makePictureQuestion(picture,i,0,"mixed");
+     tasks.add(q.artMode+"/"+q.mode);
+     assert.equal($("phaseText").textContent,
+       q.artMode==="mirror"?"MIRROR MODE":
+       q.mode==="solve"?"SOLVE & PAINT":"FULL PICTURE");
+     assert.equal($("modeTag").textContent,
+       q.artMode==="mirror"?"MIRROR":
+       q.mode==="solve"?"SOLVE & PAINT":"FULL PICTURE");
+     answerCurrent(picture,i,"mixed");
+     assert.equal($("progressText").textContent,(i+1)+" of "+total);
+   }
+   assert.deepEqual([...tasks].sort(),
+     ["full/draw","full/solve","mirror/draw","mirror/read"].sort());
+   assert.equal($("revealDialog").open,true);
+   assert.equal($("finishScreen").hidden,true);
+   assert.equal($("revealFinalArt").getAttribute("viewBox"),
+     "0 0 "+pictureWidth(picture)+" "+picture.height);
+   $("closeReveal").click();
+   assert.equal($("finishTitle").textContent,picture.name+"!");
+   assert.equal($("firstTryStat").textContent,total+"/"+total);
+   $("chooseLevelButton").click();
+   assert.equal($("introScreen").hidden,false);
+ }
+ selectStage("mixed",5);
+ assert.ok($("picturePathProgress").textContent.startsWith("5 of 5 completed"));
+ const saved=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+ for(const id of ids){
+   assert.equal(saved.progress["mixed:"+id]?.completed,true,
+     "Missing completed mixed-only picture "+id);
+ }
+ // The independently saved legacy Mixed questions remain accessible.
+ for(const id of ["full-star-starter","full-gift-step",
+   "full-ball-building","full-flower-challenge","enchanted-potion"])
+   assert.ok($("extraPicturePicker").children.some(card=>
+     card.children[1]?.children[0]?.textContent===pictureById(id).clue));
+ assert.equal(saved.progress["mixed:ice-cream-treat"]?.completed,true,
+   "Old Mixed extras must retain previous saved completions");
+});
+
