@@ -586,31 +586,44 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   }
   function stopReveal(){for(const id of revealTimers)win.clearTimeout?.(id);revealTimers=[];}
   function later(fn,ms){const id=win.setTimeout?.(fn,ms);if(id!=null)revealTimers.push(id);}
-  function revealStage(count,finish=false){
+  function revealStage(count,finish=false,detailCount=0){
     const p=picture();baseGraph(revealSvg,doc,{grid:false});
     for(let i=0;i<count;i++){
       const f=p.pieces[i];
       polygon(revealSvg,doc,intersectRegion(f.rules),{
         fill:f.color,stroke:"#fff9ec","stroke-width":3.5});
     }
-    if(finish)decorations(doc,revealSvg,p);
+    if(count===p.pieces.length&&detailCount>0)
+      decorations(doc,revealSvg,p,detailCount);
     $("graphRevealStatus").textContent=finish?
-      "Your "+p.name+" is complete! Every painted shape came from inequalities.":
-      count+" of "+p.pieces.length+" mathematical regions revealed";
+      "Your "+p.name+" is complete! All "+p.pieces.length+
+        " coloured regions are real inequality intersections.":
+      count<p.pieces.length?
+        "Mathematical shape "+count+" of "+p.pieces.length+" revealed":
+        "All the regions are complete. Finishing touches are appearing…";
     $("graphRevealTitle").textContent=finish?p.name+" ✦":"Your picture is coming to life!";
     $("graphRevealSkip").hidden=finish;
     $("graphRevealAgain").hidden=!finish;
     $("graphDownload").hidden=!finish;
   }
-  function showFinished(){stopReveal();revealStage(picture().pieces.length,true);}
+  function showFinished(){
+    stopReveal();revealStage(picture().pieces.length,true,Infinity);
+  }
   function playReveal(){
     stopReveal();revealStage(0);
     const p=picture();
     if(win.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches){
       showFinished();return;
     }
-    p.pieces.forEach((_,i)=>later(()=>revealStage(i+1),570*(i+1)));
-    later(()=>showFinished(),570*(p.pieces.length+1));
+    const pieceMs=p.pieces.length>6?480:600;
+    p.pieces.forEach((_,i)=>later(()=>revealStage(i+1),
+      pieceMs*(i+1)));
+    const start=pieceMs*(p.pieces.length+1);
+    const details=decorationStages(p);
+    for(let stage=1;stage<=details;stage++)
+      later(()=>revealStage(p.pieces.length,false,stage),
+        start+410*(stage-1));
+    later(()=>showFinished(),start+410*details);
   }
   function openReveal(){
     activeReveal=true;
