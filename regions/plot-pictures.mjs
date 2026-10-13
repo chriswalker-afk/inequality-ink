@@ -237,7 +237,7 @@ const lantern=picture(4,"moonlight-lantern","Moonlight Lantern",
 
 const rocket=picture(5,"rocket-launch","Rocket Launch",
   "A rocket built from plotted graphs","Mixed curves · two plotted boundaries · seven pieces",
-  "Plot twelve boundaries to build a rocket with fins, flames and a nose cone.",[
+  "Plot ten boundaries to build a rocket with fins, flames and a nose cone.",[
   piece("rocket-nose","Rose nose cone","#e9a2ad",[
     A("rocket-nose-v","y ≤ 4 − 2|x|",0,4,-2,"below"),
     rule("rocket-nose-floor","y ≥ 2",[2],"above")
