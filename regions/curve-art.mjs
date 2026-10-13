@@ -1,3 +1,4 @@
+import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,
   signedDifference,satisfiesAll
@@ -274,6 +275,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     $("graphPieceCount").textContent="Piece "+(r.done+1)+" of "+p.pieces.length;
     $("graphCanvasCount").textContent=r.done+" / "+p.pieces.length;
     $("graphProgressFill").style.width=(100*r.done/p.pieces.length)+"%";
+    renderPieceMarkers($("curvePieceMarkers"),doc,p.pieces.length,r.done);
     $("graphProgress").setAttribute("aria-valuenow",String(Math.round(100*r.done/p.pieces.length)));
     $("graphTaskKicker").textContent="PIECE "+(r.done+1)+" OF "+p.pieces.length;
     $("graphTaskTitle").textContent=part.name;
@@ -308,6 +310,18 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     const boundaries=p.pieces.reduce((n,part)=>n+part.rules.length,0);
     $("curveSummaryStats").textContent=p.pieces.length+" regions · "+boundaries+
       " inequalities · "+p.stage;
+    const art=$("curveSummaryArt");
+    baseGraph(art,{grid:false});
+    for(const part of p.pieces)
+      drawPiece(art,part,{fill:part.color,stroke:"#fff9ec",
+        "stroke-width":3.5,"pointer-events":"none"});
+    drawDetails(art,p);
+    art.setAttribute("aria-label","Completed curved inequality art: "+p.name);
+    renderSummaryMetrics($("curveSummaryMetrics"),doc,[
+      {value:p.pieces.length,label:"Picture pieces"},
+      {value:boundaries,label:"Inequalities"},
+      {value:p.step+" / 5",label:"Stage complete"}
+    ]);
     $("curveNextPicture").hidden=p.step===CURVE_PICTURES.length;
   }
   function setScreen(next){
@@ -516,6 +530,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   $("curveRevealSkip").addEventListener("click",showFinished);
   $("curveRevealAgain").addEventListener("click",playReveal);
   $("curveDownload").addEventListener("click",savePNG);
+  $("curveSavePicture").addEventListener("click",()=>{showFinished();savePNG();});
   reveal.addEventListener("cancel",e=>{e.preventDefault?.();closeReveal();});
   graph.addEventListener("click",ev=>{
     const box=graph.getBoundingClientRect();
