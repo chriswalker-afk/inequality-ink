@@ -78,7 +78,7 @@
         <div class="graph-game-top">
           <button type="button" id="graphBack" class="graph-quiet-button">← Pictures</button>
           <div class="graph-game-title"><span class="eyebrow" id="graphGameMode">FIND &amp; FILL</span><h1 id="graphPictureName">Little House</h1><span class="graph-game-focus" id="graphGameFocus"></span></div>
-          <span id="graphPieceCount" class="graph-piece-pill">Piece 1 of 3</span>
+          <div class="graph-game-actions"><span id="graphPieceCount" class="graph-piece-pill">Piece 1 of 3</span><button type="button" id="graphRestartPlaying" class="graph-quiet-button graph-restart-button" aria-label="Start this picture over">↺ Start over</button></div>
         </div>
         <div class="graph-progress-track" role="progressbar" aria-label="Picture pieces complete" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="graphProgress"><div id="graphProgressFill"></div></div>
         <div class="region-workspace graph-workspace">
@@ -148,9 +148,9 @@
         <div id="graphSummaryStats" class="graph-summary-stats"></div>
         <div class="graph-summary-buttons">
           <button type="button" id="graphReplayReveal" class="button button-primary">Watch the big reveal ✦</button>
-          <button type="button" id="graphRestart" class="button button-light">Make this picture again ↻</button>
+          <button type="button" id="graphRestart" class="button button-light">Play again ↻</button>
           <button type="button" id="graphNextPicture" class="button button-primary">Explore the next picture →</button>
-          <button type="button" id="graphChooseAgain" class="button button-light">Choose another picture</button>
+          <button type="button" id="graphChooseAgain" class="button button-light">Choose a picture</button>
         </div>
       </section>
 
