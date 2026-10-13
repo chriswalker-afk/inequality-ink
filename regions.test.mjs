@@ -662,7 +662,6 @@ test("The in-game Restart control can be cancelled without losing progress",()=>
   const s=session(),{$}=s;
   $("graphPictureCards").children[0].click();
   const p=modePictures("fill")[0];
-  const candidate=graphCellAt(p.pieces[0],0,0);
   // The button must work even before any piece is checked.
   let confirmations=0;
   s.win.confirm=()=>{confirmations++;return false;};
