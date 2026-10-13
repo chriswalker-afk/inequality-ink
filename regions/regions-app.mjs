@@ -1,3 +1,4 @@
+import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
 import {
   REGION_WORLD,intersectRegion,lineOnRegionGraph,regionSide,regionSideOptions,
   regionBoundaryStyle,regionCorrect,regionHint,pointSatisfiesAll
@@ -548,6 +549,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphPieceCount").textContent="Piece "+(r.done+1)+" of "+p.pieces.length;
     $("graphCanvasCount").textContent=r.done+" / "+p.pieces.length;
     $("graphProgressFill").style.width=(100*r.done/p.pieces.length)+"%";
+    renderPieceMarkers($("graphPieceMarkers"),doc,p.pieces.length,r.done);
     $("graphProgress").setAttribute("aria-valuenow",String(Math.round(100*r.done/p.pieces.length)));
     $("graphTaskKicker").textContent="PIECE "+(r.done+1)+" OF "+p.pieces.length;
     $("graphTaskTitle").textContent=part.name;
@@ -756,6 +758,20 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphSummaryStats").textContent="Stage "+p.step+" · "+p.stage+" · "+
       p.pieces.length+" real regions · "+graphTotalBoundaries(p)+
       " inequalities · "+GRAPH_ART_MODES.find(m=>m.id===mode()).name;
+    const art=$("graphSummaryArt");
+    baseGraph(art,doc,{grid:false});
+    for(const part of p.pieces)
+      polygon(art,doc,intersectRegion(part.rules),{
+        fill:part.color,stroke:"#fff9ec","stroke-width":3.5,
+        "pointer-events":"none"
+      });
+    decorations(doc,art,p);
+    art.setAttribute("aria-label","Completed inequality art: "+p.name);
+    renderSummaryMetrics($("graphSummaryMetrics"),doc,[
+      {value:p.pieces.length,label:"Picture pieces"},
+      {value:graphTotalBoundaries(p),label:"Inequalities"},
+      {value:p.step+" / 5",label:"Stage complete"}
+    ]);
     $("graphNextPicture").hidden=p.step===GRAPH_ART_STAGES.length||
       p.mode!==mode();
     $("graphNextPicture").textContent="Next picture →";
@@ -916,6 +932,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphRevealSkip").addEventListener("click",showFinished);
   $("graphRevealAgain").addEventListener("click",playReveal);
   $("graphDownload").addEventListener("click",savePNG);
+  $("graphSavePicture").addEventListener("click",()=>{showFinished();savePNG();});
   reveal.addEventListener("cancel",event=>{event.preventDefault?.();closeReveal();});
   graph.addEventListener("click",ev=>{
     const box=graph.getBoundingClientRect();
