@@ -1457,9 +1457,9 @@ test("Quadratic Quest root circles allow precise keyboard toggling and pointer g
   const again=svg.children.filter(e=>e.tagName==="g")[0];
   for(const listener of again.listeners.get("pointerdown")||[])listener({...gesture,pointerId:701});
   for(const listener of svg.listeners.get("pointermove")||[])
-    listener({...gesture,pointerId:701,clientX:170});
+    listener({...gesture,pointerId:701,clientX:50});
   for(const listener of svg.listeners.get("pointerup")||[])
-    listener({...gesture,pointerId:701,clientX:170});
+    listener({...gesture,pointerId:701,clientX:50});
   assert.notEqual($("questLower").value,before,"Dragging a circle changes its root");
   $("questBack").click();
 });
