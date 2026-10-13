@@ -208,10 +208,13 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       const finished=r.done===p.pieces.length;
       const card=doc.createElement("button");
       card.type="button";
-      card.className="graph-picture-card"+(p.id===recommended.id?" is-recommended":"");
+      card.className="graph-picture-card"+(finished?" is-complete":"")+
+        (p.id===recommended.id?" is-recommended":"");
       card.setAttribute("data-plot-picture",p.id);
-      card.setAttribute("aria-label",(finished?"Replay ":"Start or continue ")+p.name+
-        ". "+r.done+" of "+p.pieces.length+" pieces complete.");
+      card.setAttribute("aria-label",finished?
+        "View completed picture: "+p.name:
+        (r.done?"Continue picture: ":"Start picture: ")+p.clue+
+        ". "+r.done+" of "+p.pieces.length+" pieces completed.");
       const svgPreview=doc.createElementNS(NS,"svg");
       svgPreview.setAttribute("viewBox","0 0 620 620");
       svgPreview.setAttribute("aria-hidden","true");
@@ -228,8 +231,8 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       const bar=doc.createElement("span");
       bar.style.width=(100*r.done/p.pieces.length)+"%";progress.append(bar);
       const go=doc.createElement("span");go.className="graph-card-go";
-      go.textContent=finished?"✓ Finished · Play again":
-        r.done?"Continue · "+r.done+"/"+p.pieces.length+" pieces →":"Start picture →";
+      go.textContent=finished?"✓ Completed · View picture →":
+        r.done?"Continue picture →":"Start picture →";
       info.append(badge,name,description,focus,progress,go);
       card.append(svgPreview,info);
       card.addEventListener("click",()=>choosePicture(p.id));
@@ -241,12 +244,11 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     clearFlash();stopReveal();selected=null;drag=null;hint="";hintStage=0;hintKey="";
     saved.picture=p.id;
     save=saved.records[p.id]||fresh();
-    if(save.done===p.pieces.length){
-      const replays=save.replays;
-      save=fresh();save.replays=replays+1;
-    }
+    const finished=save.done===p.pieces.length;
     activePoint=save.points.length-1;cursor={x:0,y:0};
-    persist();notify("Begin by plotting the next boundary.");setScreen("play");
+    persist();
+    if(finished){setScreen("summary");openReveal();}
+    else{notify("Begin by plotting the next boundary.");setScreen("play");}
   }
   function currentConstruction(){
     return constructBoundary(step()?.kind,save.points);
@@ -553,6 +555,8 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }
   }
   function restart(){
+    if(typeof win.confirm==="function"&&!win.confirm(
+      "Restart this picture? Only this picture's progress will be reset."))return;
     clearFlash();stopReveal();drag=null;
     const replays=save.replays;
     save=fresh();save.replays=replays+1;
@@ -778,6 +782,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   });
   $("plotReplayReveal").addEventListener("click",openReveal);
   $("plotRestart").addEventListener("click",restart);
+  $("plotRestartPlaying").addEventListener("click",restart);
   $("plotChooseAgain").addEventListener("click",()=>setScreen("picker"));
   $("plotNextPicture").addEventListener("click",()=>{
     const next=PLOT_PICTURES[picture().step];
