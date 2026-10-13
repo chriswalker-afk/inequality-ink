@@ -56,8 +56,10 @@ export function quadraticAnswer(q){
 export function quadraticAnswerContains(answer,x){
   const above=x>answer.lower||(answer.lowerIncluded&&x===answer.lower);
   const below=x<answer.upper||(answer.upperIncluded&&x===answer.upper);
+  const left=x<answer.lower||(answer.lowerIncluded&&x===answer.lower);
+  const right=x>answer.upper||(answer.upperIncluded&&x===answer.upper);
   return answer.region==="between"?above&&below:
-    answer.region==="outside"?!above||!below:false;
+    answer.region==="outside"?left||right:false;
 }
 export function sameQuadraticAnswer(expected,attempt){
   if(!attempt||!["between","outside"].includes(attempt.region))return false;
