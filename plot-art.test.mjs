@@ -35,7 +35,7 @@ class Element{
   showModal(){this.setAttribute("open","");}
   close(){this.removeAttribute("open");}
 }
-function session(initial={},reduced=false){
+function session(initial={},reduced=false,query=""){
   const html=readFileSync(new URL("./regions/plot.html",import.meta.url),"utf8");
   const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
   const elements=new Map(ids.map(id=>[id,new Element(id)]));
@@ -59,16 +59,17 @@ function session(initial={},reduced=false){
     ["inequality-ink-v5","keep pixel art"],
     ...Object.entries(initial)
   ]);
-  const timers=new Map();let next=0;
+  const timers=new Map(),redirects=[];let next=0;
   const win={
     setTimeout:(fn,ms)=>{const id=++next;timers.set(id,{fn,ms});return id;},
     clearTimeout:id=>timers.delete(id),
-    matchMedia:()=>({matches:reduced})
+    matchMedia:()=>({matches:reduced}),
+    location:{search:query,assign:url=>redirects.push(url)}
   };
   const storage={getItem:key=>store.get(key)||null,
     setItem:(key,val)=>store.set(key,val)};
   const app=initPlotArt({doc,storage,win});
-  return {doc,$:doc.getElementById,store,storage,app,timers,win};
+  return {doc,$:doc.getElementById,store,storage,app,timers,redirects,win};
 }
 const layers=(s,name)=>s.$("plotGraph").children.filter(el=>
   el.getAttribute("data-region-layer")===name);
@@ -352,4 +353,14 @@ test("corrupted save cannot skip mathematical plotting or shade",()=>{
   assert.equal(s.app.readProgress().phase,"plot");
   assert.equal(s.app.readProgress().plotIndex,0);
   assert.equal(s.app.readProgress().verified.length,0);
+});
+
+test("Plot picture deep links launch directly and return to unified Graph Art",()=>{
+  const s=session({},true,"?picture=ice-cream-dream");
+  assert.equal(s.$("plotPlay").hidden,false);
+  assert.equal(s.$("plotGameTitle").textContent,"Ice Cream Dream");
+  s.$("plotBack").click();
+  assert.equal(s.redirects.at(-1),"./?mode=plot&picture=ice-cream-dream");
+  const direct=session({},false,"?picture=invalid-picture");
+  assert.equal(direct.$("plotPicker").hidden,false);
 });
