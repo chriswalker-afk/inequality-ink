@@ -42,35 +42,42 @@ export const STARTER_PICTURES=Object.freeze([
     id:"mirror-heart-step",name:"Little Heart",clue:"Heart in a Hurry",
     description:"Eight one-sided inequalities make a sweet little heart.",
     family:"half",step:2,width:8,
-    rows:[[4,7],[2,7],[0,7],[0,7],[1,7],[2,7],[3,7],[4,7]],
+    // Mirrored half coordinates start at the centre (0), not the outer edge.
+    // Two lobes above the notch and a taper to the centre form a REAL heart.
+    rows:[[2,7],[1,7],[0,7],[0,7],[0,6],[0,4],[0,2],[0,0]],
     base:"#ee84a7",edge:"#af517a",back:background("#fae9f0","#fff6fb","#f4d9e5"),
     detailStages:["sparkles","blush"],
-    details:[[2,2,"#ffdce9","sparkles"],[3,3,"#ffe9f0","sparkles"],
+    details:[[4,2,"#ffdce9","sparkles"],[3,3,"#ffe9f0","sparkles"],
       [5,4,"#ffb8cf","blush"],[4,5,"#ffd5de","blush"]]
   }),
   make({
     id:"mirror-ball-building",name:"Bouncy Ball",clue:"Bounce Around",
     description:"Ten rays round out a playful ball.",
     family:"half",step:3,width:8,
-    rows:[[5,7],[3,7],[2,7],[1,7],[0,7],[0,7],[1,7],[2,7],[3,7],[5,7]],
+    // Widen symmetrically from the central top, then narrow again.
+    // The original outer-edge rays reflected into two separated bows.
+    rows:[[0,2],[0,4],[0,5],[0,6],[0,7],[0,7],[0,6],[0,5],[0,4],[0,2]],
     base:"#6eb9de",edge:"#4778b6",back:background("#dff0f4","#effaff","#cde5ed"),
     detailStages:["seams","glint"],
-    details:[[2,3,"#c9f3ff","seams"],[3,4,"#d6f5ff","seams"],
+    details:[[5,3,"#c9f3ff","seams"],[3,4,"#d6f5ff","seams"],
       [3,5,"#fbffff","glint"],[2,6,"#c1e8f9","glint"]]
   }),
   make({
     id:"mirror-flower-challenge",name:"Tiny Flower",clue:"Petal Pop",
     description:"Twelve rays bring a flower into bloom.",
     family:"half",step:4,width:9,
-    rows:[[6,8],[4,8],[2,8],[1,8],[0,8],[1,8],
-      [3,8],[6,8],[7,8],[7,8],[6,8],[5,8]],
+    // A rounded flower head, tapering to the stem, leaves and small pot.
+    // Previously all rays faced outward and made a bow-like silhouette.
+    rows:[[0,2],[0,5],[0,7],[0,8],[0,8],[0,6],
+      [0,2],[0,1],[0,5],[0,1],[0,2],[0,3]],
     base:"#eba2c2",edge:"#a46291",
-    bands:[{from:8,to:12,fill:"#70b792"}],
+    bands:[{from:8,to:10,fill:"#70b792"},{from:11,to:12,fill:"#cf9773"}],
     back:background("#e6f1e2","#f7fff4","#d4e7d2"),
-    detailStages:["petals","centre","leaves"],
+    detailStages:["petals","centre","leaves","pot"],
     details:[[2,3,"#ffd4e5","petals"],[3,4,"#ffe4ed","petals"],
       [7,5,"#ffdf7b","centre"],[6,6,"#ffe89f","centre"],
-      [1,11,"#b1e0ae","leaves"],[2,12,"#d1f0bb","leaves"]]
+      [2,9,"#b1e0ae","leaves"],[1,10,"#d1f0bb","leaves"],
+      [1,11,"#f0c29a","pot"],[2,12,"#f2d3ac","pot"]]
   }),
   make({
     id:"full-star-starter",name:"Starburst",clue:"Star in a Flash",
