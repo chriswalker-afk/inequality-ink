@@ -87,11 +87,11 @@ export const STUDENT_BONUS_PICTURES=Object.freeze([
       grid:[
         "SSSSPPSSSS",
         "SSSPPPPSSS",
-        "SSPPYYPPSS",
-        "SPPYYYYPPS",
-        "PPYYYYYYPP",
-        "SPPYYYYPPS",
-        "SSPPYYPPSS",
+        "SSYYYYYYSS",
+        "SYYYYYYYYS",
+        "PYYYYYYYYP",
+        "SYYYYYYYYS",
+        "SSYYYYYYSS",
         "SSSPPPPSSS",
         "SSSSPPSSSS",
         "SSSSPPSSSS"
