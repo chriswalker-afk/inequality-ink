@@ -76,8 +76,8 @@ export const STARTER_PICTURES=Object.freeze([
     detailStages:["petals","centre","leaves","pot"],
     details:[[2,3,"#ffd4e5","petals"],[3,4,"#ffe4ed","petals"],
       [7,5,"#ffdf7b","centre"],[6,6,"#ffe89f","centre"],
-      [2,9,"#b1e0ae","leaves"],[1,10,"#d1f0bb","leaves"],
-      [1,11,"#f0c29a","pot"],[2,12,"#f2d3ac","pot"]]
+      [3,9,"#b1e0ae","leaves"],[7,10,"#d1f0bb","leaves"],
+      [6,11,"#f0c29a","pot"],[5,12,"#f2d3ac","pot"]]
   }),
   make({
     id:"full-star-starter",name:"Starburst",clue:"Star in a Flash",
