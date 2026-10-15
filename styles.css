@@ -1448,3 +1448,74 @@ body.paint-session{overflow:hidden}
   .topbar .studio-switch{flex:1 1 100%;width:100%}
   .topbar .top-actions>.top-button{margin-left:auto}
 }
+
+
+/* Classroom-feedback pass: persistent mathematical meanings, not a popup.
+   Keep the existing endpoint tap-to-toggle and drag gestures unchanged. */
+.endpoint-meaning{
+  display:flex;justify-content:flex-start;align-items:center;flex-wrap:wrap;
+  gap:5px 15px;padding:7px 10px;margin:6px 0 10px;
+  border:1px solid #e1e8e2;background:#f6faf6;border-radius:9px;
+  font-size:.69rem;line-height:1.55;color:#42626a
+}
+.endpoint-meaning>span{display:inline-flex;align-items:center;gap:5px;white-space:normal}
+.endpoint-meaning strong{color:#314e5e}
+.endpoint-meaning .open-circle,.endpoint-meaning .closed-circle{
+  width:15px;height:15px;flex:0 0 15px;border-color:#4c859f;
+}
+.endpoint-meaning .closed-circle{background:#4c859f}
+.circle-interaction-tip{margin:0 0 7px;font-size:.68rem;color:#697c84}
+.picture-variety-note{
+  display:flex;align-items:center;justify-content:space-between;gap:9px;
+  margin:9px 0 0;padding:8px 11px;border-radius:11px;
+  background:#f2f7f4;border:1px dashed #d1dfd8;
+  font-size:.72rem;color:#58776c
+}
+.picture-variety-button{
+  border:1px solid #b6d6c7;border-radius:9px;background:#fffefa;
+  color:#39735e;font-size:.73rem;font-weight:800;padding:8px 11px;
+  min-height:37px;white-space:normal;text-align:center
+}
+.picture-variety-button:hover,.picture-variety-button:focus-visible{
+  background:#e5f5ec;border-color:#63ab8a
+}
+#checkButton{
+  min-height:47px;min-width:138px;
+  background:#2a5971;color:white;
+  box-shadow:0 4px 0 #1b3d50;
+}
+#checkButton:hover{background:#336a82}
+#checkButton:focus-visible{outline:3px solid #e7a85e;outline-offset:3px}
+#checkButton:disabled{box-shadow:0 2px 0 #34556a}
+#finishSurpriseButton{border-color:#bad8c9;color:#39745b;background:#f0f8f3}
+#finishSurpriseButton:hover{background:#e1f1e7}
+@media(max-width:740px){
+  #playScreen .question-footer{
+    position:sticky;bottom:max(5px,env(safe-area-inset-bottom));
+    z-index:12;margin-top:14px;padding:9px 10px;
+    border:1px solid #d9e5dc;border-radius:12px;
+    background:#fffdfa;box-shadow:0 -7px 26px #1e354923;
+    align-items:center;gap:7px;flex-wrap:nowrap;
+  }
+  #playScreen .question-footer .footer-actions{
+    margin-left:auto;flex:1 1 auto;min-width:0;justify-content:flex-end;
+    gap:5px;align-items:center
+  }
+  #playScreen #hintButton{
+    min-height:45px;padding:9px 8px;font-size:.72rem;white-space:normal;
+    flex:0 1 auto
+  }
+  #playScreen #checkButton{
+    min-height:49px;min-width:0;padding:11px 12px;
+    font-size:.82rem;line-height:1.25;white-space:normal
+  }
+  #playScreen .question-footer .footer-actions #exitPracticeButton{
+    padding:9px 7px;font-size:.68rem
+  }
+  .picture-variety-note{flex-wrap:wrap}
+  .endpoint-meaning{font-size:.67rem;padding:6px 8px;gap:5px 11px}
+}
+@media(max-width:360px){
+  #playScreen .question-footer #checkButton{padding:11px 8px;font-size:.76rem}
+  #playScreen .question-footer #hintButton{font-size:.68rem;padding:9px 5px}
+}
