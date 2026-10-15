@@ -1,8 +1,8 @@
 import {PAINT_PICTURES} from "./paint-pictures.mjs";
-import {STARTER_PICTURES} from "./starter-pictures.mjs";
+import {STARTER_PICTURES} from "./starter-pictures.mjs?v=student-feedback-v1";
 import {STUDENT_BONUS_PICTURES} from "./student-bonus-pictures.mjs";
 import {MIXED_PICTURES} from "./mixed-pictures.mjs";
-import {PAINT_STARTERS} from "./paint-starters.mjs";
+import {PAINT_STARTERS} from "./paint-starters.mjs?v=student-feedback-v1";
 // Picture data lives here, separate from question generation and screen logic.
 // Rows are top-to-bottom, each [firstPixel,lastPixel] inclusive. A half-picture's
 // coordinates count away from the future vertical mirror axis.
