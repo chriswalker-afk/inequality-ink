@@ -72,7 +72,7 @@ test("Numbered mystery placeholders are replaced in all visible game surfaces",(
   assert.ok(app.includes('$("finishTitle").textContent=picture.name+"!"'));
 });
 test("The picture renderer and question generator do not use hardcoded cats or mushrooms",()=>{
- assert.ok(app.includes('from "./picture-engine.mjs"'));
+ assert.match(app,/from "\.\/picture-engine\.mjs(?:\?[^"]+)?"/);
  assert.ok(app.includes('validatePictureLibrary()'));
  const draw=getSection('function sprite(', 'sprite($("introPixelArt"),{intro:true});');
  assert.ok(draw.includes('pictureWidth(picture)'));
