@@ -22,7 +22,7 @@ export const PAINT_STARTERS=Object.freeze([
   step:1,base:"#ee8aa7",edge:"#b95e82",
   colours:{S:sky("#f5eaf4"),R:{name:"Berry pink",hex:"#f08caa"}},
   grid:[
-   "SSRRRRSS",
+   "RRRSSRRR",
    "SRRRRRRS",
    "RRRRRRRR",
    "SRRRRRRS",

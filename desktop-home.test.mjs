@@ -92,7 +92,7 @@ test("Both studios use the same labelled SVG segmented navigation",()=>{
   assert.ok(css.includes('.studio-switch .studio-tab[aria-current="page"]'));
   assert.ok(css.includes('background:#2e3b58;'));
   assert.ok(css.includes('.studio-switch .studio-icon svg{'));
-  assert.ok(html.includes('href="./styles.css?v=paint-desktop-v3"'));
+  assert.match(html,/href="\.\/styles\.css\?v=[^"]+"/);
   assert.ok(graph.includes('href="../styles.css?v=paint-desktop-v3"'));
 });
 
@@ -134,5 +134,5 @@ test("Desktop painting gives the picture genuine height and keeps controls compa
   assert.ok(mobile.includes("grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)"),
     "Keep the successful mobile picture/rules proportions");
   assert.ok(mobile.includes(".paint-help-note{display:none}"));
-  assert.ok(html.includes('href="./styles.css?v=paint-desktop-v3"'));
+  assert.match(html,/href="\.\/styles\.css\?v=[^"]+"/);
 });

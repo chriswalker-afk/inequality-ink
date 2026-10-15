@@ -6,6 +6,38 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Student feedback pass — Pixel Art
+
+The pixel studio's five-step journeys and student saves remain unchanged. The
+authored half-picture masks for **Little Heart**, **Bouncy Ball** and **Tiny
+Flower** have been corrected so their final mirrored shapes resemble the
+promised objects. Paint by Inequalities' Little Heart now also has two distinct
+upper lobes. Automated silhouette snapshots guard against another accidental
+"wrong-way mirror" even when all of the mathematical questions remain valid.
+
+**Open circles** are now labelled "< or > — endpoint excluded"; **closed
+circles** are "≤ or ≥ — endpoint included". The reminder sits beside both
+the reading and drawing tasks rather than interrupting play. The usual
+tap-to-toggle, drag and keyboard interactions are preserved. A clear **Check
+my choice / number line / solution** action stays visible on narrow screens;
+one correct Check continues automatically as before.
+
+Five new, independent **More pictures** alternatives broaden the choice:
+
+| Mode | Fresh optional picture | Same-level mathematics |
+| --- | --- | --- |
+| Mirror | Forest Sparkle → Little Evergreen | 8 one-sided inequalities |
+| Full | Across the Bay → Sailboat | 8 bounded intervals |
+| Solve | Up and Away → Hot Air Balloon | 10 algebraic inequalities |
+| Mixed | Hidden Treasure → Prism Crystal | 8 mixed-skill questions |
+| Paint | Colours Aloft → Rainbow Kite | 10 rows and 3 colours |
+
+The **Surprise me with a picture** and results-screen **Surprise me next**
+buttons prefer uncompleted, newly added alternative artwork, then other
+uncompleted pictures. They start the chosen task immediately, with no
+additional confirmation or compulsory help. Returning to any previous
+picture retains its own progress and replays.
+
 ## Phase 6 — optional same-level practice and reverse reading
 
 The five-stage routes remain exactly as before. Each Graph Art mode now offers
@@ -183,7 +215,7 @@ The pure question data, generated algebra notation and strict real-domain valida
 | **Mixed Challenge** | Each picture combines mirrored one-sided rays, bounded intervals and algebra, including negative-coefficient sign reversals at higher stages. | **Pocket Guardian**, **Visitor from Above**, **Against the Clock**, **Flutter By**, **Here Be Dragons** (five original pictures) |
 | **Paint by Inequalities** | Read 2–4 colour inequalities per row and directly paint the integer-labelled squares. Only the current row can be edited; correct rows lock with their numbers removed. | **To the Moon**, **Petal Parade**, **Beep Beep Buddy** |
 
-The library now contains **twenty-nine unique pictures** offering **47 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
+The library now contains **thirty-four unique pictures** offering **52 picture/difficulty combinations**. The selector uses playful, spoiler-free **clue titles** (such as *To the Moon*) rather than numbered mysteries. Completing an activity reveals its actual picture name, which then also appears beneath its clue in the picker. Every picture and difficulty has **independently saved progress**. Students can switch pictures without losing their previous work.
 
 ### Start a picture immediately, or practise separately
 

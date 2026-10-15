@@ -10,9 +10,9 @@ import {
 } from "./picture-engine.mjs";
 import {identicalSolution,isInInterval} from "./model.mjs";
 
-test("All 29 artworks validate with a separate five-picture path in each mode",()=>{
+test("All 34 artworks validate with the original five-stage path in each mode",()=>{
  const reports=validatePictureLibrary();
- assert.equal(reports.length,29);
+ assert.equal(reports.length,34);
  for(const report of reports){
    assert.ok([6,8,10,12,14].includes(report.rows));
    assert.ok(report.width>=6);
@@ -40,7 +40,7 @@ test("All 29 artworks validate with a separate five-picture path in each mode",(
    assert.equal(defaultPictureForLevel(level).id,ids[0]);
  }
  for(const [level,expected] of Object.entries({
-   mirror:3,full:4,solve:4,mixed:9,paint:2
+   mirror:4,full:5,solve:5,mixed:10,paint:3
  })){
    assert.equal(extraPicturesForLevel(level).length,expected);
    assert.ok(extraPicturesForLevel(level).every(p=>!p.progression?.[level]));
@@ -79,7 +79,12 @@ test("Every picture has a unique playful clue which hides its final name",()=>{
     "ice-cream-treat":"Sweet Scoop",
     "paint-rocket":"To the Moon",
     "paint-flower":"Petal Parade",
-    "paint-robot":"Beep Beep Buddy"
+    "paint-robot":"Beep Beep Buddy",
+    "mirror-evergreen-bonus":"Forest Sparkle",
+    "full-sailboat-bonus":"Across the Bay",
+    "solve-balloon-bonus":"Up and Away",
+    "mixed-crystal-bonus":"Hidden Treasure",
+    "paint-kite-bonus":"Colours Aloft"
   };
   assert.equal(Object.keys(expected).length,PICTURE_LIBRARY.length);
   for(const picture of PICTURE_LIBRARY){
@@ -230,11 +235,11 @@ test("Five new pictures are registered with exactly the intended modes and dimen
     ["enchanted-potion","full",16,16,["full","solve","mixed"]],
     ["ice-cream-treat","full",16,16,["full","solve","mixed"]]
   ];
-  assert.equal(PICTURE_LIBRARY.length,29);
-  assert.equal(picturesForLevel("mirror").length,8);
+  assert.equal(PICTURE_LIBRARY.length,34);
+  assert.equal(picturesForLevel("mirror").length,9);
   for(const mode of ["full","solve"])
-    assert.equal(picturesForLevel(mode).length,9);
-  assert.equal(picturesForLevel("mixed").length,14);
+    assert.equal(picturesForLevel(mode).length,10);
+  assert.equal(picturesForLevel("mixed").length,15);
   for(const [id,family,halfWidth,fullWidth,levels] of expected){
     const picture=pictureById(id);
     assert.equal(picture.family,family);
@@ -248,7 +253,7 @@ test("Five new pictures are registered with exactly the intended modes and dimen
       id+" needs visually meaningful finishing details");
   }
   const combinations=PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0);
-  assert.equal(combinations,47);
+  assert.equal(combinations,52);
 });
 
 test("Mixed Challenge core contains five original pictures, no reused silhouettes",()=>{

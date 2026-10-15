@@ -7,11 +7,11 @@
   <meta name="description" content="Practise inequalities on interactive number lines and reveal colourful pixel-art pictures as you go." />
   <title>Inequality Ink | Pixel-art maths</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M12 12h18v18H12zm22 0h18v18H34zM12 34h18v18H12z' fill='%23f6a17e'/%3E%3Cpath d='M34 34h18v18H34z' fill='%237cc2af'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles.css?v=paint-desktop-v3" />
+  <link rel="stylesheet" href="./styles.css?v=student-feedback-v1" />
   <link rel="stylesheet" href="./studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="./help/how-to-play.css?v=guide-v1" />
   <script type="module" src="./help/how-to-play.mjs?v=guide-v1"></script>
-  <script type="module" src="./app.mjs?v=studio-pass3"></script>
+  <script type="module" src="./app.mjs?v=student-feedback-v1"></script>
 </head>
 <body>
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -80,6 +80,10 @@
             <summary id="morePicturesToggle">More pictures</summary>
             <div id="extraPicturePicker" class="picture-picker extra-picture-picker" role="group" aria-label="More pictures"></div>
           </details>
+          <div class="picture-variety-note">
+            <span>Want something different?</span>
+            <button type="button" id="surprisePictureButton" class="picture-variety-button">Surprise me with a picture ✦</button>
+          </div>
         </div>
         <div class="intro-canvas-column">
           <div class="intro-art" aria-hidden="true">
@@ -158,6 +162,10 @@
             <div id="readArea" class="read-area" hidden>
               <div class="section-label">LOOK AT THIS NUMBER LINE</div>
               <div class="numberline-holder"><svg id="readLine" viewBox="0 0 660 142" role="img" aria-label="The given number line"></svg></div>
+              <p class="endpoint-meaning" aria-label="Open endpoints are excluded. Closed endpoints are included.">
+                <span><span class="open-circle" aria-hidden="true"></span><strong>Open:</strong> &lt; or &gt; (not included)</span>
+                <span><span class="closed-circle" aria-hidden="true"></span><strong>Closed:</strong> ≤ or ≥ (included)</span>
+              </p>
               <div class="section-label">CHOOSE THE MATCHING INEQUALITY</div>
               <div class="option-grid" id="readOptions"></div>
             </div>
@@ -167,7 +175,11 @@
               <div class="numberline-holder draw-line-holder">
                 <svg id="drawLine" viewBox="0 0 660 142" role="img" aria-label="Editable number line. Tap or click a circle to toggle it open or closed. Drag a circle to move it, or tap a number-line tick."></svg>
               </div>
-              <p class="numberline-gesture-tip"><strong>Circle shortcut:</strong> tap a circle to switch ○ open / ● closed. Drag to move it, or tap a numbered tick.</p>
+              <p class="endpoint-meaning numberline-gesture-tip" aria-label="Open circles mean less than or greater than. Closed circles mean less than or equal to or greater than or equal to.">
+                <span><span class="open-circle" aria-hidden="true"></span><strong>Open:</strong> &lt; or &gt; (not included)</span>
+                <span><span class="closed-circle" aria-hidden="true"></span><strong>Closed:</strong> ≤ or ≥ (included)</span>
+              </p>
+              <p class="circle-interaction-tip">Tap a circle to switch its type. Drag it to change its position.</p>
               <div class="direction-chooser" id="directionChooser" aria-label="Shading direction">
                 <button type="button" data-direction="left">← Left</button>
                 <button type="button" data-direction="between" class="selected">↔ Between</button>
@@ -251,7 +263,7 @@
               <button type="button" class="button button-light" id="hintButton">✳ Give me a hint</button>
               <div class="footer-actions">
                 <button type="button" class="button button-light" id="exitPracticeButton" hidden>Back to pictures</button>
-                <button type="button" class="button button-primary" id="checkButton">Check &amp; paint <span aria-hidden="true">→</span></button>
+                <button type="button" class="button button-primary" id="checkButton" aria-label="Check your answer and paint the next row">Check my answer →</button>
               </div>
             </div>
           </section>
@@ -507,6 +519,7 @@
             <button type="button" class="button button-light" id="playAgain">Play again ↻</button>
             <button type="button" class="button button-light" id="downloadArt">Save picture ↓</button>
             <button type="button" class="button button-light" id="replayReveal" hidden>Watch reveal ✦</button>
+            <button type="button" class="button button-light" id="finishSurpriseButton">Surprise me next ✦</button>
             <button type="button" class="button button-primary" id="nextPictureButton" hidden>Next picture →</button>
             <button type="button" class="button button-light" id="chooseLevelButton">Choose a picture</button>
           </div>
