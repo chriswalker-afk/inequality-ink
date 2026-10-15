@@ -9,11 +9,14 @@ test("Five math stages in all modes; bonus pictures retain advanced generators",
   for(const level of ["mirror","full","solve","mixed","paint"]){
     assert.deepEqual(progressionForLevel(level).map(p=>mathematicalStage(p,level)),
       [1,2,3,4,5]);
-    assert.ok(extraPicturesForLevel(level).every(p=>
-      level==="mixed"&&p.legacyMathStage?.mixed?
-        mathematicalStage(p,level)===p.legacyMathStage.mixed:
-        mathematicalStage(p,level)===5),
-      "Historical Mixed quick-win questions retain their original maths");
+    assert.ok(extraPicturesForLevel(level).every(p=>{
+      // Original bonuses keep stage 5 (apart from historical Mixed previews).
+      // Student-requested alternatives have the exact same mathematical stage
+      // as the core picture they offer another route through.
+      const bespoke=p.legacyMathStage?.[level];
+      const expected=p.studentEncore||(level==="mixed"&&bespoke)?bespoke:5;
+      return mathematicalStage(p,level)===expected;
+    }),"Old bonuses retain their maths; new ones use their stated stage");
   }
 });
 
