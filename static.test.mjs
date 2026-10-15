@@ -187,8 +187,10 @@ test("Site remains dependency-free and keyboard/mobile friendly",()=>{
 });
 
 
-test("One Check & paint press handles correctness, progression and the final reveal",()=>{
-  assert.ok(html.includes('id="checkButton">Check &amp; paint'));
+test("One clear Check answer press handles correctness, progression and the final reveal",()=>{
+  assert.ok(html.includes('id="checkButton" aria-label="Check your answer and paint the next row">Check my answer'));
+  assert.ok(app.includes('"Check my choice →"'));
+  assert.ok(app.includes('"Check my number line →"'));
   assert.ok(!html.includes('id="nextButton"'));
   assert.ok(!app.includes('$("nextButton")'));
   const check=getSection('function check(){','function hint(){');
