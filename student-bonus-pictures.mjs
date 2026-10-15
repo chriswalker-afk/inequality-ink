@@ -4,7 +4,7 @@
 const sky=(base,light,shade)=>({base,light,shade,sparkle:"#fff6d8"});
 const bonus=({id,name,clue,description,levels,width,rows,step,base,edge,bands=[],
   background,detailStages,details,paint})=>Object.freeze({
-  id,name,clue,description,levels,
+  id,name,clue,description,levels,studentEncore:true,
   family:levels.includes("mirror")?"half":"full",
   window:{min:-Math.floor(width/2),max:Math.ceil(width/2)},
   axis:levels.includes("mixed")?{min:-width/2-1,max:width/2+1}:undefined,
