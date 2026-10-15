@@ -285,7 +285,7 @@ test("Choose a picture shows five quick-win steps with accurate row and colour c
    assert.ok($("pictureSummary").textContent.includes("Quick win"));
    const legacy=LEGACY_ORDER[level];
    assert.equal($("extraPicturePicker").children.length,
-     level==="mirror"?3:level==="paint"?2:level==="mixed"?9:4);
+     level==="mirror"?4:level==="paint"?3:level==="mixed"?10:5);
    for(const id of legacy){
      const pic=pictureById(id);
      const selectable=[...$("picturePicker").children,
@@ -1596,3 +1596,34 @@ test("Five Mixed-only stages complete with all three skills and independent prog
    "Old Mixed extras must retain previous saved completions");
 });
 
+
+test("A surprise picture starts a fresh bonus without changing the five-step journey",()=>{
+ const newArt={
+   mirror:"mirror-evergreen-bonus",
+   full:"full-sailboat-bonus",
+   solve:"solve-balloon-bonus",
+   mixed:"mixed-crystal-bonus",
+   paint:"paint-kite-bonus"
+ };
+ for(const [level,id] of Object.entries(newArt)){
+   $("changeLevelButton").click();
+   levels.find(x=>x.dataset.level===level).click();
+   assert.equal($("picturePicker").children.length,5);
+   assert.ok($("extraPicturePicker").children.some(card=>
+     card.children[1]?.children[0]?.textContent===pictureById(id).clue));
+   const before=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+   $("surprisePictureButton").click();
+   assert.equal($(level==="paint"?"paintScreen":"playScreen").hidden,false,
+     "Surprise should start the picture immediately in "+level);
+   const now=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+   assert.equal(now.selectedPictures[level],id,
+     "New, unplayed alternate should be preferred in "+level);
+   assert.equal($("picturePicker").children.length,5,
+     "The core five-stage path must remain separate");
+   for(const [key,data]of Object.entries(before.progress)){
+     assert.deepEqual(now.progress[key],data,
+       "A surprise must not erase other saved progress: "+key);
+   }
+ }
+ $("paintBack").click();
+});
