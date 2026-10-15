@@ -1,6 +1,6 @@
 // Reusable, picture-independent question, artwork and validation engine.
 // New pictures only require a definition in pictures.mjs.
-import {PICTURE_DEFINITIONS} from "./pictures.mjs";
+import {PICTURE_DEFINITIONS} from "./pictures.mjs?v=student-feedback-v1";
 import {isInInterval,identicalSolution,formatInterval,formatLinear} from "./model.mjs";
 import {makePaintQuestion,validatePaintPicture} from "./paint-engine.mjs";
 import {mathematicalStage,boundedEndpointPreferences,oneSidedOpenPreference,
