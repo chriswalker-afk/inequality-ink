@@ -330,7 +330,13 @@ function question(){
  $("workingShell").hidden=q.mode!=="solve";
  $("checkButton").hidden=false;
  $("checkButton").disabled=false;
- $("checkButton").textContent=tutorial?"Check practice →":"Check & paint →";
+ $("checkButton").textContent=tutorial?"Check practice →":
+   q.mode==="read"?"Check my choice →":q.mode==="solve"?
+     "Check my solution →":"Check my number line →";
+ $("checkButton").setAttribute("aria-label",tutorial?
+   "Check the practice answer":q.mode==="read"?
+   "Check the selected inequality and paint the next row":
+   "Check the number line answer and paint the next row");
  $("hintButton").disabled=false;$("hintButton").textContent="✳ Give me a hint";
  $("exitPracticeButton").hidden=!tutorial;
  $("hintPanel").hidden=true;$("hintPanel").replaceChildren();
@@ -360,6 +366,25 @@ function selectPicture(id){
  state.selectedPictures[state.activeLevel]=id;
  $("practiceStatus").hidden=true;
  syncProgress();store();updateLevelSelector();
+}
+// One-click choice between genuinely different pictures. Prefer new, unplayed
+// bonus artwork before previously solved or familiar paths, but never remove
+// or overwrite another picture's saved progress.
+function surprisePicture(){
+ const level=state.activeLevel;
+ const extras=extraPicturesForLevel(level),core=progressionForLevel(level);
+ const remaining=items=>items.filter(p=>
+   !state.progress[progressKey(level,p.id)]?.completed&&p.id!==activePicture().id);
+ const newBonus=remaining(extras.filter(p=>p.studentEncore));
+ const otherBonus=remaining(extras);
+ const otherCore=remaining(core);
+ const alternatives=newBonus.length?newBonus:
+   otherBonus.length?otherBonus:otherCore.length?otherCore:
+   [...extras,...core].filter(p=>p.id!==activePicture().id);
+ if(!alternatives.length)return;
+ const p=alternatives[Math.floor(Math.random()*alternatives.length)];
+ selectPicture(p.id);
+ start(); // The single action immediately begins the selected picture.
 }
 function renderPicturePicker(){
  const level=state.activeLevel,core=progressionForLevel(level),
@@ -395,7 +420,9 @@ function renderPicturePicker(){
      progress=state.progress[progressKey(level,picture.id)]||blank(),
      step=progressionStep(picture,level),total=questionCount(picture),
      colours=picture.paint?Object.keys(picture.paint.colours).length:null;
-   const meta=(step?PICTURE_TIERS[step-1]:"More pictures")+" · "+
+   const meta=(step?PICTURE_TIERS[step-1]:picture.studentEncore?
+     "Extra · "+PICTURE_TIERS[(picture.legacyMathStage?.[level]||2)-1]:
+     "More pictures")+" · "+
      (colours===null?"":colours+" colours · ")+total+" rows"+
      (level==="mixed"&&step?" · 3 skills":"");
    const card=document.createElement("button");
@@ -416,7 +443,8 @@ function renderPicturePicker(){
    const caption=document.createElement("small");
    caption.textContent=progress.completed?picture.name+" — completed":
      progress.done?progress.done+" / "+total+" rows finished":
-     step===1?"Quick win · Ready to start":!step?"Bonus picture":
+     step===1?"Quick win · Ready to start":!step?
+       picture.studentEncore?"Fresh picture · Try something new":"Bonus picture":
      picture.id===next?.id?"Suggested next":"Not started";
    const detail=document.createElement("span");
    detail.className="picture-option-meta";detail.textContent=meta;
@@ -1415,6 +1443,8 @@ document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
 });
 $("startButton").onclick=start;
+$("surprisePictureButton").onclick=surprisePicture;
+$("finishSurpriseButton").onclick=surprisePicture;
 $("practiceButton").onclick=startPractice;
 $("exitPracticeButton").onclick=chooseLevel;
 $("checkButton").onclick=check;
