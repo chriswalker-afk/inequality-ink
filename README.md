@@ -132,6 +132,44 @@ uncompleted pictures. They start the chosen task immediately, with no
 additional confirmation or compulsory help. Returning to any previous
 picture retains its own progress and replays.
 
+## Complex Quest — the Argand plane creates the art (October 2026)
+
+**Complex Quest** is a separate optional Further Mathematics extension at
+[Graph Art](regions/), introduced in place of Graph Art's redundant
+three-card bottom instructions and extra Pixel Art footer link. The existing
+four Cartesian Graph Art modes, their help and their saved progress are
+unchanged. The bottom card links to [Complex Quest](regions/complex.html).
+
+This first **five-picture playable collection** spans a genuine progression:
+
+| Difficulty | Mystery | Mathematical interaction |
+| --- | --- | --- |
+| Quick Spark | Star Trail | Plot five complex numbers as Argand points, joining them into a star |
+| Step Up | Rotating Pinwheel | Use conjugation and multiplication by i, -i or -1 to construct congruent rotating blades |
+| Ink Builder | Bubble Bouquet | Determine the centre and radius of filled modulus discs; distinguish strict/inclusive circles |
+| Brain Stretch | Aurora Beams | Construct translated argument sectors, with unbounded edges clipped only by the graph window |
+| Masterpiece | Prism Butterfly | Intersect modulus discs and argument sectors, making genuine bounded circular sectors |
+
+The student enters real and imaginary coordinates (or taps the Argand canvas),
+and where appropriate selects a radius or the argument bounds. The preview
+represents the **student's chosen mathematical region**, never a hidden
+silhouette. Correct answers commit exactly that point, circle or sector to
+the growing artwork. Displayed polar bounds are radians (multiples of pi/4).
+The game includes contextual hints, keyboard-accessible plotting, meaningful
+negative feedback, an animated full-picture reveal, independent per-picture
+localStorage records, replay and an irreversible discovery archive.
+
+The geometry is derived in regions/complex-quest-model.mjs and
+regions/complex-quest-geometry.mjs; it does not draw arbitrary masks or
+invent circular boundaries for unbounded argument loci. The interface is
+regions/complex-quest-app.mjs. complex-quest.test.mjs verifies exact
+complex transformations, strict boundaries, modulus/argument intersections,
+cross-mode save isolation and complete play-throughs of all five artworks.
+
+**Scope:** This is the agreed five-picture starting collection, **not yet
+five pictures per difficulty**. An expansion to 25 pictures and integration
+with My Mural can be considered after student testing.
+
 ## Graph Art Pass 2 — all five difficulty pools complete (October 2026)
 
 **The Graph Art variety expansion has reached its original goal: 100 standard
