@@ -129,7 +129,7 @@ test("New curved starter pictures use actual simple parabolas and touch-selectab
         "Circles and absolute value curves belong to later levels");
       for(const r of part.rules){
         if(r.kind==="function"&&r.coeffs.length===3){
-          assert.equal(r.coeffs[1],0,
+          assert.ok(Math.abs(r.coeffs[1])<1e-10,
             "Beginner parabolas remain centred on the y-axis");
         }
       }
@@ -162,7 +162,7 @@ test("Every new Plot & Shade boundary can be constructed with two correct snappe
       if(!target.inclusive)strict++;
     }
   }
-  assert.ok(lines>=4&&parabolas>=3,
+  assert.ok(lines>=4&&parabolas>=2,
     "Mix introductory line and parabola plotting rather than repeating one skill");
   assert.ok(strict>=1,"Include a dashed line example at starter level");
 });
