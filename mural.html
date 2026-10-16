@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="theme-color" content="#f6f4ec">
+  <meta name="description" content="Explore your personal Inequality Ink mural. Every completed mystery adds a new piece to a growing landscape.">
+  <title>My Mural · Inequality Ink</title>
+  <link rel="stylesheet" href="./mural.css?v=mural-v1">
+  <script type="module" src="./mural.mjs?v=mural-v1"></script>
+</head>
+<body>
+  <div class="mural-page">
+    <header class="mural-topbar">
+      <a class="mural-brand" href="./" aria-label="Inequality Ink home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span><strong>Inequality<span class="brand-accent">Ink</span></strong><small>Make maths into art</small></span>
+      </a>
+      <div class="mural-top-actions">
+        <span class="mural-pill">✦ Your discoveries</span>
+        <a href="./" class="mural-back">← Back to the game</a>
+      </div>
+    </header>
+    <main>
+      <section class="mural-intro" aria-labelledby="muralTitle">
+        <div class="mural-heading">
+          <span class="eyebrow">YOUR WORLD · BUILT WITH MATHEMATICS</span>
+          <h1 id="muralTitle">My <em>Mural.</em></h1>
+          <p>Every mystery you've finished belongs somewhere in this world. Watch it grow, one solved inequality at a time.</p>
+        </div>
+        <div class="mural-progress" aria-live="polite">
+          <div class="mural-progress-orb"><span aria-hidden="true">✦</span></div>
+          <div><strong id="muralCount">0</strong><span>of <span id="muralTotal">125</span> discoveries</span></div>
+          <div class="mural-progress-track" aria-hidden="true"><span id="muralBar"></span></div>
+        </div>
+      </section>
+      <section class="mural-frame" aria-label="Your connected world">
+        <div class="mural-controls">
+          <div class="mural-controls-title"><strong>Explore your world</strong><small>Scroll or swipe to explore · tap a discovery to revisit it</small></div>
+          <nav class="mural-zones" aria-label="Jump to a part of your mural">
+            <button type="button" data-mural-zone="garden" aria-current="true">✿ Garden</button>
+            <button type="button" data-mural-zone="village">⌂ Village</button>
+            <button type="button" data-mural-zone="coast">≈ Coast</button>
+            <button type="button" data-mural-zone="highlands">△ Highlands</button>
+            <button type="button" data-mural-zone="sky">✦ Sky</button>
+          </nav>
+        </div>
+        <div class="mural-viewport" id="muralViewport" tabindex="0"
+             role="region" aria-label="Scrollable mural panorama, from garden to sky">
+          <svg id="muralWorld" class="mural-world" xmlns="http://www.w3.org/2000/svg"
+               viewBox="0 0 5400 820" role="img" aria-labelledby="muralSvgTitle muralSvgDescription">
+            <title id="muralSvgTitle">Your Inequality Ink world</title>
+            <desc id="muralSvgDescription">A continuous illustrated world, gradually populated only by the pixel-art pictures you have completed.</desc>
+            <defs>
+              <linearGradient id="skyGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#e0f2ee"/>
+                <stop offset=".32" stop-color="#e9f5f5"/>
+                <stop offset=".67" stop-color="#ececfa"/>
+                <stop offset="1" stop-color="#ddd9f1"/>
+              </linearGradient>
+              <linearGradient id="meadowLight" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#c9e4ce"/>
+                <stop offset="1" stop-color="#90bb9d"/>
+              </linearGradient>
+              <linearGradient id="seaBlue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#bbdce3"/>
+                <stop offset="1" stop-color="#7cb5c8"/>
+              </linearGradient>
+              <linearGradient id="mountainMist" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#bbc5da"/>
+                <stop offset="1" stop-color="#8fabc0"/>
+              </linearGradient>
+              <linearGradient id="sunlitSky" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+                <stop offset=".5" stop-color="#f7dddb" stop-opacity=".52"/>
+                <stop offset="1" stop-color="#d9d0ef" stop-opacity=".42"/>
+              </linearGradient>
+              <filter id="rewardShadow" x="-35%" y="-35%" width="170%" height="170%">
+                <feDropShadow dx="2" dy="6" stdDeviation="3.5" flood-color="#364767" flood-opacity=".24"/>
+              </filter>
+            </defs>
+            <g aria-hidden="true">
+              <rect x="0" y="0" width="5400" height="820" fill="url(#skyGradient)"/>
+              <rect x="0" y="0" width="5400" height="430" fill="url(#sunlitSky)"/>
+              <!-- One uninterrupted horizon ties every area into the same scene. -->
+              <path d="M0 530 Q170 480 390 520 T830 535 T1290 512 T1720 544
+                T2190 512 T2640 537 T3060 496 T3510 480 T3940 505
+                T4410 545 T4920 525 T5400 518 V820 H0Z"
+                fill="#d7e6de" opacity=".72"/>
+              <path d="M0 595 Q220 548 490 585 T960 576 T1450 580 T1980 595
+                T2410 580 T2890 592 T3380 558 T3890 595 T4380 606
+                T4930 580 T5400 590 V820 H0Z"
+                fill="#c2d9ce" opacity=".75"/>
+              <!-- The garden rolls naturally into the village. -->
+              <path d="M0 643 Q270 605 560 635 T1190 646 Q1440 618 1720 642
+                T2240 663 L2240 820 H0Z" fill="url(#meadowLight)"/>
+              <path d="M0 752 Q230 725 480 755 T1020 746 Q1350 703 1710 749
+                T2190 740" stroke="#82ab90" stroke-width="10" fill="none" opacity=".28"/>
+              <path d="M1100 745 Q1340 703 1530 737 T1960 739 T2330 757"
+                stroke="#e4d0ad" stroke-width="58" fill="none" opacity=".68"/>
+              <path d="M1100 745 Q1340 703 1530 737 T1960 739 T2330 757"
+                stroke="#f7ead5" stroke-width="3" fill="none" stroke-dasharray="18 25" opacity=".72"/>
+              <!-- The coast belongs to the same landmass, transitioning to water. -->
+              <path d="M2000 686 Q2210 643 2435 684 T2900 668 T3290 688
+                L3290 820 H2000Z" fill="url(#seaBlue)"/>
+              <path d="M2030 725 Q2220 700 2400 724 T2800 716 T3260 739"
+                stroke="#e3f3ef" stroke-width="6" fill="none" opacity=".68"/>
+              <path d="M2080 775 Q2310 752 2520 774 T2930 777 T3285 771"
+                stroke="#d9ebf2" stroke-width="5" fill="none" opacity=".48"/>
+              <path d="M2160 684 Q2230 666 2290 679" stroke="#f4efdc" stroke-width="16" fill="none" opacity=".5"/>
+              <!-- Hills rise to a distant mountain ridge. -->
+              <path d="M3090 616 L3330 448 L3490 555 L3710 333 L3900 501
+                L4050 386 L4360 630 V820 H3090Z"
+                fill="url(#mountainMist)" opacity=".86"/>
+              <path d="M3450 560 L3710 333 L3810 421 L3740 401 L3710 371
+                L3668 429 L3622 425Z" fill="#edf3f5" opacity=".82"/>
+              <path d="M3962 459 L4050 386 L4113 469 L4051 422 L4020 447Z"
+                fill="#f4f2f3" opacity=".68"/>
+              <path d="M3130 686 Q3360 627 3590 665 T4010 639 T4490 680
+                L4490 820 H3130Z" fill="#9dbbb7" opacity=".72"/>
+              <!-- The hill softens into a luminous evening sky. -->
+              <path d="M4290 697 Q4570 660 4800 695 T5350 710 L5400 820
+                H4290Z" fill="#c5d5c8" opacity=".65"/>
+              <path d="M4270 604 Q4580 580 4810 620 T5400 591"
+                stroke="#ffffff" stroke-width="7" opacity=".15" fill="none"/>
+              <g fill="#ffffff" opacity=".47">
+                <circle cx="4550" cy="230" r="4"/><circle cx="4780" cy="340" r="3"/>
+                <circle cx="4950" cy="190" r="4"/><circle cx="5160" cy="330" r="2"/>
+                <circle cx="5330" cy="220" r="4"/><circle cx="4430" cy="375" r="3"/>
+              </g>
+              <g font-family="Inter,system-ui,sans-serif" font-size="33"
+                 font-weight="850" letter-spacing="2.5" fill="#34596a" opacity=".78">
+                <text x="110" y="146">THE GARDEN</text>
+                <text x="1180" y="146">THE VILLAGE</text>
+                <text x="2270" y="146">THE COAST</text>
+                <text x="3330" y="146">THE HIGHLANDS</text>
+                <text x="4420" y="146">THE SKY</text>
+              </g>
+              <g font-family="Inter,system-ui,sans-serif" font-size="15"
+                 font-weight="650" letter-spacing="1.8" fill="#658191" opacity=".82">
+                <text x="112" y="178">SEEDS OF DISCOVERY</text>
+                <text x="1182" y="178">A WORLD OF IDEAS</text>
+                <text x="2272" y="178">BEYOND THE SHORELINE</text>
+                <text x="3332" y="178">ADVENTURE AWAITS</text>
+                <text x="4422" y="178">ANYTHING IS POSSIBLE</text>
+              </g>
+            </g>
+            <!-- Only unlocked and truly completed sprites are ever inserted. -->
+            <g id="muralItems"></g>
+          </svg>
+        </div>
+        <div class="mural-bottom">
+          <p id="muralHint">Your mural remembers your discoveries in this browser, even when you replay a picture.</p>
+          <p id="muralEmpty" hidden>Nothing collected yet. Finish your first Pixel Art mystery to make this world your own.</p>
+          <a class="mural-continue" href="./">Keep creating →</a>
+        </div>
+      </section>
+      <p class="mural-footnote">The landscape is yours to explore. No empty frames or mystery silhouettes: completed pictures are the only objects revealed. Progress is saved on this device, with no login required.</p>
+    </main>
+    <footer class="mural-footer">INEQUALITY INK <span aria-hidden="true">✳</span> MATHS THROUGH ART <span>Every discovery makes a difference.</span></footer>
+  </div>
+  <dialog id="muralDetails" class="mural-details" aria-labelledby="muralPictureName">
+    <button type="button" id="muralClose" class="mural-dialog-close" aria-label="Close discovery details">✕</button>
+    <div class="mural-detail-head"><span class="eyebrow">✦ IN YOUR COLLECTION</span><h2 id="muralPictureName">Your discovery</h2><p id="muralPictureStory"></p></div>
+    <div class="mural-detail-preview"><svg id="muralDetailArt" viewBox="0 0 20 16" role="img" aria-label="Completed picture on a transparent background"></svg></div>
+    <div class="mural-detail-actions">
+      <a id="muralReplay" href="./" class="mural-replay">Revisit this picture ↗</a>
+      <button type="button" id="muralDone" class="mural-dismiss">Back to mural</button>
+    </div>
+  </dialog>
+</body>
+</html>
