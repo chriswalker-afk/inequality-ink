@@ -421,7 +421,7 @@ test("Five unique cards switch between modes, track stage status and show saved 
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(legacy)}),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
   assert.equal($("graphStageTrack").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 6 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 10 discovered/);
   assert.ok($("graphStageTrack").children[0].className.includes("is-complete"));
   assert.equal($("graphPictureCards").children[1].children[1].children[1].textContent,
     "Home Sweet Home");
@@ -634,13 +634,13 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify({
     mode:"fill",picture:"cosmic-rocket",records
   })}),{$}=s;
-  assert.match($("graphGalleryProgress").textContent,/5 of 6 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/5 of 10 discovered/);
   assert.equal($("graphStageTrack").children.length,5);
   assert.equal($("graphStageTrack").children.filter(x=>
     x.className.includes("is-complete")).length,4,
     "The extra Step Up practice artwork remains undiscovered");
   $("graphModeBuild").click();
-  assert.match($("graphGalleryProgress").textContent,/0 of 6 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 10 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
 });
 
@@ -715,7 +715,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModeCurve").click();
   assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 6 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 10 discovered/);
   assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
     "Difficulty-first start must hide unearned curved mystery art");
   assert.equal($("graphPreviewStage").textContent,"2 · Step Up",
@@ -729,7 +729,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModePlot").click();
   assert.equal($("graphModePlot").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/0 of 6 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 10 discovered/);
   $("graphPictureCards").children[0].click();
   assert.match($("graphStartPicture").textContent,/Continue picture/);
   $("graphStartPicture").click();
@@ -774,10 +774,10 @@ test("Hub query links restore the selected mode and picture",()=>{
 test("Phase 6 leaves all five original stages untouched, with one fresh practice card per linear mode",()=>{
   assert.equal(validateGraphPictureLibrary(),true);
   assert.equal(GRAPH_ART_PICTURES.length,10,"Original gallery must stay at ten");
-  assert.equal(GRAPH_PRACTICE_PICTURES.length,2);
+  assert.equal(GRAPH_PRACTICE_PICTURES.length,10);
   for(const mode of ["fill","build"]){
     const bonus=graphPracticeGallery(mode);
-    assert.equal(bonus.length,1);
+    assert.equal(bonus.length,5);
     assert.equal(bonus[0].step,2);
     assert.equal(bonus[0].pieces.length,3);
     assert.ok(bonus[0].practice);
@@ -785,7 +785,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
   }
   const s=session(),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
-  assert.equal($("graphPracticeCards").children.length,1);
+  assert.equal($("graphPracticeCards").children.length,5);
   assert.equal($("graphStageTrack").children.length,5);
   const tent=graphPracticeGallery("fill")[0];
   $("graphPracticeCards").children[0].click();
@@ -810,7 +810,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
 test("Optional reverse Build & Shade reads the shaded graph rather than showing the answer",()=>{
   const picture=graphPracticeGallery("build")[0];
   const s=session({}, "?mode=build"),{$}=s;
-  assert.equal($("graphPracticeCards").children.length,1);
+  assert.equal($("graphPracticeCards").children.length,5);
   $("graphPracticeCards").children[0].click();
   $("graphStartPicture").click();
   assert.equal($("graphPlay").hidden,false);
@@ -861,7 +861,7 @@ test("Difficulty-first hub keeps all unfinished artwork secret until the student
     "Gallery should not be expanded by the game");
   assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
     "A fresh mystery cannot preview its coloured art");
-  assert.match($("graphMysteryHint").textContent,/1 new or unfinished mystery/);
+  assert.match($("graphMysteryHint").textContent,/5 new or unfinished mysteries/);
   $("graphStartMystery").click();
   assert.equal($("graphPlay").hidden,false);
   assert.equal(s.app.readProgress().picture,"signal-flag");
