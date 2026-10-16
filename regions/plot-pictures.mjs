@@ -2,6 +2,7 @@
 // intersection of the displayed inequalities: no painted mask or fake art.
 import {q,parabola,vertical,absolute,circleRule,regionPaths,satisfiesAll} from "./curved-engine.mjs";
 import {checkConstruction} from "./plot-engine.mjs";
+import {PLOT_QUICK_SPARKS} from "./plot-quick-sparks.mjs";
 const rule=(id,text,coeffs,side,inclusive=true)=>q(id,text,coeffs,side,inclusive);
 const line=rule;
 const V=(id,text,x,side,inclusive=true)=>vertical(id,text,x,side,inclusive);
@@ -396,7 +397,7 @@ const snowGlobe=Object.freeze({...picture(2,"snow-globe","Snow Globe",
 
 export const PLOT_PICTURES=Object.freeze([umbrella,ice,rainbow,lantern,rocket]);
 export const PLOT_PICTURE=umbrella;
-export const PLOT_PRACTICE_PICTURES=Object.freeze([snowGlobe]);
+export const PLOT_PRACTICE_PICTURES=Object.freeze([snowGlobe,...PLOT_QUICK_SPARKS]);
 export const plotAllPictures=Object.freeze([...PLOT_PICTURES,...PLOT_PRACTICE_PICTURES]);
 export const plotPicture=id=>plotAllPictures.find(p=>p.id===id)||null;
 export const plotSteps=part=>part.plots||(part.plot?[part.plot]:[]);
@@ -457,10 +458,19 @@ export function validatePlotGallery(){
       throw Error("Incorrect Plot & Shade progression");
     ids.add(p.id);validatePlotPicture(p);
   });
-  if(PLOT_PRACTICE_PICTURES.length!==1||snowGlobe.pieces.length!==3||
-    !snowGlobe.practice||snowGlobe.step!==2||ids.has(snowGlobe.id))
-    throw Error("Plot practice must be a separate three-piece Step Up picture");
-  validatePlotPicture(snowGlobe);
+  if(PLOT_PRACTICE_PICTURES.length!==5||snowGlobe.pieces.length!==3||
+    !snowGlobe.practice||snowGlobe.step!==2||ids.has(snowGlobe.id)||
+    PLOT_PRACTICE_PICTURES.filter(p=>p.step===1&&p.quickSpark).length!==4)
+    throw Error("Plot practice needs four Quick Sparks plus one Step Up");
+  for(const extra of PLOT_PRACTICE_PICTURES){
+    if(ids.has(extra.id)||extra.mode!=="plot"||!extra.practice)
+      throw Error("Invalid extra Plot & Shade picture "+extra.id);
+    ids.add(extra.id);
+    if(extra.quickSpark&&(extra.pieces.length!==2||
+       extra.pieces.some(part=>plotSteps(part).length!==1)))
+      throw Error("Each Quick Spark plots one new boundary per region");
+    validatePlotPicture(extra);
+  }
   if(PLOT_PICTURES[0].id!=="little-umbrella"||
      plotRule(PLOT_PICTURES[0].pieces[0]).text!=="y ≤ 4 − 0.5x²")
     throw Error("Prototype umbrella must be preserved");

@@ -132,6 +132,42 @@ uncompleted pictures. They start the chosen task immediately, with no
 additional confirmation or compulsory help. Returning to any previous
 picture retains its own progress and replays.
 
+## Graph Art Pass 2 — four additional Quick Spark pictures per mode
+
+The first picture-variety batch is now live in the Graph Art library.
+**Every Quick Spark difficulty contains five different pictures**, across all
+four mathematical modes. Sixteen new handcrafted mathematical artworks take the
+Graph Art library from **24 to 40 unique pictures** without changing any
+existing picture definitions or student progress IDs.
+
+| Mode | Four new Quick Spark pictures | Mathematics |
+| --- | --- | --- |
+| **Find & Fill** | Apple Tree, Hot Cocoa, Little Bus, Birthday Cake | Read simple horizontal/vertical inequalities; two bounded pieces |
+| **Build & Shade** | Pocket Robot, Power Cell, Night Lantern, Music Player | Choose left/right/above/below, with a few easy dashed boundaries |
+| **Curve & Fill** | Mushroom Magic, Autumn Leaf, Winter Snowman, Friendly Jellyfish | Common regions above/below simple centred parabolas |
+| **Plot & Shade** | Sky Kite, Birthday Candle, Pocket Rocket, Sunrise Bay | Plot one straight line or parabola for each of two regions |
+
+Each picture includes subject-specific patterns, accents and three-stage
+finishing details, but the **coloured mathematical pieces themselves are exact
+inequality intersections**, never pre-drawn masks.
+
+The existing difficulty-first system automatically includes all new Quick
+Sparks, with **random unfinished-only choices** and independent Continue
+progress. A returning student who finished an original Starter now sees the
+unfinished same-level alternatives, rather than being pushed to the next level.
+All original stories, curves, plotting workflows, reveals and optional
+reverse-reading work remain intact. The optional picture gallery also includes
+the new artwork for deliberate selection or replay.
+
+**Subsequent Pass 2 batches:** fill the Step Up pools with varied intermediate
+maths, then expand Ink Builder, Brain Stretch and Masterpiece. This first
+batch deliberately avoids diluting harder mathematics just to increase counts.
+A separate completed-only **Graph Art mural** is planned for a later pass.
+
+A dedicated test suite validates all 20 Quick Spark choices, the new 16
+silhouettes and staged details, exact half-plane and parabolic regions,
+constructible snapped plotting points, and preservation of original saves.
+
 ## Graph Art Pass 1 — difficulty-first mysteries (October 2026)
 
 All **four Graph Art modes** now share the same difficulty-first homepage as

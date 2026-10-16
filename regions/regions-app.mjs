@@ -9,12 +9,12 @@ import {
   GRAPH_ART_DETAIL_COLORS,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
   graphPicture,graphModeGallery,graphPracticeGallery,graphLegacyExtras,graphTotalBoundaries,reverseInequalityOptions,
   graphCellAt,graphArrow,validateGraphPictureLibrary
-} from "./graph-art-pictures.mjs?v=phase6-v1";
-import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES} from "./curve-pictures.mjs?v=phase6-v1";
-import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=phase6-v1";
+} from "./graph-art-pictures.mjs?v=graph-quick-sparks-v1";
+import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES} from "./curve-pictures.mjs?v=graph-quick-sparks-v1";
+import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=graph-quick-sparks-v1";
 import {regionPaths} from "./curved-engine.mjs";
-import {readCurveSave} from "./curve-art.mjs?v=phase6-v1";
-import {readPlotSave} from "./plot-art.mjs?v=phase6-v1";
+import {readCurveSave} from "./curve-art.mjs?v=graph-quick-sparks-v1";
+import {readPlotSave} from "./plot-art.mjs?v=graph-quick-sparks-v1";
 import {
   GRAPH_MYSTERY_LEVELS,graphMysteryPool,graphMysteryStatus,
   graphMysteryFinished,graphMysteryStarted,graphPickMystery,
@@ -367,9 +367,13 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     if(hubTiers[m])return hubTiers[m];
     const curve=records?.curve||readCurveSave(storage);
     const plot=records?.plot||readPlotSave(storage);
-    const next=hubGallery(m).find(p=>
-      !graphMysteryFinished(p,hubRecord(m,p,curve,plot)));
-    hubTiers[m]=(next||hubGallery(m)[4]).step;
+    // New same-difficulty pictures count too: a pupil who completed the old
+    // five-stage path should still be offered their unexplored starter art.
+    const next=GRAPH_MYSTERY_LEVELS.find(level=>{
+      const pool=graphMysteryPool(m,level.step,hubGallery(m),hubPracticeGallery(m));
+      return graphMysteryStatus(pool,p=>hubRecord(m,p,curve,plot)).remaining>0;
+    });
+    hubTiers[m]=next?.step||5;
     return hubTiers[m];
   }
   function currentHubRecord(p){

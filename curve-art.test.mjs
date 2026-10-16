@@ -254,13 +254,13 @@ test("Curve picture deep links launch directly and return to unified Graph Art",
 
 test("Optional Balloon Parade gives same-level curved practice without changing the five core stages",()=>{
   assert.equal(validateCurveGallery(),true);
-  assert.equal(CURVE_PRACTICE_PICTURES.length,1);
+  assert.equal(CURVE_PRACTICE_PICTURES.length,5);
   const bonus=CURVE_PRACTICE_PICTURES[0];
   assert.equal(bonus.step,2);
   assert.equal(bonus.pieces.length,3);
   const s=session(),{$}=s;
   assert.equal($("curvePictureCards").children.length,5);
-  assert.equal($("curvePracticeCards").children.length,1);
+  assert.equal($("curvePracticeCards").children.length,5);
   $("curvePracticeCards").children[0].click();
   assert.equal($("curveGameTitle").textContent,"Balloon Parade");
   let first=interior(bonus.pieces[0]);
@@ -297,4 +297,26 @@ test("Mystery-launched curve challenges return to their chosen difficulty",()=>{
   const back=session({},false,"?picture="+CURVE_PICTURES[1].id+"&from=mystery&tier=2");
   back.$("curveBack").click();
   assert.equal(back.redirects.at(-1),"./?mode=curve&tier=2");
+});
+
+
+test("A new parabolic Quick Spark plays through both regions and all three finish stages",()=>{
+  const p=CURVE_PRACTICE_PICTURES.find(item=>item.id==="quick-curve-mushroom");
+  assert.ok(p);
+  const s=session({},true,"?picture="+p.id);
+  assert.equal(s.$("curvePlay").hidden,false);
+  assert.equal(s.$("curveGameTitle").textContent,p.name);
+  // Use deliberately interior points: near-edge selections should remain
+  // unselectable in the real game, and a test must respect that tolerance.
+  for(const [x,y] of [[0,2],[0,-1]]){
+    s.app.pickAt(x,y);
+    s.$("graphCheckFill").click();
+  }
+  assert.equal(s.app.readProgress().records[p.id].done,2);
+  assert.equal(s.$("curveSummary").hidden,false);
+  s.$("curveRevealSkip").click();
+  assert.ok(details(s.$("graphRevealSvg")).length>=10);
+  assert.equal(s.$("curveDownload").hidden,false);
+  const resumed=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+  assert.equal(resumed.$("curveSummary").hidden,false);
 });

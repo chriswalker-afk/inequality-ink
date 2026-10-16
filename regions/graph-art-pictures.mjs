@@ -6,6 +6,7 @@ import {
   REGION_FACETS,REGION_WORLD,evaluateRegionRule,intersectRegion,
   lineOnRegionGraph,polygonArea,pointSatisfiesAll
 } from "./regions-engine.mjs";
+import {LINEAR_QUICK_SPARKS} from "./linear-quick-sparks.mjs";
 
 export const GRAPH_ART_STAGES=Object.freeze([
   Object.freeze({step:1,name:"Starter",summary:"Straight lines · an early win"}),
@@ -410,7 +411,7 @@ const diamondKite=Object.freeze({...picture({
     L(2,-.4,-3.8,.35,-3.5,DETAIL.mintInk,.065)
   ]
 }),practice:true,practiceType:"reverse"});
-export const GRAPH_PRACTICE_PICTURES=Object.freeze([campTent,diamondKite]);
+export const GRAPH_PRACTICE_PICTURES=Object.freeze([campTent,diamondKite,...LINEAR_QUICK_SPARKS]);
 export const graphPracticeGallery=mode=>GRAPH_PRACTICE_PICTURES.filter(p=>p.mode===mode);
 // Graph-to-inequality multiple choice: four genuinely different boundary
 // relations. No hidden wording gives away the answer before a choice is made.
@@ -534,12 +535,18 @@ export function validateGraphPictureLibrary(){
       }
     }
   }
-  if(GRAPH_ART_PICTURES.length!==10||GRAPH_PRACTICE_PICTURES.length!==2)
-    throw Error("Expected ten core and two practice pictures");
+  if(GRAPH_ART_PICTURES.length!==10||GRAPH_PRACTICE_PICTURES.length!==10)
+    throw Error("Expected ten core and ten practice pictures");
   for(const mode of GRAPH_ART_MODES){
-    const bonus=graphPracticeGallery(mode.id);
-    if(bonus.length!==1||bonus[0].step!==2||bonus[0].stage!=="Step Up"||
-      bonus[0].pieces.length!==3)throw Error("Step Up practice must match core difficulty");
+    const bonus=graphPracticeGallery(mode.id),starter=bonus.filter(p=>p.step===1);
+    if(bonus.length!==5||starter.length!==4||starter.some(p=>
+      !p.quickSpark||p.pieces.length!==2||p.stage!=="Starter"||
+      p.pieces.some(part=>part.rules.some(r=>r.a!==0&&r.b!==0))))
+      throw Error("Quick Spark practice must use two solid mathematical regions");
+    const stepUp=bonus.filter(p=>p.step===2);
+    if(stepUp.length!==1||stepUp[0].stage!=="Step Up"||
+      stepUp[0].pieces.length!==3)
+      throw Error("Step Up practice must match core difficulty");
   }
   return true;
 }
