@@ -37,7 +37,7 @@ test("Every referenced element exists, with no duplicate HTML IDs",()=>{
 test("All five modes offer a picture selector and picture-specific save keys",()=>{
  for(const level of ["mirror","full","solve","mixed","paint"])
    assert.ok(html.includes('data-level="'+level+'"'));
- assert.ok(html.includes('role="group" aria-label="Choose a picture"'));
+ assert.ok(html.includes('role="group" aria-label="Main picture gallery"'));
  assert.ok(app.includes('function renderPicturePicker(){'));
  assert.ok(app.includes('picturesForLevel(state.activeLevel)'));
  assert.ok(app.includes('state.selectedPictures[state.activeLevel]=id'));
