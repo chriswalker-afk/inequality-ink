@@ -196,7 +196,8 @@ const FOCUS=[
   "Multi-facet convex regions · mixed inequalities · rigorous sign interpretation"
 ];
 const scalePoint=(pt,shift,mirror)=>[
-  (mirror?-pt[0]:pt[0])+shift,pt[1]
+  Math.round(((mirror?-pt[0]:pt[0])+shift)*4)/4,
+  Math.round(pt[1]*4)/4
 ];
 const D=(type,stage,attrs)=>Object.freeze({type,stage,...attrs});
 const colour=(palette,i)=>palette[i%palette.length];
