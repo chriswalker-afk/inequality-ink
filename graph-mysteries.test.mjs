@@ -27,10 +27,10 @@ test("Graph Art offers five freely accessible mathematical difficulties in four 
   for(const mode of GRAPH_MYSTERY_MODES){
     const [core,practice]=galleries(mode);
     assert.equal(core.length,5);
-    assert.equal(practice.length,mode==="build"?9:8);
+    assert.equal(practice.length,mode==="build"?21:20);
     for(const tier of GRAPH_MYSTERY_LEVELS){
       const pool=graphMysteryPool(mode,tier.step,core,practice);
-      assert.equal(pool.length,tier.step<=2?5:1,
+      assert.equal(pool.length,5,
         mode+" tier "+tier.step);
       assert.ok(pool.every(p=>p.step===tier.step&&p.mode===mode));
       assert.equal(new Set(pool.map(p=>p.id)).size,pool.length);

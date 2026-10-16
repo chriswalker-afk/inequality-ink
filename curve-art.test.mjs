@@ -254,13 +254,13 @@ test("Curve picture deep links launch directly and return to unified Graph Art",
 
 test("Optional Balloon Parade gives same-level curved practice without changing the five core stages",()=>{
   assert.equal(validateCurveGallery(),true);
-  assert.equal(CURVE_PRACTICE_PICTURES.length,8);
+  assert.equal(CURVE_PRACTICE_PICTURES.length,20);
   const bonus=CURVE_PRACTICE_PICTURES[0];
   assert.equal(bonus.step,2);
   assert.equal(bonus.pieces.length,3);
   const s=session(),{$}=s;
   assert.equal($("curvePictureCards").children.length,5);
-  assert.equal($("curvePracticeCards").children.length,8);
+  assert.equal($("curvePracticeCards").children.length,20);
   $("curvePracticeCards").children[0].click();
   assert.equal($("curveGameTitle").textContent,"Balloon Parade");
   let first=interior(bonus.pieces[0]);
@@ -339,4 +339,21 @@ test("A new translated-parabola Step Up mystery completes all three regions and 
   const second=session(Object.fromEntries(s.store),true,"?picture="+p.id);
   assert.equal(second.$("curveSummary").hidden,false);
   assert.equal(second.app.readProgress().records[p.id].done,3);
+});
+
+
+test("All three advanced Curve & Fill tiers can be solved, fully revealed and resumed",()=>{
+  for(const tier of [3,4,5]){
+    const p=CURVE_PRACTICE_PICTURES.find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p);
+    const s=session({},true,"?picture="+p.id);
+    assert.equal(s.$("curvePlay").hidden,false);
+    finish(s,p);
+    assert.equal(s.app.readProgress().records[p.id].done,p.pieces.length);
+    s.$("curveRevealSkip").click();
+    assert.ok(details(s.$("graphRevealSvg")).length>=12);
+    const saved=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+    assert.equal(saved.$("curveSummary").hidden,false);
+    assert.equal(saved.app.readProgress().records[p.id].done,p.pieces.length);
+  }
 });

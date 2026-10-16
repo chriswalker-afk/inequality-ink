@@ -58,9 +58,9 @@ test("Step Up now offers five different standard mysteries per Graph Art mode",(
     ...CURVE_PICTURES,...CURVE_PRACTICE_PICTURES,
     ...PLOT_PICTURES,...PLOT_PRACTICE_PICTURES
   ];
-  assert.equal(all.length,53);
-  assert.equal(new Set(all.map(p=>p.id)).size,53,"New IDs must preserve all older saves");
-  assert.deepEqual(modes.map(m=>allByMode(m).flat().length),[13,14,13,13]);
+  assert.equal(all.length,101);
+  assert.equal(new Set(all.map(p=>p.id)).size,101,"New IDs must preserve all older saves");
+  assert.deepEqual(modes.map(m=>allByMode(m).flat().length),[25,26,25,25]);
   for(const m of modes){
     const [core,practice]=allByMode(m);
     const step=graphMysteryPool(m,2,core,practice);

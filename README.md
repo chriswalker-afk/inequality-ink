@@ -132,6 +132,62 @@ uncompleted pictures. They start the chosen task immediately, with no
 additional confirmation or compulsory help. Returning to any previous
 picture retains its own progress and replays.
 
+## Graph Art Pass 2 — all five difficulty pools complete (October 2026)
+
+**The Graph Art variety expansion has reached its original goal: 100 standard
+picture mysteries**, with **five genuine pictures at each of the five
+difficulties in all four modes**. There are **101 distinct artworks** when
+counting the optional gallery-only Diamond Kite reverse-reading exercise.
+The final batch adds **48 new harder pictures** across Ink Builder, Brain
+Stretch and Masterpiece, on top of the 53 pictures developed earlier.
+
+| Difficulty | Find & Fill | Build & Shade | Curve & Fill | Plot & Shade |
+| --- | ---: | ---: | ---: | ---: |
+| Quick Spark | 5 | 5 | 5 | 5 |
+| Step Up | 5 | 5, plus Diamond Kite optional | 5 | 5 |
+| Ink Builder | 5 | 5 | 5 | 5 |
+| Brain Stretch | 5 | 5 | 5 | 5 |
+| Masterpiece | 5 | 5 | 5 | 5 |
+
+The newer linear artwork ranges across twelve distinct subjects, including
+owls, ships, windmills, cats, rockets, lighthouses, trees, submarines,
+castles, butterflies, trains and phoenixes. The richer curved and plotted
+scenes include flowers, orbiting planets, lanterns, fish, night-sky
+observatories, underwater parades, gardens and carnival balloons.
+
+**The mathematics genuinely progresses.** The new Ink Builder pictures have
+four coloured regions per mode, combining rising/falling lines, translated
+parabolas, circles and strict boundaries. Brain Stretch introduces
+five or six pieces, fractional and standard-form linear inequalities,
+V-shaped absolute-value boundaries and selective multi-graph construction.
+Masterpieces have seven, eight or nine mathematical pieces depending on
+the mode, with dense but verifiable intersections, strict boundary styles,
+multiple forms of curve and several instances of plotting more than one
+boundary for a single piece.
+
+All painted regions are the mathematical solutions, *not image masks*.
+For the linear modes, convex polygon edges generate true half-plane
+inequalities, including standard forms and fractional gradients. For the
+curved modes, the actual circle, parabola and absolute-value equations
+define the fill. Every Plot & Shade construction must pass the real
+half-unit grid, graph-equation and dashed/solid checking logic.
+
+Original core-picture IDs, maths, existing progress, optional review aids,
+touch interactions and the picture reveal remain unchanged. New pictures
+have new independent IDs, meaningful coloured details and staged finishing
+touches. The existing difficulty-first selector continues to pick unplayed
+pictures before partly completed ones, never automatically replaying a
+completed work. The expanded optional gallery remains available for direct
+picture selection and revisiting discoveries.
+
+Regression tests verify every five-picture pool, geometrical intersection,
+tap-safe selection, strict/standard-form boundary, plotting construction,
+visual variety and **full play-through at each new difficulty in every mode**.
+
+**Next planned milestone:** a completed-only **Graph Art mural**, inspired
+by the existing Pixel Art mural but naturally built from overlapping
+curved and straight-edged colour regions.
+
 ## Graph Art Pass 2 — Step Up reaches five mysteries per mode
 
 The second variety batch adds **13 original Step Up pictures**, expanding
@@ -162,10 +218,9 @@ remains a sixth, gallery-only reverse-reading variation in Build & Shade;
 it is excluded from regular randomised choices because it uses different
 controls.
 
-**Next Pass 2 batches:** expand Ink Builder, Brain Stretch and Masterpiece,
-then build the separate completed-only Graph Art mural. The current
-library has **40 standard choices across the two easiest levels** plus
-13 other unique pictures, including the reverse-reading bonus.
+**Later update:** Ink Builder, Brain Stretch and Masterpiece have since
+reached five standard mysteries each. The separate Graph Art mural is
+the next planned milestone.
 
 Tests enforce the exact pool sizes, mathematical shapes and signatures,
 strict boundary semantics, graph construction points and full three-piece
@@ -199,9 +254,9 @@ All original stories, curves, plotting workflows, reveals and optional
 reverse-reading work remain intact. The optional picture gallery also includes
 the new artwork for deliberate selection or replay.
 
-**Subsequent Pass 2 batches:** Step Up has since been expanded to five
-choices in every mode. Next are Ink Builder, Brain Stretch and Masterpiece,
-without diluting their mathematics just to increase picture counts.
+**Later update:** all five Graph Art difficulty tiers now have five
+standard mysteries per mode. The mathematics of the upper tiers was
+expanded without changing any original artwork or student progress.
 A separate completed-only **Graph Art mural** is planned for a later pass.
 
 A dedicated test suite validates all 20 Quick Spark choices, the new 16
@@ -218,8 +273,8 @@ picture without previewing unrevealed artwork.
 - **Start a mystery** randomly chooses an unfinished picture at the selected
   difficulty, preferring untouched art and never automatically replaying an
   already completed picture. At the time of Pass 1, there was only **one
-  standard picture at most difficulties**. Pass 2 has since expanded both
-  Quick Spark and Step Up to five choices; Diamond Kite remains gallery-only.
+  standard picture at most difficulties**. Pass 2 has since expanded **all five difficulties** to five choices;
+  Diamond Kite remains gallery-only.
 - **Continue your picture** resumes partly completed work, including saved
   graph points in Plot & Shade and a partly built inequality in Build & Shade.
 - The five difficulties remain freely selectable. When everything at one

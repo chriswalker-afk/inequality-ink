@@ -421,7 +421,7 @@ test("Five unique cards switch between modes, track stage status and show saved 
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(legacy)}),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
   assert.equal($("graphStageTrack").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 13 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 25 discovered/);
   assert.ok(!$("graphStageTrack").children[0].className.includes("is-complete"),
     "One completed starter does not complete the new five-picture tier");
   assert.equal($("graphPictureCards").children[1].children[1].children[1].textContent,
@@ -635,13 +635,13 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify({
     mode:"fill",picture:"cosmic-rocket",records
   })}),{$}=s;
-  assert.match($("graphGalleryProgress").textContent,/5 of 13 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/5 of 25 discovered/);
   assert.equal($("graphStageTrack").children.length,5);
   assert.equal($("graphStageTrack").children.filter(x=>
-    x.className.includes("is-complete")).length,3,
-    "Quick Spark and Step Up still contain undiscovered extras");
+    x.className.includes("is-complete")).length,0,
+    "Completing the old five-picture journey must not claim four unseen advanced alternatives are finished");
   $("graphModeBuild").click();
-  assert.match($("graphGalleryProgress").textContent,/0 of 14 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 26 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
 });
 
@@ -716,7 +716,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModeCurve").click();
   assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 13 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 25 discovered/);
   assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
     "Difficulty-first start must hide unearned curved mystery art");
   assert.equal($("graphPreviewStage").textContent,"1 · Quick Spark",
@@ -730,7 +730,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModePlot").click();
   assert.equal($("graphModePlot").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/0 of 13 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 25 discovered/);
   $("graphPictureCards").children[0].click();
   assert.match($("graphStartPicture").textContent,/Continue picture/);
   $("graphStartPicture").click();
@@ -775,10 +775,10 @@ test("Hub query links restore the selected mode and picture",()=>{
 test("Phase 6 leaves all five original stages untouched, with one fresh practice card per linear mode",()=>{
   assert.equal(validateGraphPictureLibrary(),true);
   assert.equal(GRAPH_ART_PICTURES.length,10,"Original gallery must stay at ten");
-  assert.equal(GRAPH_PRACTICE_PICTURES.length,17);
+  assert.equal(GRAPH_PRACTICE_PICTURES.length,41);
   for(const mode of ["fill","build"]){
     const bonus=graphPracticeGallery(mode);
-    assert.equal(bonus.length,mode==="fill"?8:9);
+    assert.equal(bonus.length,mode==="fill"?20:21);
     assert.equal(bonus[0].step,2);
     assert.equal(bonus[0].pieces.length,3);
     assert.ok(bonus[0].practice);
@@ -786,7 +786,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
   }
   const s=session(),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
-  assert.equal($("graphPracticeCards").children.length,8);
+  assert.equal($("graphPracticeCards").children.length,20);
   assert.equal($("graphStageTrack").children.length,5);
   const tent=graphPracticeGallery("fill")[0];
   $("graphPracticeCards").children[0].click();
@@ -811,7 +811,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
 test("Optional reverse Build & Shade reads the shaded graph rather than showing the answer",()=>{
   const picture=graphPracticeGallery("build")[0];
   const s=session({}, "?mode=build"),{$}=s;
-  assert.equal($("graphPracticeCards").children.length,9);
+  assert.equal($("graphPracticeCards").children.length,21);
   $("graphPracticeCards").children[0].click();
   $("graphStartPicture").click();
   assert.equal($("graphPlay").hidden,false);
@@ -1026,4 +1026,48 @@ test("New Build & Shade Step Up supports gradients, strict lines and an independ
   assert.ok($("graphRevealSvg").children.length>p.pieces.length+12);
   const restored=session(Object.fromEntries(s.store),"?mode=build&picture="+p.id);
   assert.equal(restored.app.readProgress().records["build:"+p.id].done,3);
+});
+
+
+test("Ink Builder, Brain Stretch and Masterpiece Find & Fill art all complete and persist their actual polygons",()=>{
+  for(const tier of [3,4,5]){
+    const p=graphPracticeGallery("fill").find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p,"Missing new fill difficulty "+tier);
+    const s=session({},"?mode=fill&picture="+p.id),{$}=s;
+    $("graphStartPicture").click();
+    assert.equal($("graphPlay").hidden,false);
+    for(const [i,part] of p.pieces.entries()){
+      const at=centroid(intersectRegion(part.rules));
+      assert.equal(graphCellAt(part,at.x,at.y)?.correct,true,part.id);
+      s.app.pickAt(at.x,at.y);
+      $("graphCheckFill").click();
+      assert.equal(s.app.readProgress().records["fill:"+p.id].done,i+1);
+    }
+    assert.equal($("graphSummary").hidden,false);
+    s.app.showFinished();
+    assert.equal($("graphReveal").getAttribute("open"),"");
+    const restored=session(Object.fromEntries(s.store),
+      "?mode=fill&picture="+p.id);
+    assert.equal(restored.app.readProgress().records["fill:"+p.id].done,
+      p.pieces.length,"Advanced completed work must survive refresh");
+  }
+});
+test("Ink Builder, Brain Stretch and Masterpiece Build & Shade mysteries can finish with correct gradient sides and dashes",()=>{
+  for(const tier of [3,4,5]){
+    const p=graphPracticeGallery("build").find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p);
+    const s=session({},"?mode=build&picture="+p.id),{$}=s;
+    $("graphStartPicture").click();
+    for(const part of p.pieces){
+      answerRules(s,part);
+      finishBuildPiece(s);
+    }
+    assert.equal($("graphSummary").hidden,false);
+    assert.equal(s.app.readProgress().records["build:"+p.id].done,p.pieces.length);
+    s.app.showFinished();
+    const restored=session(Object.fromEntries(s.store),
+      "?mode=build&picture="+p.id);
+    assert.equal(restored.app.readProgress().records["build:"+p.id].done,
+      p.pieces.length);
+  }
 });
