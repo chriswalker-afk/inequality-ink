@@ -113,7 +113,7 @@ test("Every mode receives one original optional picture at a comparable maths st
     const names=[...progressionForLevel(mode),...extraPicturesForLevel(mode)].map(x=>x.clue);
     assert.equal(new Set(names).size,names.length);
   }
-  assert.equal(validatePictureLibrary().length,115);
+  assert.equal(validatePictureLibrary().length,125);
 });
 test("Classroom help is always visible, but no new modal or answer gate is added",()=>{
   const html=readFileSync(new URL("./index.html",import.meta.url),"utf8");
