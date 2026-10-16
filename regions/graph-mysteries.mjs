@@ -14,7 +14,10 @@ export function graphMysteryPool(mode,tier,core=[],practice=[]){
   if(!GRAPH_MYSTERY_MODES.includes(mode)||!validTier(tier))return [];
   const seen=new Set();
   return [...core,...practice].filter(p=>{
-    if(!p||p.mode!==mode||p.step!==tier||seen.has(p.id))return false;
+    // Reverse-reading uses different controls, so it remains an explicit
+    // optional gallery challenge rather than an unexpected random task.
+    if(!p||p.mode!==mode||p.step!==tier||
+       p.practiceType==="reverse"||seen.has(p.id))return false;
     seen.add(p.id);return true;
   });
 }
