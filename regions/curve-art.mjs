@@ -580,4 +580,14 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     }),render:()=>setScreen(screen),choose:choosePicture,
     start:()=>choosePicture(saved.picture),showFinished};
 }
-if(typeof document!=="undefined"&&document.getElementById("curvePicker"))initCurveArt();
+if(typeof document!=="undefined"&&document.getElementById("curvePicker")){
+  const params=new URLSearchParams(window.location?.search||"");
+  // Old page links now open the unified difficulty-first Graph Art chooser.
+  // Direct picture bookmarks and an explicit ?gallery=1 retain the older gallery.
+  if(!params.has("picture")&&!params.has("gallery")&&
+     typeof window.location?.replace==="function"){
+    const tier=Number(params.get("tier"));
+    window.location.replace("./?mode=curve"+
+      (Number.isInteger(tier)&&tier>=1&&tier<=5?"&tier="+tier:""));
+  }else initCurveArt();
+}
