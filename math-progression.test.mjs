@@ -14,7 +14,7 @@ test("Five math stages in all modes; bonus pictures retain advanced generators",
       // Student-requested alternatives have the exact same mathematical stage
       // as the core picture they offer another route through.
       const bespoke=p.legacyMathStage?.[level];
-      const expected=p.studentEncore||p.mysteryBank||(level==="mixed"&&bespoke)?bespoke:5;
+      const expected=p.studentEncore||p.mysteryBank||p.craftedMystery||(level==="mixed"&&bespoke)?bespoke:5;
       return mathematicalStage(p,level)===expected;
     }),"Old bonuses retain their maths; new ones use their stated stage");
   }
