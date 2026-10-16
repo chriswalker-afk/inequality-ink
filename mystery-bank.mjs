@@ -117,10 +117,10 @@ function decorations(rows,family,w,n,colours){
     const y=Math.round(1+(n-1)*(j+1)/4);
     const [from,to]=rows[y-1], centre=family==="half"?0:w/2-1;
     const selected=clip(centre,from,to);
-    decorations.push([selected,y,colours[j],groups[j]]);
+    decorations.push([family==="half"?w+selected:selected,y,colours[j],groups[j]]);
     const below=clip(y+1,1,n),[left,right]=rows[below-1];
     const second=clip(family==="half"?Math.min(2,right):w/2-1,left,right);
-    if(below!==y)decorations.push([second,below,colours[j],groups[j]]);
+    if(below!==y)decorations.push([family==="half"?w+second:second,below,colours[j],groups[j]]);
   }
   return {detailStages:groups,details:decorations};
 }
@@ -163,7 +163,7 @@ export const MYSTERY_BANK=Object.freeze(Object.entries(THEMES).flatMap(([mode,st
       mysteryBank:true,
       palette:{base,edge,bands:[{from:Math.max(1,Math.floor(n*.65)),to:n,fill:accent}]},
       background:{base:bg,light,shade,sparkle:"#fff9d7"},
-      detailStages:marks.detailStages,details:art?[]:marks.details,
+      detailStages:marks.detailStages,details:marks.details,
       ...(art?{paint:art}:{}),
     });
   }))
