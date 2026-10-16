@@ -38,7 +38,10 @@ function box(id,name,color,left,bottom,right,top,strict=[]){
 function make(mode,id,name,clue,description,focus,parts,details){
   return Object.freeze({
     id,name,mode,step:1,stage:"Starter",clue,description,focus,
-    pieces:Object.freeze(parts),details:Object.freeze(details),
+    pieces:Object.freeze(parts),
+    details:Object.freeze(details.map((d,i)=>Object.freeze({
+      id:id+"-detail-"+(i+1),...d
+    }))),
     practice:true,quickSpark:true
   });
 }
