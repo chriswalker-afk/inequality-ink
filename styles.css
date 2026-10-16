@@ -1580,3 +1580,62 @@ body.paint-session .mural-nav-link{display:none}
 #morePicturesSection .picture-picker{margin-top:9px}
 #morePicturesSection .picture-option{min-height:55px}
 @media(max-width:740px){.difficulty-card{min-height:59px}.mystery-decision{margin-bottom:15px}}
+
+
+/* Quadratic Quest · 25-picture, difficulty-first gallery.
+   Shared difficulty-card primitives keep visual language aligned with
+   Pixel Art and Graph Art while leaving maths controls untouched. */
+.quest-difficulty-choices{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;margin:12px 0;
+}
+.quest-difficulty-card{min-width:0;min-height:80px;cursor:pointer}
+.quest-difficulty-card:last-child:nth-child(odd){grid-column:1/-1}
+.quest-difficulty-card .difficulty-copy small{font-size:.69rem;line-height:1.35}
+.quest-difficulty-card .difficulty-copy .quest-difficulty-progress{
+  color:#408777;font-size:.68rem;font-weight:800
+}
+.quest-difficulty-card.is-complete .difficulty-stamp{
+  background:#d9f1e3;color:#347d65
+}
+.quest-mystery-decision{
+  border-color:#c5ddce;background:#f0f8f2;
+  gap:16px;margin:12px 0;
+}
+.quest-mystery-decision>div:first-child{flex:1;min-width:0}
+.quest-mystery-decision #questSelectedTitle{font-size:1.01rem}
+.quest-mystery-decision #questSelectedSummary{line-height:1.5}
+.quest-mystery-decision #questTierStatus{
+  color:#408b76;font-weight:800;margin-top:8px
+}
+.quest-mystery-buttons{display:grid;gap:8px;min-width:220px}
+.quest-mystery-buttons .button{min-height:42px;font-size:.82rem}
+.quest-mystery-buttons .button:disabled{opacity:.62;cursor:default}
+.quest-mystery-buttons [hidden]{display:none!important}
+.quest-optional-gallery{
+  border:1px solid #dfe8df;background:#fcfdf9;
+  border-radius:12px;padding:11px 14px;margin-top:14px;
+}
+.quest-optional-gallery summary{
+  font-size:.81rem;font-weight:820;color:#367867;
+  cursor:pointer;list-style-position:inside;
+}
+.quest-optional-gallery>p{
+  font-size:.73rem;line-height:1.5;color:#70808b;
+  margin:9px 0 1px
+}
+.quest-optional-gallery .quest-picture-grid{margin:10px 0 0}
+.quest-picture-choice--complete{background:#f0f8f2}
+.quest-picture-choice--complete .quest-picture-number{
+  background:#d7eee2;color:#33846a
+}
+.quest-picture-choice--complete .quest-picture-status{color:#2f9577}
+@media(max-width:740px){
+  .quest-difficulty-choices{grid-template-columns:1fr;gap:8px}
+  .quest-difficulty-card:last-child:nth-child(odd){grid-column:auto}
+  .quest-difficulty-card{min-height:65px}
+  .quest-mystery-decision{align-items:stretch;gap:10px}
+  .quest-mystery-buttons{width:100%;min-width:0}
+  .quest-mystery-buttons .button{width:100%}
+  .quest-optional-gallery{padding:11px}
+}
