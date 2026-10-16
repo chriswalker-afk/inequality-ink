@@ -463,7 +463,7 @@ function renderDifficultyPicker(){
  $("mysteryStartButton").textContent=remaining?"Start a "+tierNames(selectedTier)+" mystery →":"All discovered ✓";
  $("mysteryContinueButton").hidden=underway.length===0;
  $("mysteryContinueButton").textContent=underway.length?
-   "Continue your picture · "+underway[0].done+" of "+(4+2*selectedTier)+" →":"Continue your picture →";
+   "Continue your picture · "+state.progress[progressKey(level,underway[0].id)].done+" of "+(4+2*selectedTier)+" →":"Continue your picture →";
  const track=$("pictureStepTrack");track.replaceChildren();
  for(const [i,t]of totals.entries()){
    const marker=document.createElement("span");marker.className="picture-step"+
