@@ -1,3 +1,4 @@
+import {rememberGraphMuralDiscoveries} from "./graph-mural-model.mjs";
 import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
 import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
@@ -6,7 +7,7 @@ import {
 } from "./curved-engine.mjs";
 import {
   CURVE_PICTURES,CURVE_PRACTICE_PICTURES,curveAllPictures,CURVE_STAGES,curvePicture,validateCurveGallery
-} from "./curve-pictures.mjs?v=graph-advanced-v1";
+} from "./curve-pictures.mjs?v=graph-mural-v1";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-WORLD.xmin)*GRID/(WORLD.xmax-WORLD.xmin);
@@ -318,6 +319,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   }
   function summaryView(){
     const p=picture();
+    $("curveMuralLink").href="./graph-mural.html?found="+encodeURIComponent("curve:"+p.id);
     $("curveSummaryTitle").textContent=p.name;
     $("curveSummaryText").textContent=
       "You created "+p.pieces.length+" coloured shapes by finding the intersection of their curved inequalities.";
@@ -399,7 +401,8 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       playView();return;
     }
     record().done++;
-    persist();selected=null;setWhy(null);stopFlash();cursor={x:0,y:0};hint="";
+    persist();
+    if(record().done===picture().pieces.length)rememberGraphMuralDiscoveries(storage);selected=null;setWhy(null);stopFlash();cursor={x:0,y:0};hint="";
     if(!current()){
       setScreen("summary");openReveal();
     }else{
@@ -411,6 +414,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     if(typeof win.confirm==="function"&&!win.confirm(
       "Restart this picture? Only this picture's progress will be reset."))return;
     stopFlash();stopReveal();
+    if(record().done===picture().pieces.length)rememberGraphMuralDiscoveries(storage);
     record().done=0;record().replays++;
     persist();selected=null;setWhy(null);cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
     notify("Find the common region.");setScreen("play");
