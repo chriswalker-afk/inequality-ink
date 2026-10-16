@@ -40,7 +40,7 @@ function make(mode,id,name,clue,description,focus,parts,details){
     id,name,mode,step:1,stage:"Starter",clue,description,focus,
     pieces:Object.freeze(parts),
     details:Object.freeze(details.map((d,i)=>Object.freeze({
-      id:id+"-detail-"+(i+1),...d
+      id:id+"-detail-"+(i+1),...d,stage:d.stage-1
     }))),
     practice:true,quickSpark:true
   });
