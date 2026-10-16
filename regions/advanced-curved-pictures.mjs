@@ -101,7 +101,7 @@ const SUBJECTS=[
       ["glowing-bubble","disk",3,-3]]},
   {motif:"carnival",curve:"Cloud Nine Carnival",plot:"Sky Balloon Festival",
     clue:"A World Above the Clouds",
-    parts:[["left-air-balloon","disk",-2.5,2],["central-air-balloon","disk",0,2.75],
+    parts:[["left-air-balloon","disk",-2.5,2],["central-air-balloon","disk",0,2.5],
       ["right-air-balloon","disk",2.5,2],["left-hanging-string","stripe",-2.5,-1],
       ["middle-hanging-string","stripe",0,-1],
       ["right-hanging-string","stripe",2.5,-1],
