@@ -429,7 +429,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function summaryView(){
     const p=picture();
-    $("plotMuralLink").href="./graph-mural.html?found="+encodeURIComponent("plot:"+p.id);
+    if($("plotMuralLink"))$("plotMuralLink").href="./graph-mural.html?found="+encodeURIComponent("plot:"+p.id);
     $("plotSummaryTitle").textContent=p.name;
     $("plotSummaryText").textContent=
       "You constructed mathematical boundaries and found "+p.pieces.length+
