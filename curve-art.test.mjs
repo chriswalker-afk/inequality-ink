@@ -320,3 +320,23 @@ test("A new parabolic Quick Spark plays through both regions and all three finis
   const resumed=session(Object.fromEntries(s.store),true,"?picture="+p.id);
   assert.equal(resumed.$("curveSummary").hidden,false);
 });
+
+
+test("A new translated-parabola Step Up mystery completes all three regions and keeps progress",()=>{
+  const p=CURVE_PRACTICE_PICTURES.find(t=>t.id==="step-blooming-tulip");
+  assert.ok(p);
+  const s=session({},true,"?picture="+p.id);
+  assert.equal(s.$("curveGameTitle").textContent,p.name);
+  assert.equal(s.$("curvePlay").hidden,false);
+  for(const [i,[x,y]] of [[-1,2],[1,2],[0,-1]].entries()){
+    s.app.pickAt(x,y);
+    s.$("graphCheckFill").click();
+    assert.equal(s.app.readProgress().records[p.id].done,i+1);
+  }
+  assert.equal(s.$("curveSummary").hidden,false);
+  s.$("curveRevealSkip").click();
+  assert.ok(details(s.$("graphRevealSvg")).length>=12);
+  const second=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+  assert.equal(second.$("curveSummary").hidden,false);
+  assert.equal(second.app.readProgress().records[p.id].done,3);
+});
