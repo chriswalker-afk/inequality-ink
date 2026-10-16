@@ -237,6 +237,8 @@ function currentMode() {
 }
 function currentTip(mode){
   const playing=id=>document.getElementById(id)?.hidden===false;
+  if(playing("graphPicker")&&document.getElementById("graphDifficultyChoices"))
+    return "Right now: choose your mathematical difficulty, then Start a mystery. Continue saved work separately, or open Picture gallery to replay.";
   if(mode==="plot"&&playing("plotPlay")){
     const step=document.querySelector("#plotPhaseTrack .plot-phase.is-current")?.dataset.step;
     const tips={
