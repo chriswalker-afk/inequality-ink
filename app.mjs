@@ -481,6 +481,7 @@ function renderPicturePicker(){
    "Choose your difficulty, then paint a surprise in colour.":
    "Choose the maths; uncover the picture one correct inequality at a time.";
  renderDifficultyPicker();
+ const next=core.find(p=>!state.progress[progressKey(level,p.id)]?.completed);
  const cardFor=picture=>{
    const selected=activePicture().id===picture.id,
      progress=state.progress[progressKey(level,picture.id)]||blank(),
