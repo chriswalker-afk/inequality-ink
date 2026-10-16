@@ -113,9 +113,9 @@ export const LINEAR_STEP_UPS=Object.freeze([
       poly("sunflower-pot","The terracotta pot","#d88e7b",
         [[-2,-1.25],[2,-1.25],[1.50,-3.50],[-1.50,-3.50]]),
       poly("sunflower-stem","The leafy stalk","#86bb91",
-        rect(-.40,-1.25,.40,2)),
+        rect(-.50,-1.25,.50,2)),
       poly("sunflower-head","The golden flower","#f0c875",
-        diamond(0,2.6,1.35,1.35))
+        diamond(0,2.5,1.25,1.25))
     ],[
       C(0,0,2.6,.40,"#936c57"),
       C(0,-.17,2.75,.075,"#fff0c1"),
@@ -133,11 +133,11 @@ export const LINEAR_STEP_UPS=Object.freeze([
     "A tall sloping lighthouse, luminous lantern room and pointed roof shine at sea.",
     "Use two gentle gradients and clear vertical and horizontal restrictions",[
       poly("light-tower","The lighthouse tower","#b1bfcb",
-        [[-1.45,-3.50],[1.45,-3.50],[.80,1.50],[-.80,1.50]]),
+        [[-1.50,-3.50],[1.50,-3.50],[.75,1.50],[-.75,1.50]]),
       poly("light-room","The glowing window","#f3d48a",
-        rect(-.95,1.50,.95,2.80)),
+        rect(-1,1.50,1,2.75)),
       poly("light-roof","The pointed roof","#d98e91",
-        [[-1.35,2.8],[1.35,2.8],[0,4.00]])
+        [[-1.25,2.75],[1.25,2.75],[0,4.00]])
     ],[
       R(0,-.42,-2.65,.84,1.15,"#607b90"),
       R(0,-.35,.05,.70,.75,"#dbeff0"),
@@ -155,11 +155,11 @@ export const LINEAR_STEP_UPS=Object.freeze([
     "Assemble a dark geometric body, pale belly and triangular orange beak.",
     "Rising and falling half-planes · a strict boundary · three regions",[
       poly("penguin-body","The penguin","#526f87",
-        diamond(0,-.2,2.25,3.15)),
+        diamond(0,-.25,2.25,3)),
       poly("penguin-belly","The snowy belly","#e5e9dd",
-        diamond(0,-.8,1.35,1.8),{strict:[1]}),
+        diamond(0,-.75,1.25,1.75),{strict:[1]}),
       poly("penguin-beak","The orange beak","#f2bd73",
-        [[-.50,1.15],[.50,1.15],[0,.40]])
+        [[-.50,1.25],[.50,1.25],[0,.50]])
     ],[
       C(0,-.73,1.85,.18,"#eaf2eb"),C(0,.73,1.85,.18,"#eaf2eb"),
       C(0,-.72,1.85,.09,"#344b61"),C(0,.72,1.85,.09,"#344b61"),
@@ -176,11 +176,11 @@ export const LINEAR_STEP_UPS=Object.freeze([
     "Shape a cosy house using a triangular roof, square walls and a little door.",
     "Interpret diagonal boundaries with one dashed edge among solid lines",[
       poly("cabin-walls","Golden cabin","#e5bf8d",
-        rect(-2.65,-3.20,2.65,.65)),
+        rect(-2.75,-3.25,2.75,.75)),
       poly("cabin-roof","The red roof","#cf8a8b",
-        [[-3.4,.65],[3.4,.65],[0,3.7]],{strict:[1]}),
+        [[-3.50,.75],[3.50,.75],[0,3.75]],{strict:[1]}),
       poly("cabin-door","The wooden door","#8d7190",
-        rect(-.65,-3.2,.65,-.70))
+        rect(-.75,-3.25,.75,-.75))
     ],[
       R(0,-2.0,-1.1,.85,.8,"#b8d9d8"),
       R(0,1.15,-1.1,.85,.8,"#b8d9d8"),
@@ -198,11 +198,11 @@ export const LINEAR_STEP_UPS=Object.freeze([
     "Combine a faceted balloon, its hanging rigging and a little passenger basket.",
     "Three connected regions · diagonals · open and closed boundaries",[
       poly("balloon-envelope","The balloon","#d998aa",
-        diamond(0,1.65,2.3,2.35),{strict:[2]}),
+        diamond(0,1.75,2.25,2.25),{strict:[2]}),
       poly("balloon-harness","The hanging ropes","#85b9c4",
-        [[-1.10,-.5],[1.10,-.5],[.50,-2.40],[-.50,-2.40]]),
+        [[-1.00,-.50],[1.00,-.50],[.50,-2.50],[-.50,-2.50]]),
       poly("balloon-basket","The basket","#deb882",
-        rect(-1.05,-3.45,1.05,-2.15))
+        rect(-1.00,-3.50,1.00,-2.25))
     ],[
       L(0,0,3.9,0,-.25,"#f6d8c9",.09),
       L(0,-1.85,1.65,1.85,1.65,"#f5c2c7",.08),
@@ -220,12 +220,12 @@ export const LINEAR_STEP_UPS=Object.freeze([
     "Grow a cactus with two upward arms from simple intersecting straight lines.",
     "Rising slopes and mixed solid/dashed boundaries; compare gradient signs",[
       poly("cactus-trunk","Tall green trunk","#6aa98c",
-        rect(-.8,-3.5,.8,2.90)),
+        rect(-.75,-3.5,.75,3)),
       poly("cactus-left-arm","The left arm","#80bda0",
-        [[-.8,-1.05],[-2.80,-.15],[-2.45,1.45],[-1.65,1.45]],
+        [[-.75,-1.00],[-2.75,-.25],[-2.50,1.50],[-1.75,1.50]],
         {strict:[1]}),
       poly("cactus-right-arm","The right arm","#80bda0",
-        [[.8,-1.05],[2.80,-.15],[2.45,1.45],[1.65,1.45]])
+        [[.75,-1.00],[2.75,-.25],[2.50,1.50],[1.75,1.50]])
     ],[
       L(0,-.32,-2.7,-.3,2.35,"#b3d9b4",.065),
       L(0,.32,-2.7,.3,2.35,"#b3d9b4",.065),
