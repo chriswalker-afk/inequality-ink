@@ -846,4 +846,14 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }),start:begin,render:()=>setScreen(screen),showFinished
   };
 }
-if(typeof document!=="undefined"&&document.getElementById("plotPicker"))initPlotArt();
+if(typeof document!=="undefined"&&document.getElementById("plotPicker")){
+  const params=new URLSearchParams(window.location?.search||"");
+  // Old page links now open the unified difficulty-first Graph Art chooser.
+  // Direct picture bookmarks and an explicit ?gallery=1 retain the older gallery.
+  if(!params.has("picture")&&!params.has("gallery")&&
+     typeof window.location?.replace==="function"){
+    const tier=Number(params.get("tier"));
+    window.location.replace("./?mode=plot"+
+      (Number.isInteger(tier)&&tier>=1&&tier<=5?"&tier="+tier:""));
+  }else initPlotArt();
+}
