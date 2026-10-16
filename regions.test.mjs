@@ -948,3 +948,41 @@ test("Curve and Plot mystery routes carry the selected tier and preserve direct 
       "Deliberately chosen gallery URLs must remain unchanged");
   }
 });
+
+
+test("New Find & Fill Quick Spark completes with a genuine two-region reveal and saved ID",()=>{
+  const p=graphPracticeGallery("fill").find(item=>item.id==="quick-treehouse-sapling");
+  assert.ok(p);
+  const s=session({}, "?mode=fill&picture="+p.id),{$}=s;
+  $("graphStartPicture").click();
+  assert.equal($("graphPlay").hidden,false);
+  for(const [i,part] of p.pieces.entries()){
+    const at=centroid(intersectRegion(part.rules));
+    assert.equal(graphCellAt(part,at.x,at.y)?.correct,true);
+    s.app.pickAt(at.x,at.y);
+    $("graphCheckFill").click();
+    assert.equal(s.app.readProgress().records["fill:"+p.id].done,i+1);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal($("graphReveal").getAttribute("open"),"");
+  s.app.showFinished();
+  assert.ok($("graphRevealSvg").children.length>p.pieces.length+8,
+    "Specific decorations should enrich the new mathematical artwork");
+  assert.equal(JSON.parse(s.store.get(GRAPH_ART_SAVE_KEY)).records["fill:"+p.id].done,2);
+});
+test("New Build & Shade Quick Spark includes a real dashed inequality and completes normally",()=>{
+  const p=graphPracticeGallery("build").find(item=>item.id==="quick-power-cell");
+  assert.ok(p);
+  const s=session({}, "?mode=build&picture="+p.id),{$}=s;
+  $("graphStartPicture").click();
+  assert.equal($("graphPlay").hidden,false);
+  assert.ok(p.pieces.some(part=>part.rules.some(r=>!r.inclusive)));
+  for(const part of p.pieces){
+    answerRules(s,part);
+    finishBuildPiece(s);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal(s.app.readProgress().records["build:"+p.id].done,2);
+  s.app.showFinished();
+  assert.ok($("graphRevealSvg").children.length>p.pieces.length+8);
+});
