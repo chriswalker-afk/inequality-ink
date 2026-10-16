@@ -338,7 +338,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     ]);
     $("curveNextPicture").hidden=!fromMystery&&
       (!!p.practice||p.step===CURVE_PICTURES.length);
-    if(fromMystery)$("curveNextPicture").textContent="Another mystery →";
+    if(fromMystery)$("curveNextPicture").textContent="Explore more challenges →";
   }
   function setScreen(next){
     screen=next;
