@@ -967,7 +967,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   }
   function summaryView(){
     const p=picture();
-    $("graphMuralLink").href="./graph-mural.html?found="+encodeURIComponent(mode()+":"+p.id);
+    if($("graphMuralLink"))$("graphMuralLink").href="./graph-mural.html?found="+encodeURIComponent(mode()+":"+p.id);
     $("graphSummaryTitle").textContent=p.name+" ✦";
     $("graphSummaryText").textContent="You created every piece from the common solutions of simultaneous inequalities.";
     $("graphSummaryStats").textContent="Stage "+p.step+" · "+p.stage+" · "+
