@@ -5,7 +5,7 @@ import {
  pictureWidth,fullPictureWidth,pictureHeight,questionCount,pictureAxis,
  makePictureQuestion,picturePaintedValues,picturePixelAt,pictureColourAt,
  pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
-} from "./picture-engine.mjs?v=difficulty-first-v1";
+} from "./picture-engine.mjs?v=five-mysteries-v1";
 import {makePaintQuestion,paintTarget,checkPaintRow} from "./paint-engine.mjs";
 import {initQuadraticQuest} from "./quadratic-quest-ui.mjs";
 import {initWorkingPad} from "./working-space.mjs";
