@@ -285,7 +285,7 @@ test("Choose a picture shows five quick-win steps with accurate row and colour c
    assert.ok($("pictureSummary").textContent.includes("Quick win"));
    const legacy=LEGACY_ORDER[level];
    assert.equal($("extraPicturePicker").children.length,
-     level==="mirror"?14:level==="paint"?13:level==="mixed"?20:15);
+     level==="mirror"?21:level==="paint"?20:level==="mixed"?23:22);
    for(const id of legacy){
      const pic=pictureById(id);
      const selectable=[...$("picturePicker").children,
