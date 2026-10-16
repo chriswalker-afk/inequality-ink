@@ -638,8 +638,8 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   assert.match($("graphGalleryProgress").textContent,/5 of 25 discovered/);
   assert.equal($("graphStageTrack").children.length,5);
   assert.equal($("graphStageTrack").children.filter(x=>
-    x.className.includes("is-complete")).length,3,
-    "Quick Spark and Step Up still contain undiscovered extras");
+    x.className.includes("is-complete")).length,0,
+    "Completing the old five-picture journey must not claim four unseen advanced alternatives are finished");
   $("graphModeBuild").click();
   assert.match($("graphGalleryProgress").textContent,/0 of 26 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
