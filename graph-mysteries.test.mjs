@@ -30,16 +30,19 @@ test("Graph Art offers five freely accessible mathematical difficulties in four 
     assert.equal(practice.length,1);
     for(const tier of GRAPH_MYSTERY_LEVELS){
       const pool=graphMysteryPool(mode,tier.step,core,practice);
-      assert.equal(pool.length,tier.step===2?2:1,mode+" tier "+tier.step);
+      assert.equal(pool.length,tier.step===2&&mode!=="build"?2:1,
+        mode+" tier "+tier.step);
       assert.ok(pool.every(p=>p.step===tier.step&&p.mode===mode));
       assert.equal(new Set(pool.map(p=>p.id)).size,pool.length);
-      if(tier.step===2)assert.ok(pool.some(p=>p.practice));
+      if(tier.step===2&&mode!=="build")assert.ok(pool.some(p=>p.practice));
+      assert.ok(pool.every(p=>p.practiceType!=="reverse"),
+        "A reverse-reading challenge must remain an opt-in variation");
     }
   }
 });
 test("Completed pictures never enter random choices, and fresh mysteries come first",()=>{
-  const [core,practice]=galleries("build");
-  const pool=graphMysteryPool("build",2,core,practice);
+  const [core,practice]=galleries("fill");
+  const pool=graphMysteryPool("fill",2,core,practice);
   const data=new Map(),record=p=>data.get(p.id)||{done:0,line:0};
   assert.equal(graphPickMystery(pool,record,()=>0),pool[0]);
   assert.equal(graphPickMystery(pool,record,()=>.9999),pool[1]);
