@@ -213,3 +213,22 @@ test("Graph Art landing page shows Complex Quest rather than redundant instructi
   assert.ok(hub.includes("Complex Quest"));
   assert.ok(html.includes("complex-quest-app.mjs"));
 });
+
+test("Complex Quest reuses the exact Graph Art studio switch and active-link styling",()=>{
+  const studio=readFileSync(new URL("./regions/index.html",import.meta.url),"utf8");
+  const switchMarkup=source=>{
+    const match=source.match(/<nav class="studio-switch" aria-label="Art style">[\s\S]*?<\/nav>/);
+    assert.ok(match,"The navigation switch should be present");
+    return match[0];
+  };
+  assert.equal(switchMarkup(html),switchMarkup(studio),
+    "Complex Quest must use the same icons, labels, links and selected state as Graph Art");
+  const markup=switchMarkup(html);
+  assert.match(markup,/<svg viewBox="0 0 20 20"/);
+  assert.match(markup,/<a class="studio-tab is-active" href="\.\/" aria-current="page">/);
+  assert.doesNotMatch(markup,/[▦⌁]/,
+    "Text glyphs cause inconsistent appearance in the switch");
+  const css=readFileSync(new URL("./styles.css",import.meta.url),"utf8");
+  assert.match(css,/\.studio-switch \.studio-tab:visited:not\(\[aria-current="page"\]\)/,
+    "Visited links have a separate selector: active navigation must carry aria-current");
+});
