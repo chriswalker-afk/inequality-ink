@@ -407,7 +407,7 @@ test("Mystery-launched plot challenges return to their chosen difficulty",()=>{
   assert.equal(s.$("plotSummary").hidden,false);
   assert.equal(s.$("plotNextPicture").hidden,false,
     "Finished Masterpieces can return to difficulty-first selection");
-  assert.match(s.$("plotNextPicture").textContent,/Another mystery/);
+  assert.match(s.$("plotNextPicture").textContent,/more challenges/i);
   s.$("plotNextPicture").click();
   assert.equal(s.redirects.at(-1),"./?mode=plot&tier=5");
   const back=session({},false,"?picture="+PLOT_PICTURES[1].id+"&from=mystery&tier=2");
