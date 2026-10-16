@@ -719,8 +719,8 @@ test("One Graph Art studio switches across four galleries without mixing progres
   assert.match($("graphGalleryProgress").textContent,/1 of 10 discovered/);
   assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
     "Difficulty-first start must hide unearned curved mystery art");
-  assert.equal($("graphPreviewStage").textContent,"2 · Step Up",
-    "Completed first stage should recommend the next challenge");
+  assert.equal($("graphPreviewStage").textContent,"1 · Quick Spark",
+    "The new easy mysteries remain available after the original first stage");
   $("graphPictureCards").children[0].click();
   assert.match($("graphStartPicture").textContent,/View completed picture/);
   assert.equal($("graphPicker").hidden,false,
