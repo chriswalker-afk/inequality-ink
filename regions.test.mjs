@@ -850,3 +850,96 @@ test("Optional reverse Build & Shade reads the shaded graph rather than showing 
   assert.equal(restored.app.readProgress().records["build:"+picture.id].done,3);
   assert.equal(restored.$("graphPictureCards").children.length,5);
 });
+
+
+test("Difficulty-first hub keeps all unfinished artwork secret until the student begins",()=>{
+  const s=session(),{$}=s;
+  assert.equal($("graphDifficultyChoices").children.length,5);
+  assert.equal($("graphDifficultyChoices").children[0].getAttribute("aria-pressed"),"true");
+  assert.equal($("graphPreviewName").textContent,"Mystery artwork");
+  assert.equal($("graphPictureGallery").open,undefined,
+    "Gallery should not be expanded by the game");
+  assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
+    "A fresh mystery cannot preview its coloured art");
+  assert.match($("graphMysteryHint").textContent,/1 new or unfinished mystery/);
+  $("graphStartMystery").click();
+  assert.equal($("graphPlay").hidden,false);
+  assert.equal(s.app.readProgress().picture,"signal-flag");
+  assert.equal($("graphReveal").getAttribute("open"),null);
+  $("graphBack").click();
+  assert.equal($("graphPreviewName").textContent,"Mystery artwork");
+});
+test("Difficulty selection restores per-mode levels and never alters student game saves",()=>{
+  const s=session(),{$}=s,original=s.store.get("inequality-ink-v5");
+  $("graphDifficultyChoices").children[4].click();
+  assert.equal($("graphDifficultyChoices").children[4].getAttribute("aria-pressed"),"true");
+  assert.match($("graphMysteryHint").textContent,/9 mathematical pieces/);
+  const choices=JSON.parse(s.store.get("inequality-ink-graph-mystery-tiers-v1"));
+  assert.equal(choices.fill,5);
+  assert.equal(s.store.get("inequality-ink-v5"),original);
+  $("graphModeBuild").click();
+  $("graphDifficultyChoices").children[1].click();
+  assert.equal(JSON.parse(s.store.get("inequality-ink-graph-mystery-tiers-v1")).build,2);
+  const restored=session(Object.fromEntries(s.store));
+  assert.equal(restored.$("graphDifficultyChoices").children[4].getAttribute("aria-pressed"),"true");
+  restored.$("graphModeBuild").click();
+  assert.equal(restored.$("graphDifficultyChoices").children[1].getAttribute("aria-pressed"),"true");
+});
+test("Step Up mystery randomiser skips solved art; Continue resumes exact partial work",()=>{
+  const core=graphModeGallery("fill")[1],bonus=graphPracticeGallery("fill")[0];
+  const initial={mode:"fill",picture:core.id,records:{
+    ["fill:"+core.id]:{done:1,line:0,replays:0}
+  }};
+  const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(initial)}),{$}=s;
+  $("graphDifficultyChoices").children[1].click();
+  assert.match($("graphMysteryHint").textContent,/2 new or unfinished mysteries/);
+  assert.equal($("graphContinueMystery").hidden,false);
+  $("graphStartMystery").click();
+  assert.equal(s.app.readProgress().picture,bonus.id,
+    "Untouched picture should be preferred to abandoning partially completed art");
+  $("graphBack").click();
+  $("graphContinueMystery").click();
+  assert.equal(s.app.readProgress().picture,core.id);
+  assert.equal(s.app.readProgress().records["fill:"+core.id].done,1);
+  $("graphBack").click();
+  // Completing the core cannot cause a repeated core picture via Start.
+  s.app.readProgress(); 
+  const done={mode:"fill",picture:core.id,records:{
+    ["fill:"+core.id]:{done:core.pieces.length,line:0,replays:0}
+  }};
+  const next=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(done)}),$next=next.$;
+  $next("graphDifficultyChoices").children[1].click();
+  $next("graphStartMystery").click();
+  assert.equal(next.app.readProgress().picture,bonus.id);
+  const allDone={mode:"fill",picture:core.id,records:{
+    ["fill:"+core.id]:{done:core.pieces.length,line:0,replays:0},
+    ["fill:"+bonus.id]:{done:bonus.pieces.length,line:0,replays:0}
+  }};
+  const complete=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(allDone)}),$all=complete.$;
+  $all("graphDifficultyChoices").children[1].click();
+  assert.equal($all("graphStartMystery").disabled,true);
+  assert.equal($all("graphContinueMystery").hidden,true);
+  assert.match($all("graphPreviewProgress").textContent,/All discovered/);
+  // A gallery replay remains available, but is never selected automatically.
+  $all("graphPracticeCards").children[0].click();
+  assert.match($all("graphStartPicture").textContent,/View completed picture/);
+  $all("graphStartPicture").click();
+  assert.equal($all("graphSummary").hidden,false);
+});
+test("Curve and Plot mystery routes carry the selected tier and preserve direct gallery links",()=>{
+  for(const mode of ["curve","plot"]){
+    const s=session({},"?mode="+mode),{$}=s;
+    assert.equal($("graphDifficultyChoices").children.length,5);
+    $("graphDifficultyChoices").children[1].click();
+    $("graphStartMystery").click();
+    assert.match(s.redirects.at(-1),new RegExp("^\\./"+mode+
+      "\\.html\\?picture=[^&]+&from=mystery&tier=2$"));
+    assert.equal($("graphPicker").hidden,false,
+      "The destination page starts the lesson; the shared hub is preserved");
+    const old=session({},"?mode="+mode+"&picture="+
+      (mode==="curve"?"rolling-hills":"ice-cream-dream"));
+    old.$("graphStartPicture").click();
+    assert.ok(!old.redirects.at(-1).includes("from=mystery"),
+      "Deliberately chosen gallery URLs must remain unchanged");
+  }
+});
