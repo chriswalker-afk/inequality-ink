@@ -428,3 +428,18 @@ test("A new Plot & Shade Quick Spark can be plotted, shaded, completed and resum
   assert.equal(restored.$("plotSummary").hidden,false);
   assert.equal(restored.app.readProgress().done,2);
 });
+
+
+test("Garden Daisy Step Up constructs vertical line, parabola and circle to complete its reveal",()=>{
+  const p=PLOT_PRACTICE_PICTURES.find(t=>t.id==="step-plot-garden-daisy");
+  assert.ok(p);
+  const s=session({},true,"?picture="+p.id);
+  assert.equal(s.$("plotGameTitle").textContent,p.name);
+  assert.equal(s.$("plotPlay").hidden,false);
+  completePicture(s,p);
+  assert.equal(s.app.readProgress().done,3);
+  assert.equal(s.$("plotSummary").hidden,false);
+  const restored=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+  assert.equal(restored.$("plotSummary").hidden,false);
+  assert.equal(restored.app.readProgress().done,3);
+});
