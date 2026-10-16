@@ -988,3 +988,42 @@ test("New Build & Shade Quick Spark includes a real dashed inequality and comple
   s.app.showFinished();
   assert.ok($("graphRevealSvg").children.length>p.pieces.length+8);
 });
+
+
+test("New Step Up Find & Fill picture paints three real sloped regions and saves its reveal",()=>{
+  const p=graphPracticeGallery("fill").find(t=>t.id==="step-bubble-fish");
+  assert.ok(p);
+  const s=session({},"?mode=fill&picture="+p.id),{$}=s;
+  $("graphStartPicture").click();
+  assert.equal($("graphPlay").hidden,false);
+  for(const [i,part] of p.pieces.entries()){
+    const middle=centroid(intersectRegion(part.rules));
+    assert.equal(graphCellAt(part,middle.x,middle.y)?.correct,true,part.id);
+    s.app.pickAt(middle.x,middle.y);
+    $("graphCheckFill").click();
+    assert.equal(s.app.readProgress().records["fill:"+p.id].done,i+1);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  s.app.showFinished();
+  assert.ok($("graphRevealSvg").children.length>p.pieces.length+12);
+  const restored=session(Object.fromEntries(s.store),"?mode=fill&picture="+p.id);
+  assert.equal(restored.app.readProgress().records["fill:"+p.id].done,3);
+  assert.equal(restored.$("graphSummary").hidden,false);
+});
+test("New Build & Shade Step Up supports gradients, strict lines and an independent save",()=>{
+  const p=graphPracticeGallery("build").find(t=>t.id==="step-happy-penguin");
+  assert.ok(p);
+  const s=session({},"?mode=build&picture="+p.id),{$}=s;
+  $("graphStartPicture").click();
+  assert.ok(p.pieces.some(part=>part.rules.some(rule=>!rule.inclusive)));
+  for(const part of p.pieces){
+    answerRules(s,part);
+    finishBuildPiece(s);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal(s.app.readProgress().records["build:"+p.id].done,3);
+  s.app.showFinished();
+  assert.ok($("graphRevealSvg").children.length>p.pieces.length+12);
+  const restored=session(Object.fromEntries(s.store),"?mode=build&picture="+p.id);
+  assert.equal(restored.app.readProgress().records["build:"+p.id].done,3);
+});
