@@ -414,3 +414,17 @@ test("Mystery-launched plot challenges return to their chosen difficulty",()=>{
   back.$("plotBack").click();
   assert.equal(back.redirects.at(-1),"./?mode=plot&tier=2");
 });
+
+
+test("A new Plot & Shade Quick Spark can be plotted, shaded, completed and resumed",()=>{
+  const p=PLOT_PRACTICE_PICTURES.find(item=>item.id==="quick-plot-sky-kite");
+  assert.ok(p);
+  const s=session({},true,"?picture="+p.id);
+  assert.equal(s.$("plotPlay").hidden,false);
+  completePicture(s,p);
+  assert.equal(s.app.readProgress().done,2);
+  assert.equal(s.$("plotSummary").hidden,false);
+  const restored=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+  assert.equal(restored.$("plotSummary").hidden,false);
+  assert.equal(restored.app.readProgress().done,2);
+});
