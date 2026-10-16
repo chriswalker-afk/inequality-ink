@@ -1629,3 +1629,32 @@ test("A surprise picture starts a fresh bonus without changing the five-step jou
  }
  $("paintBack").click();
 });
+
+test("Difficulty-first random mystery avoids completed art and resumes partial art",()=>{
+  const mode=levels.find(x=>x.dataset.level==="mirror");
+  mode.click();
+  assert.equal($("difficultyPicker").children.length,5);
+  const second=$("difficultyPicker").children[1];
+  second.click();
+  assert.equal(second.getAttribute("aria-pressed"),"true");
+  assert.ok($("mysteryTierStatus").textContent.includes("questions each"));
+  const old=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+  const oldCompleted=new Set(Object.entries(old.progress).filter(([k,r])=>
+    k.startsWith("mirror:")&&r.completed).map(([key])=>key));
+  $("mysteryStartButton").click();
+  assert.equal($("playScreen").hidden,false);
+  const after=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+  const chosen=after.selectedPictures.mirror;
+  assert.equal(pictureById(chosen).rows.length,8);
+  assert.equal(oldCompleted.has("mirror:"+chosen),false);
+  if(!(after.progress["mirror:"+chosen]?.done>0)){
+    answerCurrent(pictureById(chosen),0,"mirror");
+  }
+  $("changeLevelButton").click();
+  assert.equal($("mysteryContinueButton").hidden,false);
+  $("mysteryContinueButton").click();
+  const resumed=JSON.parse(localStorage.getItem("inequality-ink-v5"));
+  assert.equal(resumed.selectedPictures.mirror,chosen);
+  assert.ok(resumed.progress["mirror:"+chosen].done>0);
+  $("changeLevelButton").click();
+});
