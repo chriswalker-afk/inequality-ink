@@ -52,11 +52,17 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   const graph=$("graphArtGraph"),reveal=$("curveReveal"),revealSvg=$("graphRevealSvg");
   const start=readCurveSave(storage);
   let saved={picture:start.picture,records:start.records};
-  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  const params=new URLSearchParams(win.location?.search||"");
+  const requestedPicture=params.get("picture");
   const linkedPicture=curvePicture(requestedPicture)?.id||null;
+  const fromMystery=params.get("from")==="mystery";
   function returnToHub(id=saved.picture){
     if(!linkedPicture||typeof win.location?.assign!=="function")return false;
-    win.location.assign("./?mode=curve&picture="+encodeURIComponent(id));
+    // Mystery-first journeys return to the selected difficulty, without
+    // exposing another picture or accidentally turning on manual gallery mode.
+    const query=fromMystery?"./?mode=curve&tier="+picture().step:
+      "./?mode=curve&picture="+encodeURIComponent(id);
+    win.location.assign(query);
     return true;
   }
   let screen="picker",selected=null,flash=null,why=null,cursor={x:0,y:0},
@@ -330,7 +336,9 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
       {value:boundaries,label:"Inequalities"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("curveNextPicture").hidden=!!p.practice||p.step===CURVE_PICTURES.length;
+    $("curveNextPicture").hidden=!fromMystery&&
+      (!!p.practice||p.step===CURVE_PICTURES.length);
+    if(fromMystery)$("curveNextPicture").textContent="Explore more challenges →";
   }
   function setScreen(next){
     screen=next;
@@ -572,4 +580,14 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
     }),render:()=>setScreen(screen),choose:choosePicture,
     start:()=>choosePicture(saved.picture),showFinished};
 }
-if(typeof document!=="undefined"&&document.getElementById("curvePicker"))initCurveArt();
+if(typeof document!=="undefined"&&document.getElementById("curvePicker")){
+  const params=new URLSearchParams(window.location?.search||"");
+  // Old page links now open the unified difficulty-first Graph Art chooser.
+  // Direct picture bookmarks and an explicit ?gallery=1 retain the older gallery.
+  if(!params.has("picture")&&!params.has("gallery")&&
+     typeof window.location?.replace==="function"){
+    const tier=Number(params.get("tier"));
+    window.location.replace("./?mode=curve"+
+      (Number.isInteger(tier)&&tier>=1&&tier<=5?"&tier="+tier:""));
+  }else initCurveArt();
+}

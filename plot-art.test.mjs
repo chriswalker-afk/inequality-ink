@@ -397,3 +397,20 @@ test("Snow Globe practices two circles and a line in a separate saved Plot & Sha
   assert.equal(restored.app.readProgress().done,3);
   assert.equal(restored.$("plotPictureCards").children.length,5);
 });
+
+
+test("Mystery-launched plot challenges return to their chosen difficulty",()=>{
+  const picture=PLOT_PICTURES[4];
+  const complete={picture:picture.id,records:{[picture.id]:{done:picture.pieces.length,phase:"plot",plotIndex:0,points:[],styleChoice:null,verified:[],replays:0}}};
+  const s=session({["inequality-ink-plot-shade-v2"]:JSON.stringify(complete)},false,
+    "?picture="+picture.id+"&from=mystery&tier=5");
+  assert.equal(s.$("plotSummary").hidden,false);
+  assert.equal(s.$("plotNextPicture").hidden,false,
+    "Finished Masterpieces can return to difficulty-first selection");
+  assert.match(s.$("plotNextPicture").textContent,/more challenges/i);
+  s.$("plotNextPicture").click();
+  assert.equal(s.redirects.at(-1),"./?mode=plot&tier=5");
+  const back=session({},false,"?picture="+PLOT_PICTURES[1].id+"&from=mystery&tier=2");
+  back.$("plotBack").click();
+  assert.equal(back.redirects.at(-1),"./?mode=plot&tier=2");
+});

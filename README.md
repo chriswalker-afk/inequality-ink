@@ -132,6 +132,44 @@ uncompleted pictures. They start the chosen task immediately, with no
 additional confirmation or compulsory help. Returning to any previous
 picture retains its own progress and replays.
 
+## Graph Art Pass 1 — difficulty-first mysteries (October 2026)
+
+All **four Graph Art modes** now share the same difficulty-first homepage as
+Pixel Art, with familiar labels: **Quick Spark, Step Up, Ink Builder, Brain
+Stretch and Masterpiece**. Students first choose the maths, then discover a
+picture without previewing unrevealed artwork.
+
+- **Start a mystery** randomly chooses an unfinished picture at the selected
+  difficulty, preferring untouched art and never automatically replaying an
+  already completed picture. The current library honestly offers **one
+  standard picture at each difficulty**, plus optional Step Up alternatives. The reverse-reading Diamond Kite stays gallery-only.
+  Expanding to five per difficulty belongs to Pass 2, not this change.
+- **Continue your picture** resumes partly completed work, including saved
+  graph points in Plot & Shade and a partly built inequality in Build & Shade.
+- The five difficulties remain freely selectable. When everything at one
+  difficulty has been completed, automatic selection is disabled there;
+  students can choose a different difficulty or deliberately replay.
+- The **Picture gallery** is collapsed by default but contains the exact
+  original five pictures, the optional Step Up challenge, and any eligible
+  earlier pictures with saved progress. Gallery selections still allow
+  view-only inspection or explicit replay of completed work.
+- The mystery preview is an empty coordinate canvas until a student opts into
+  choosing a specific picture. No compulsory instructions or extra steps
+  interrupt the mathematics or full-picture reveal.
+- Curve & Fill and Plot & Shade keep their original play screens and
+  independently saved work. Visiting the standalone pages directly now opens
+  the unified difficulty chooser; specific-picture deep links still work,
+  while `?gallery=1` explicitly opens the older gallery. Finishing a mystery
+  returns to that difficulty rather than revealing the next picture.
+- Difficulty preferences live under a separate key,
+  `inequality-ink-graph-mystery-tiers-v1`. Existing Graph Art, Curve & Fill
+  and Plot & Shade saves, mathematics, hints, reveals and touch controls
+  remain unchanged.
+
+Tests cover all 20 mode/difficulty pools, completed-picture exclusion,
+partial-work continuation, restored preferences, old saves, cross-page
+navigation, and the existing mathematics/gameplay suite.
+
 ## Phase 6 — optional same-level practice and reverse reading
 
 The five-stage routes remain exactly as before. Each Graph Art mode now offers

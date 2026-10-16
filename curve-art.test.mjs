@@ -281,3 +281,20 @@ test("Optional Balloon Parade gives same-level curved practice without changing 
   assert.equal(restored.app.readProgress().records[bonus.id].done,3);
   assert.equal(restored.$("curvePictureCards").children.length,5);
 });
+
+
+test("Mystery-launched curve challenges return to their chosen difficulty",()=>{
+  const picture=CURVE_PICTURES[4];
+  const complete={picture:picture.id,records:{[picture.id]:{done:picture.pieces.length,replays:0}}};
+  const s=session({["inequality-ink-curve-fill-v2"]:JSON.stringify(complete)},false,
+    "?picture="+picture.id+"&from=mystery&tier=5");
+  assert.equal(s.$("curveSummary").hidden,false);
+  assert.equal(s.$("curveNextPicture").hidden,false,
+    "Finished Masterpieces can return to difficulty-first selection");
+  assert.match(s.$("curveNextPicture").textContent,/more challenges/i);
+  s.$("curveNextPicture").click();
+  assert.equal(s.redirects.at(-1),"./?mode=curve&tier=5");
+  const back=session({},false,"?picture="+CURVE_PICTURES[1].id+"&from=mystery&tier=2");
+  back.$("curveBack").click();
+  assert.equal(back.redirects.at(-1),"./?mode=curve&tier=2");
+});

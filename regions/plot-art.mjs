@@ -76,11 +76,17 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
   const restored=readPlotSave(storage);
   let saved={picture:restored.picture,records:restored.records};
-  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  const params=new URLSearchParams(win.location?.search||"");
+  const requestedPicture=params.get("picture");
   const linkedPicture=plotPicture(requestedPicture)?.id||null;
+  const fromMystery=params.get("from")==="mystery";
   function returnToHub(id=saved.picture){
     if(!linkedPicture||typeof win.location?.assign!=="function")return false;
-    win.location.assign("./?mode=plot&picture="+encodeURIComponent(id));
+    // Mystery-first journeys return to the selected difficulty, without
+    // exposing another picture or accidentally turning on manual gallery mode.
+    const query=fromMystery?"./?mode=plot&tier="+picture().step:
+      "./?mode=plot&picture="+encodeURIComponent(id);
+    win.location.assign(query);
     return true;
   }
   let save=saved.records[saved.picture]||fresh();
@@ -441,7 +447,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       {value:p.pieces.reduce((n,part)=>n+plotSteps(part).length,0),label:"Graphs plotted"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("plotNextPicture").hidden=!!p.practice||p.step===PLOT_PICTURES.length;
+    $("plotNextPicture").hidden=!fromMystery&&
+      (!!p.practice||p.step===PLOT_PICTURES.length);
+    if(fromMystery)$("plotNextPicture").textContent="Explore more challenges →";
   }
   function setScreen(next){
     screen=next;
@@ -838,4 +846,14 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }),start:begin,render:()=>setScreen(screen),showFinished
   };
 }
-if(typeof document!=="undefined"&&document.getElementById("plotPicker"))initPlotArt();
+if(typeof document!=="undefined"&&document.getElementById("plotPicker")){
+  const params=new URLSearchParams(window.location?.search||"");
+  // Old page links now open the unified difficulty-first Graph Art chooser.
+  // Direct picture bookmarks and an explicit ?gallery=1 retain the older gallery.
+  if(!params.has("picture")&&!params.has("gallery")&&
+     typeof window.location?.replace==="function"){
+    const tier=Number(params.get("tier"));
+    window.location.replace("./?mode=plot"+
+      (Number.isInteger(tier)&&tier>=1&&tier<=5?"&tier="+tier:""));
+  }else initPlotArt();
+}
