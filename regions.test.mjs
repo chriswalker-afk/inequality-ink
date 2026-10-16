@@ -421,7 +421,7 @@ test("Five unique cards switch between modes, track stage status and show saved 
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(legacy)}),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
   assert.equal($("graphStageTrack").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 10 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 13 discovered/);
   assert.ok(!$("graphStageTrack").children[0].className.includes("is-complete"),
     "One completed starter does not complete the new five-picture tier");
   assert.equal($("graphPictureCards").children[1].children[1].children[1].textContent,
@@ -635,13 +635,13 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify({
     mode:"fill",picture:"cosmic-rocket",records
   })}),{$}=s;
-  assert.match($("graphGalleryProgress").textContent,/5 of 10 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/5 of 13 discovered/);
   assert.equal($("graphStageTrack").children.length,5);
   assert.equal($("graphStageTrack").children.filter(x=>
     x.className.includes("is-complete")).length,3,
     "Quick Spark and Step Up still contain undiscovered extras");
   $("graphModeBuild").click();
-  assert.match($("graphGalleryProgress").textContent,/0 of 10 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 14 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
 });
 
@@ -716,7 +716,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModeCurve").click();
   assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 10 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 13 discovered/);
   assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
     "Difficulty-first start must hide unearned curved mystery art");
   assert.equal($("graphPreviewStage").textContent,"1 · Quick Spark",
@@ -730,7 +730,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModePlot").click();
   assert.equal($("graphModePlot").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/0 of 10 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 13 discovered/);
   $("graphPictureCards").children[0].click();
   assert.match($("graphStartPicture").textContent,/Continue picture/);
   $("graphStartPicture").click();
@@ -775,10 +775,10 @@ test("Hub query links restore the selected mode and picture",()=>{
 test("Phase 6 leaves all five original stages untouched, with one fresh practice card per linear mode",()=>{
   assert.equal(validateGraphPictureLibrary(),true);
   assert.equal(GRAPH_ART_PICTURES.length,10,"Original gallery must stay at ten");
-  assert.equal(GRAPH_PRACTICE_PICTURES.length,10);
+  assert.equal(GRAPH_PRACTICE_PICTURES.length,17);
   for(const mode of ["fill","build"]){
     const bonus=graphPracticeGallery(mode);
-    assert.equal(bonus.length,5);
+    assert.equal(bonus.length,mode==="fill"?8:9);
     assert.equal(bonus[0].step,2);
     assert.equal(bonus[0].pieces.length,3);
     assert.ok(bonus[0].practice);
@@ -786,7 +786,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
   }
   const s=session(),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
-  assert.equal($("graphPracticeCards").children.length,5);
+  assert.equal($("graphPracticeCards").children.length,8);
   assert.equal($("graphStageTrack").children.length,5);
   const tent=graphPracticeGallery("fill")[0];
   $("graphPracticeCards").children[0].click();
@@ -811,7 +811,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
 test("Optional reverse Build & Shade reads the shaded graph rather than showing the answer",()=>{
   const picture=graphPracticeGallery("build")[0];
   const s=session({}, "?mode=build"),{$}=s;
-  assert.equal($("graphPracticeCards").children.length,5);
+  assert.equal($("graphPracticeCards").children.length,9);
   $("graphPracticeCards").children[0].click();
   $("graphStartPicture").click();
   assert.equal($("graphPlay").hidden,false);
@@ -891,41 +891,43 @@ test("Difficulty selection restores per-mode levels and never alters student gam
   assert.equal(restored.$("graphDifficultyChoices").children[4].getAttribute("aria-pressed"),"true");
 });
 test("Step Up mystery randomiser skips solved art; Continue resumes exact partial work",()=>{
-  const core=graphModeGallery("fill")[1],bonus=graphPracticeGallery("fill")[0];
+  const pool=[graphModeGallery("fill")[1],
+    ...graphPracticeGallery("fill").filter(p=>p.step===2)];
+  assert.equal(pool.length,5);
+  const core=pool[0];
   const initial={mode:"fill",picture:core.id,records:{
     ["fill:"+core.id]:{done:1,line:0,replays:0}
   }};
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(initial)}),{$}=s;
   $("graphDifficultyChoices").children[1].click();
-  assert.match($("graphMysteryHint").textContent,/2 new or unfinished mysteries/);
+  assert.match($("graphMysteryHint").textContent,/5 new or unfinished mysteries/);
   assert.equal($("graphContinueMystery").hidden,false);
   $("graphStartMystery").click();
-  assert.equal(s.app.readProgress().picture,bonus.id,
-    "Untouched picture should be preferred to abandoning partially completed art");
+  assert.ok(pool.slice(1).some(p=>p.id===s.app.readProgress().picture),
+    "Start must prefer one of four untouched pictures to partial core work");
   $("graphBack").click();
   $("graphContinueMystery").click();
   assert.equal(s.app.readProgress().picture,core.id);
   assert.equal(s.app.readProgress().records["fill:"+core.id].done,1);
   $("graphBack").click();
-  // Completing the core cannot cause a repeated core picture via Start.
-  s.app.readProgress(); 
+  // Completed pictures never return from Start while other choices remain.
   const done={mode:"fill",picture:core.id,records:{
     ["fill:"+core.id]:{done:core.pieces.length,line:0,replays:0}
   }};
   const next=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(done)}),$next=next.$;
   $next("graphDifficultyChoices").children[1].click();
   $next("graphStartMystery").click();
-  assert.equal(next.app.readProgress().picture,bonus.id);
-  const allDone={mode:"fill",picture:core.id,records:{
-    ["fill:"+core.id]:{done:core.pieces.length,line:0,replays:0},
-    ["fill:"+bonus.id]:{done:bonus.pieces.length,line:0,replays:0}
-  }};
+  assert.ok(pool.slice(1).some(p=>p.id===next.app.readProgress().picture));
+  const allDone={mode:"fill",picture:core.id,records:Object.fromEntries(
+    pool.map(p=>["fill:"+p.id,
+      {done:p.pieces.length,line:0,replays:0}])
+  )};
   const complete=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(allDone)}),$all=complete.$;
   $all("graphDifficultyChoices").children[1].click();
   assert.equal($all("graphStartMystery").disabled,true);
   assert.equal($all("graphContinueMystery").hidden,true);
   assert.match($all("graphPreviewProgress").textContent,/All discovered/);
-  // A gallery replay remains available, but is never selected automatically.
+  // Gallery replay remains possible, but is never automatic.
   $all("graphPracticeCards").children[0].click();
   assert.match($all("graphStartPicture").textContent,/View completed picture/);
   $all("graphStartPicture").click();
@@ -985,4 +987,43 @@ test("New Build & Shade Quick Spark includes a real dashed inequality and comple
   assert.equal(s.app.readProgress().records["build:"+p.id].done,2);
   s.app.showFinished();
   assert.ok($("graphRevealSvg").children.length>p.pieces.length+8);
+});
+
+
+test("New Step Up Find & Fill picture paints three real sloped regions and saves its reveal",()=>{
+  const p=graphPracticeGallery("fill").find(t=>t.id==="step-bubble-fish");
+  assert.ok(p);
+  const s=session({},"?mode=fill&picture="+p.id),{$}=s;
+  $("graphStartPicture").click();
+  assert.equal($("graphPlay").hidden,false);
+  for(const [i,part] of p.pieces.entries()){
+    const middle=centroid(intersectRegion(part.rules));
+    assert.equal(graphCellAt(part,middle.x,middle.y)?.correct,true,part.id);
+    s.app.pickAt(middle.x,middle.y);
+    $("graphCheckFill").click();
+    assert.equal(s.app.readProgress().records["fill:"+p.id].done,i+1);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  s.app.showFinished();
+  assert.ok($("graphRevealSvg").children.length>p.pieces.length+12);
+  const restored=session(Object.fromEntries(s.store),"?mode=fill&picture="+p.id);
+  assert.equal(restored.app.readProgress().records["fill:"+p.id].done,3);
+  assert.equal(restored.$("graphSummary").hidden,false);
+});
+test("New Build & Shade Step Up supports gradients, strict lines and an independent save",()=>{
+  const p=graphPracticeGallery("build").find(t=>t.id==="step-happy-penguin");
+  assert.ok(p);
+  const s=session({},"?mode=build&picture="+p.id),{$}=s;
+  $("graphStartPicture").click();
+  assert.ok(p.pieces.some(part=>part.rules.some(rule=>!rule.inclusive)));
+  for(const part of p.pieces){
+    answerRules(s,part);
+    finishBuildPiece(s);
+  }
+  assert.equal($("graphSummary").hidden,false);
+  assert.equal(s.app.readProgress().records["build:"+p.id].done,3);
+  s.app.showFinished();
+  assert.ok($("graphRevealSvg").children.length>p.pieces.length+12);
+  const restored=session(Object.fromEntries(s.store),"?mode=build&picture="+p.id);
+  assert.equal(restored.app.readProgress().records["build:"+p.id].done,3);
 });

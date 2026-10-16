@@ -3,7 +3,7 @@ import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
-import {PLOT_PICTURES,PLOT_PICTURE,PLOT_PRACTICE_PICTURES,plotAllPictures,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs?v=graph-quick-sparks-v1";
+import {PLOT_PICTURES,PLOT_PICTURE,PLOT_PRACTICE_PICTURES,plotAllPictures,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs?v=graph-step-ups-v1";
 import {
   POINT_STEP,snapPoint,samePoint,constructBoundary,checkConstruction,
   checkBoundaryStyle,previewPaths,validSavedPoints

@@ -5,6 +5,7 @@ import {
   validatePicture,regionPaths,satisfiesAll
 } from "./curved-engine.mjs";
 import {CURVE_QUICK_SPARKS} from "./curve-quick-sparks.mjs";
+import {CURVE_STEP_UPS} from "./curve-step-ups.mjs";
 
 export const CURVE_STAGES=Object.freeze([
   Object.freeze({step:1,name:"Starter",summary:"Find two parabolic wings"}),
@@ -232,7 +233,7 @@ const balloonPractice=Object.freeze({...picture(2,"balloon-parade","Balloon Para
     C("balloon-confetti-one",3,1.9,-2.75,.1,"#a28ab2"),
     C("balloon-confetti-two",3,-1.55,-3.3,.1,"#ac7e9e")
   ]),practice:true});
-export const CURVE_PRACTICE_PICTURES=Object.freeze([balloonPractice,...CURVE_QUICK_SPARKS]);
+export const CURVE_PRACTICE_PICTURES=Object.freeze([balloonPractice,...CURVE_QUICK_SPARKS,...CURVE_STEP_UPS]);
 export const curveAllPictures=Object.freeze([...CURVE_PICTURES,...CURVE_PRACTICE_PICTURES]);
 
 export const curvePicture=id=>curveAllPictures.find(p=>p.id===id)||null;
@@ -272,7 +273,7 @@ export function validateCurveGallery(){
       throw Error("Missing staged artwork details for "+p.id);
   }
   const bonus=CURVE_PRACTICE_PICTURES;
-  if(bonus.length!==5||bonus.filter(p=>p.step===2&&p.pieces.length===3).length!==1||
+  if(bonus.length!==8||bonus.filter(p=>p.step===2&&p.pieces.length===3).length!==4||
      bonus.filter(p=>p.step===1&&p.pieces.length===2&&p.quickSpark).length!==4)
     throw Error("Expected four Quick Sparks and one three-piece Curve Step Up");
   for(const p of bonus){

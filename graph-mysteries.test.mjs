@@ -27,10 +27,10 @@ test("Graph Art offers five freely accessible mathematical difficulties in four 
   for(const mode of GRAPH_MYSTERY_MODES){
     const [core,practice]=galleries(mode);
     assert.equal(core.length,5);
-    assert.equal(practice.length,5);
+    assert.equal(practice.length,mode==="build"?9:8);
     for(const tier of GRAPH_MYSTERY_LEVELS){
       const pool=graphMysteryPool(mode,tier.step,core,practice);
-      assert.equal(pool.length,tier.step===1?5:tier.step===2&&mode!=="build"?2:1,
+      assert.equal(pool.length,tier.step<=2?5:1,
         mode+" tier "+tier.step);
       assert.ok(pool.every(p=>p.step===tier.step&&p.mode===mode));
       assert.equal(new Set(pool.map(p=>p.id)).size,pool.length);
@@ -41,19 +41,24 @@ test("Graph Art offers five freely accessible mathematical difficulties in four 
     }
   }
 });
-test("Completed pictures never enter random choices, and fresh mysteries come first",()=>{
+test("Step Up draws uncompleted art, preferring fresh pictures and keeping Continue separate",()=>{
   const [core,practice]=galleries("fill");
   const pool=graphMysteryPool("fill",2,core,practice);
+  assert.equal(pool.length,5);
   const data=new Map(),record=p=>data.get(p.id)||{done:0,line:0};
   assert.equal(graphPickMystery(pool,record,()=>0),pool[0]);
-  assert.equal(graphPickMystery(pool,record,()=>.9999),pool[1]);
+  assert.equal(graphPickMystery(pool,record,()=>.9999),pool[4]);
   data.set(pool[0].id,{done:pool[0].pieces.length,line:0});
-  assert.equal(graphMysteryFinished(pool[0],record(pool[0])),true);
-  assert.equal(graphPickMystery(pool,record,()=>0),pool[1]);
+  assert.equal(graphPickMystery(pool,record,()=>0),pool[1],
+    "The first solved art is not offered again");
   data.set(pool[1].id,{done:0,line:1});
   assert.equal(graphContinueMystery(pool,record),pool[1]);
+  assert.equal(graphPickMystery(pool,record,()=>0),pool[2],
+    "Unplayed Step Up artwork takes priority over partly finished art");
+  for(const p of pool.slice(2))
+    data.set(p.id,{done:p.pieces.length,line:0});
   assert.equal(graphPickMystery(pool,record,()=>.9),pool[1],
-    "A partly completed mystery is still eligible if no fresh ones remain");
+    "Partially completed art is still eligible if there are no fresh pictures");
   data.set(pool[1].id,{done:pool[1].pieces.length,line:0});
   assert.equal(graphPickMystery(pool,record,()=>0),null);
   assert.equal(graphContinueMystery(pool,record),null);

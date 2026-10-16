@@ -254,13 +254,13 @@ test("Curve picture deep links launch directly and return to unified Graph Art",
 
 test("Optional Balloon Parade gives same-level curved practice without changing the five core stages",()=>{
   assert.equal(validateCurveGallery(),true);
-  assert.equal(CURVE_PRACTICE_PICTURES.length,5);
+  assert.equal(CURVE_PRACTICE_PICTURES.length,8);
   const bonus=CURVE_PRACTICE_PICTURES[0];
   assert.equal(bonus.step,2);
   assert.equal(bonus.pieces.length,3);
   const s=session(),{$}=s;
   assert.equal($("curvePictureCards").children.length,5);
-  assert.equal($("curvePracticeCards").children.length,5);
+  assert.equal($("curvePracticeCards").children.length,8);
   $("curvePracticeCards").children[0].click();
   assert.equal($("curveGameTitle").textContent,"Balloon Parade");
   let first=interior(bonus.pieces[0]);
@@ -319,4 +319,24 @@ test("A new parabolic Quick Spark plays through both regions and all three finis
   assert.equal(s.$("curveDownload").hidden,false);
   const resumed=session(Object.fromEntries(s.store),true,"?picture="+p.id);
   assert.equal(resumed.$("curveSummary").hidden,false);
+});
+
+
+test("A new translated-parabola Step Up mystery completes all three regions and keeps progress",()=>{
+  const p=CURVE_PRACTICE_PICTURES.find(t=>t.id==="step-blooming-tulip");
+  assert.ok(p);
+  const s=session({},true,"?picture="+p.id);
+  assert.equal(s.$("curveGameTitle").textContent,p.name);
+  assert.equal(s.$("curvePlay").hidden,false);
+  for(const [i,[x,y]] of [[-1,2],[1,2],[0,-1]].entries()){
+    s.app.pickAt(x,y);
+    s.$("graphCheckFill").click();
+    assert.equal(s.app.readProgress().records[p.id].done,i+1);
+  }
+  assert.equal(s.$("curveSummary").hidden,false);
+  s.$("curveRevealSkip").click();
+  assert.ok(details(s.$("graphRevealSvg")).length>=12);
+  const second=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+  assert.equal(second.$("curveSummary").hidden,false);
+  assert.equal(second.app.readProgress().records[p.id].done,3);
 });
