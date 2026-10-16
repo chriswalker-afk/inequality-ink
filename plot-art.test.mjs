@@ -443,3 +443,19 @@ test("Garden Daisy Step Up constructs vertical line, parabola and circle to comp
   assert.equal(restored.$("plotSummary").hidden,false);
   assert.equal(restored.app.readProgress().done,3);
 });
+
+
+test("Ink Builder, Brain Stretch and Masterpiece Plot & Shade can construct every required graph and save their reveal",()=>{
+  for(const tier of [3,4,5]){
+    const p=PLOT_PRACTICE_PICTURES.find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p);
+    const s=session({},true,"?picture="+p.id);
+    assert.equal(s.$("plotPlay").hidden,false);
+    completePicture(s,p);
+    assert.equal(s.app.readProgress().done,p.pieces.length);
+    assert.equal(s.$("plotSummary").hidden,false);
+    const saved=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+    assert.equal(saved.$("plotSummary").hidden,false);
+    assert.equal(saved.app.readProgress().done,p.pieces.length);
+  }
+});
