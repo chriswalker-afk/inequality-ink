@@ -75,7 +75,7 @@ function motif(which){
     sh("Right ear",1,tri([2,1.2],[1.75,3.5],[.35,1.5])),
     sh("Left bright eye",2,diamond(-.8,.35,.45,.5)),
     sh("Right bright eye",2,diamond(.8,.35,.45,.5)),
-    sh("Pink nose",3,tri([-.35,-.45],[.35,-.45],[0,-1])),
+    sh("Pink nose",3,tri([-.5,-.25],[.5,-.25],[0,-1])),
     sh("Cat collar",4,trap(-1.5,-2.5,1.5,-2,-1.25,1.25)),
     sh("Golden bell",5,diamond(0,-2.75,.5,.5)),
     sh("Curled tail",4,tri([1.5,-2],[3,-3.5],[3.75,-1.25]))
