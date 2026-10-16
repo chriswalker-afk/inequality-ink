@@ -1,3 +1,4 @@
+import {rememberGraphMuralDiscoveries} from "./graph-mural-model.mjs";
 import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
 import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
@@ -9,7 +10,7 @@ import {
   GRAPH_ART_DETAIL_COLORS,GRAPH_ART_SAVE_KEY,GRAPH_ART_LEGACY_SAVE_KEY,
   graphPicture,graphModeGallery,graphPracticeGallery,graphLegacyExtras,graphTotalBoundaries,reverseInequalityOptions,
   graphCellAt,graphArrow,validateGraphPictureLibrary
-} from "./graph-art-pictures.mjs?v=graph-advanced-v1";
+} from "./graph-art-pictures.mjs?v=graph-mural-v1";
 import {CURVE_PICTURES,CURVE_PRACTICE_PICTURES} from "./curve-pictures.mjs?v=graph-advanced-v1";
 import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=graph-advanced-v1";
 import {regionPaths} from "./curved-engine.mjs";
@@ -936,7 +937,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       (r.line!==part.rules.length||buildRevealPhase==="converging"))return;
     cancelBuildRevealTimer();
     r.done++;r.line=0;
-    persist();resetChoices();flash=null;cursor={x:0,y:0};
+    persist();
+    if(r.done===picture().pieces.length)rememberGraphMuralDiscoveries(storage);resetChoices();flash=null;cursor={x:0,y:0};
     buildRevealPhase="idle";
     if(r.done===picture().pieces.length){
       setScreen("summary");
@@ -965,6 +967,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   }
   function summaryView(){
     const p=picture();
+    $("graphMuralLink").href="./graph-mural.html?found="+encodeURIComponent(mode()+":"+p.id);
     $("graphSummaryTitle").textContent=p.name+" ✦";
     $("graphSummaryText").textContent="You created every piece from the common solutions of simultaneous inequalities.";
     $("graphSummaryStats").textContent="Stage "+p.step+" · "+p.stage+" · "+
@@ -997,6 +1000,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       "Restart this picture? Only this picture's progress will be reset."))return;
     cancelBuildRevealTimer();
     const r=record();
+    if(r.done===picture().pieces.length)rememberGraphMuralDiscoveries(storage);
     saved.records[key(mode(),saved.picture)]={done:0,line:0,replays:r.replays+1};
     persist();resetChoices();notify("Start your picture again.");setScreen("play");
   }
