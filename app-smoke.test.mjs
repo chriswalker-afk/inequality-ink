@@ -1545,6 +1545,51 @@ test("Quadratic Quest includes keyboard-toggle, drag, and independent selector n
 });
 
 
+test("Quadratic Quest auto-picks a fresh mystery and offers exact continuation",()=>{
+  $("questEnter").click();
+  $("questDifficultyPicker").children[1].click();
+  assert.equal($("questStart").textContent,"Start a mystery →");
+  assert.equal($("questPicturePicker").children.length,5);
+  assert.equal($("questContinueMystery").hidden,true);
+  $("questStart").click();
+  const state=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY_V2));
+  const p=QUEST_PICTURES.find(pic=>pic.id===state.selectedPicture);
+  assert.equal(p.stage,2);
+  assert.notEqual(p.id,"petals","Automatic start must not replay completed core art");
+  assert.equal($("questEquationText").textContent,p.questions[0].expression);
+  const expected=quadraticAnswer(p.questions[0]);
+  $(expected.region==="between"?"questBetween":"questOutside").click();
+  const order=expected.upper<=0?[
+    ["questLower",expected.lower],["questUpper",expected.upper]
+  ]:[
+    ["questUpper",expected.upper],["questLower",expected.lower]
+  ];
+  for(const [id,value] of order){$(id).value=String(value);$(id).change();}
+  $(expected.lowerIncluded?"questLowerClosed":"questLowerOpen").click();
+  $(expected.upperIncluded?"questUpperClosed":"questUpperOpen").click();
+  const original=globalThis.setTimeout;
+  let next=null;
+  globalThis.setTimeout=(fn,delay)=>{
+    if(delay===320||delay===850){next=fn;return -811;}
+    return original(fn,delay);
+  };
+  try{
+    $("questCheck").click();
+    assert.ok(next,"Solving the picture should advance");
+    next();
+  }finally{globalThis.setTimeout=original;}
+  assert.equal($("questQuestionStep").textContent,"QUESTION 2 OF 8");
+  $("questBack").click();
+  assert.equal($("questStart").textContent,"Start a mystery →");
+  assert.equal($("questContinueMystery").hidden,false);
+  $("questContinueMystery").click();
+  assert.equal($("questEquationText").textContent,p.questions[1].expression);
+  assert.equal(JSON.parse(localStorage.getItem(QUEST_SAVE_KEY_V2)).
+    progress[p.id].done,1);
+  $("questBack").click();
+  $("questBack").click();
+});
+
 test("Five Mixed-only stages complete with all three skills and independent progress",()=>{
  const ids=["mixed-shield-starter","mixed-saucer-step",
    "mixed-hourglass-building","mixed-butterfly-challenge","mixed-dragon-finale"];
