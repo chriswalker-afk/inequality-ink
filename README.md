@@ -448,25 +448,25 @@ mathematics and displayed inequality notation, fill/arrow/solid-dashed
 interactions, persistent progress, reduced motion, the full Rocket and
 Castle journeys, and the staged celebration.
 
-## Optional extension: Quadratic Quest — full five-picture journey
+## Quadratic Quest — 25 difficulty-first mathematical mysteries (October 2026)
 
-**Quadratic Quest** is an optional, independent mathematical extension beneath the site's five familiar modes. It has its own **Choose a picture** screen, five-step progression, saved results, reveals and replay controls. Students who have not studied quadratic inequalities can continue the complete main game without entering it.
+**Quadratic Quest** is a separate optional number-line extension beneath Pixel Art's five familiar modes. There are **five difficulties, five original pixel-art pictures per difficulty, and 250 quadratic inequalities** (up from five pictures and 50 questions). Students need never enter the extension to complete the core game.
 
-| Picture | Questions | Mathematical progression |
-| --- | ---: | --- |
-| **Prism of Possibilities** | 6 | Already-factorised monic quadratics, roots, strict/inclusive, between/outside, then one expanded and negative-leading example |
-| **Petal Parabola** | 8 | Expanded monic quadratics, simple factorisation, mixed endpoint inclusivity |
-| **Skyline Arc** | 10 | Rearrange an inequality to zero before factorising, including an introductory negative-leading and common-factor example |
-| **Crystal Path** | 12 | Scaled factors and expanded non-monic quadratics; combine the multiplier's sign with the direction of the parabola |
-| **Nova Finale** | 14 | Full mixed review: factorised/expanded/scaled/rearranged forms and upward/downward parabolas |
+| Difficulty | Pictures | Questions per picture | Mathematical progression |
+| --- | ---: | ---: | --- |
+| **Quick Spark** | 5 | 6 | Factorised quadratics, identify both roots and decide between/outside with correct endpoints |
+| **Step Up** | 5 | 8 | Factorise expanded monic quadratics, check strict signs and negative roots |
+| **Ink Builder** | 5 | 10 | Rearrange to zero, solve both sides of the inequality and begin handling downward parabolas |
+| **Brain Stretch** | 5 | 12 | Scaled factors and non-monic quadratics, positive and negative leading coefficients |
+| **Masterpiece** | 5 | 14 | Mixed factorised, expanded, rearranged and scaled questions requiring method choice |
 
-That is **50 fully authored inequalities**, each with **two distinct, visible integer roots** and exactly two root controls. Repeated roots, no-real-root cases and all-real/no-solution cases remain excluded until dedicated number-line controls are available.
+The original **Prism of Possibilities**, **Petal Parabola**, **Skyline Arc**, **Crystal Path** and **Nova Finale** retain their existing question content, row art, IDs and answers. Four new illustrated themes were authored for each difficulty in quadratic-quest-extra.mjs (hearts, robots, a lighthouse, a phoenix and more). All pictures have independently saved questions and reveals.
 
-**Gameplay:** Choose any picture (later stages are never locked), press Start picture or Continue picture and solve one real quadratic inequality per artwork row. The interface supports **Between roots / Outside roots** (two unbounded rays), independent open/closed roots, draggable circles, keyboard-adjustable endpoints, three staged hints, a collapsible parabola and an optional typed-MathML/handwritten working space. Correctly solving an inequality **unlocks a decorative row**; the artwork is not presented as a graph of its solution. Every picture has its own full-screen reveal, question-by-question review and Next picture action. The number-line window expands as appropriate for each stage.
+**Navigation:** Choose one of the five difficulties first. **Start a mystery** randomly selects an unplayed picture from that difficulty, never automatically replaying completed pictures or opening a different tier. **Continue your picture** resumes partial work at exactly the saved row. **Picture gallery · choose or replay** is optional, for selecting a specific picture or revisiting completed art; there are no locked tiers. The five-zone track, completion counts and progress copy follow the Pixel Art / Graph Art conventions.
 
-**Compatibility and preservation:** The six Prism prototype questions, artwork and its established answer behaviour are unchanged. On first load, a completed or partly completed `inequality-ink-quadratic-quest-v1` save is **copied** into Prism's slot in `inequality-ink-quadratic-quest-v2`; the original v1 save remains untouched. Later progress is saved by picture ID, including hints, replay count and first-try statistics. Restart affects **only the selected quadratic picture**. Original `inequality-ink-v5` game saves remain separate and unchanged.
+**Mathematical interaction:** The student shades **between roots / outside roots** (including both unbounded rays), independently sets included or excluded endpoints and positions draggable circles on the number line. Staged hints, worked solutions, an optional parabola graph and typed or handwritten working remain available. Each correct answer reveals one decorative pixel-art row; the artwork is a reward, not a discrete sampling of the quadratic solution set. Repeated-root and no-real-root cases are deliberately excluded until suitable controls exist.
 
-The pure question data, generated algebra notation and strict real-domain validation live in `quadratic-quest.mjs`. The five-stage selector, scoped progress migration, number-line UI and per-picture reveals live in `quadratic-quest-ui.mjs`. Automated tests solve all fifty questions, verify two-ended interval semantics and simulate leaving, returning, completing and replaying independent pictures.
+**Backward compatibility:** The v1 Prism prototype save is copied into its v2 record without changing the original. Existing v2 saves keep every original picture's score, hints, attempts and replays; the other 20 pictures begin with new independent records. A discoveries archive in the same v2 save retains completed artwork even after a voluntary replay. Main-game progress remains independent. The pure question generator validates signs and inequality truth over the real number line; unit and browser smoke tests cover all 25 artworks, 250 questions, v1/v2 migrations, difficulty pools, fresh mysteries, continuation and the original five-picture journey.
 
 ## Choose a challenge and a picture
 
