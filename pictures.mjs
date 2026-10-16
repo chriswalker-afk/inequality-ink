@@ -1,6 +1,7 @@
 import {PAINT_PICTURES} from "./paint-pictures.mjs";
 import {STARTER_PICTURES} from "./starter-pictures.mjs?v=student-feedback-v1";
 import {MYSTERY_BANK} from "./mystery-bank.mjs";
+import {CRAFTED_MYSTERIES} from "./crafted-mysteries.mjs";
 import {STUDENT_BONUS_PICTURES} from "./student-bonus-pictures.mjs";
 import {MIXED_PICTURES} from "./mixed-pictures.mjs";
 import {PAINT_STARTERS} from "./paint-starters.mjs?v=student-feedback-v1";
@@ -42,6 +43,7 @@ export const PICTURE_DEFINITIONS = Object.freeze([
   ...STARTER_PICTURES,
   ...STUDENT_BONUS_PICTURES,
   ...MYSTERY_BANK,
+  ...CRAFTED_MYSTERIES,
   // Mixed Challenge now has a completely independent five-picture journey.
   // Existing Full/Solve artworks still support Mixed as preserved bonus art.
   ...MIXED_PICTURES,
