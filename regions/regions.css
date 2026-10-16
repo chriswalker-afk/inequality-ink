@@ -606,3 +606,83 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
   .graph-practice-cards {grid-template-columns:minmax(0,1fr)}
   .graph-reverse-options button {min-height:48px}
 }
+
+
+/* Graph Art · difficulty-first challenges (same vocabulary as Pixel Art).
+   The separate picture gallery remains optional; the maths comes first. */
+.graph-hub-pictures .graph-difficulty-choices{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:7px;margin:8px 0 9px;
+}
+.graph-difficulty-card{
+  display:flex;align-items:center;gap:10px;text-align:left;width:100%;
+  min-height:57px;padding:8px 10px;border-radius:12px;
+  border:1.5px solid #e0e4dc;background:#fffdf9;color:#344d61;
+  font:inherit;cursor:pointer;transition:border-color .15s,background .15s;
+}
+.graph-difficulty-card:hover{border-color:#9ecbbb;background:#f3faf4}
+.graph-difficulty-card.is-selected{
+  background:#eaf7ee;border-color:#60aa91;
+  box-shadow:0 0 0 2px #c5e6d343;
+}
+.graph-difficulty-card:focus-visible{
+  outline:3px solid #e3aa69;outline-offset:2px;
+}
+.graph-difficulty-stamp{
+  display:grid;place-items:center;width:33px;height:33px;flex:0 0 33px;
+  background:#f3e6df;border-radius:9px;color:#bc796a;
+  font-weight:900;font-size:.94rem;
+}
+.graph-difficulty-card.is-selected .graph-difficulty-stamp{
+  background:#cfeadc;color:#2f8167;
+}
+.graph-difficulty-card.is-complete .graph-difficulty-stamp{
+  background:#d6ece0;color:#347d64;
+}
+.graph-difficulty-info{display:grid;gap:3px;flex:1;min-width:0}
+.graph-difficulty-info strong{font-size:.83rem;line-height:1.22}
+.graph-difficulty-info small{font-size:.67rem;color:#778892;line-height:1.35}
+.graph-difficulty-tick{font-size:1rem;color:#70aa96;font-weight:800}
+.graph-hub-pictures .graph-mystery-hint{
+  color:#4f786a;font-size:.73rem;line-height:1.45;
+  background:#f2f8f2;border:1px dashed #cadfcf;border-radius:10px;
+  margin:8px 0 10px;padding:9px 11px;
+}
+.graph-mystery-cta{display:grid;gap:7px;margin:9px 0 11px}
+.graph-mystery-cta button{width:100%;min-height:43px;font-size:.83rem}
+.graph-mystery-cta button[disabled],
+.graph-hub-start[disabled]{opacity:.62;cursor:default}
+.graph-hub-pictures .graph-mystery-gallery{
+  margin-top:11px;padding-top:12px;border-top:1px solid #e8e8de;
+}
+.graph-hub-pictures .graph-mystery-gallery>summary{
+  cursor:pointer;font-size:.77rem;font-weight:850;color:#426f67;
+}
+.graph-hub-pictures .graph-mystery-gallery>p{
+  font-size:.69rem;color:#748694;line-height:1.42;margin:8px 0 10px;
+}
+.graph-hub-pictures .graph-mystery-gallery .graph-picture-grid{margin-top:9px}
+.graph-hub-pictures .graph-mystery-gallery .graph-more-pictures{
+  margin-top:12px;padding-top:10px;
+}
+.graph-hub-pictures .graph-stage-track{margin-bottom:9px}
+.graph-hub-pictures .graph-step-node{flex:1;min-width:0}
+.graph-hub-pictures .graph-step-node span:not(.graph-step-number){
+  font-size:.53rem;max-width:75px;text-align:center;
+}
+.graph-hub-preview #graphPreviewName{font-size:1.04rem}
+.graph-mystery-direct-link{
+  display:inline-flex;justify-content:center;align-items:center;
+  margin:10px 0 15px;padding:11px 16px;border-radius:11px;
+  border:1px solid #aed6be;background:#e9f7ed;
+  color:#347b64;font-size:.85rem;font-weight:850;text-decoration:none;
+}
+.graph-mystery-direct-link:hover{background:#dff1e4}
+.graph-mystery-direct-link:focus-visible{outline:3px solid #e3aa69;outline-offset:3px}
+@media(max-width:780px){
+  .graph-hub-pictures .graph-difficulty-choices{gap:7px}
+  .graph-difficulty-card{min-height:55px}
+  .graph-mystery-cta button{min-height:46px}
+}
+@media(prefers-reduced-motion:reduce){
+  .graph-difficulty-card{transition:none}
+}
