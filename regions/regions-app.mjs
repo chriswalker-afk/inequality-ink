@@ -15,6 +15,11 @@ import {PLOT_PICTURES,PLOT_PRACTICE_PICTURES} from "./plot-pictures.mjs?v=phase6
 import {regionPaths} from "./curved-engine.mjs";
 import {readCurveSave} from "./curve-art.mjs?v=phase6-v1";
 import {readPlotSave} from "./plot-art.mjs?v=phase6-v1";
+import {
+  GRAPH_MYSTERY_LEVELS,graphMysteryPool,graphMysteryStatus,
+  graphMysteryFinished,graphMysteryStarted,graphPickMystery,
+  graphContinueMystery,readGraphMysteryTiers,saveGraphMysteryTiers
+} from "./graph-mysteries.mjs";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-REGION_WORLD.xmin)*GRID/(REGION_WORLD.xmax-REGION_WORLD.xmin);
@@ -202,10 +207,21 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   ];
   const requestedMode=new URLSearchParams(win.location?.search||"").get("mode");
   let hubMode=HUB_MODES.some(m=>m.id===requestedMode)?requestedMode:saved.mode;
-  const hubSelections={};
-  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
-  if(requestedPicture&&hubGalleryAvailable(hubMode,requestedPicture))
+  const hubSelections={},hubManual={};
+  const hubTiers=readGraphMysteryTiers(storage);
+  const params=new URLSearchParams(win.location?.search||"");
+  const requestedPicture=params.get("picture"),requestedTier=Number(params.get("tier"));
+  if(Number.isInteger(requestedTier)&&requestedTier>=1&&requestedTier<=5)
+    hubTiers[hubMode]=requestedTier;
+  if(requestedPicture&&hubGalleryAvailable(hubMode,requestedPicture)){
     hubSelections[hubMode]=requestedPicture;
+    hubManual[hubMode]=true;
+    const linked=[...(hubMode==="curve"?CURVE_PICTURES:hubMode==="plot"?PLOT_PICTURES:
+      graphModeGallery(hubMode)),...(hubMode==="curve"?CURVE_PRACTICE_PICTURES:
+      hubMode==="plot"?PLOT_PRACTICE_PICTURES:graphPracticeGallery(hubMode))].
+      find(p=>p.id===requestedPicture);
+    if(linked)hubTiers[hubMode]=linked.step;
+  }
   function hubGalleryAvailable(m,id){
     return [...(m==="curve"?CURVE_PICTURES:m==="plot"?PLOT_PICTURES:
       graphModeGallery(m)),
@@ -342,103 +358,199 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       "Mathematical preview of "+label+", "+done+" of "+p.pieces.length+" pieces complete");
     hubMiniature($("graphPreviewSvg"),p,done,m);
   }
-  function startHubPicture(){
-    const p=[...hubGallery(hubMode),...hubPracticeGallery(hubMode),...
-      ((hubMode==="fill"||hubMode==="build")?
-        graphLegacyExtras(hubMode,saved.records):[])].find(
-          item=>item.id===hubSelections[hubMode]);
-    if(!p)return;
-    if(hubMode==="curve"||hubMode==="plot"){
-      const url="./"+(hubMode==="curve"?"curve.html":"plot.html")+
-        "?picture="+encodeURIComponent(p.id);
-      if(typeof win.location?.assign==="function")win.location.assign(url);
-      else if(win.location)win.location.href=url;
-    }else choosePicture(p.id,hubMode);
+  function allHubPictures(m,includeLegacy=false){
+    return [...hubGallery(m),...hubPracticeGallery(m),
+      ...(includeLegacy&&(m==="fill"||m==="build")?
+        graphLegacyExtras(m,saved.records):[])];
   }
-  function changeHubMode(next){
-    if(!HUB_MODES.some(x=>x.id===next))return;
-    hubMode=next;
-    if(next==="fill"||next==="build"){saved.mode=next;persist();}
-    // Share the selected mode in the URL, so the browser Back button and
-    // links from the standalone pages can return to the right challenge.
+  function hubTierFor(m,records=null){
+    if(hubTiers[m])return hubTiers[m];
+    const curve=records?.curve||readCurveSave(storage);
+    const plot=records?.plot||readPlotSave(storage);
+    const next=hubGallery(m).find(p=>
+      !graphMysteryFinished(p,hubRecord(m,p,curve,plot)));
+    hubTiers[m]=(next||hubGallery(m)[4]).step;
+    return hubTiers[m];
+  }
+  function currentHubRecord(p){
+    return hubRecord(hubMode,p,readCurveSave(storage),readPlotSave(storage));
+  }
+  function currentMysteryPool(){
+    return graphMysteryPool(hubMode,hubTierFor(hubMode),
+      hubGallery(hubMode),hubPracticeGallery(hubMode));
+  }
+  function syncHubUrl(){
     try{
       if(win.history?.replaceState&&win.location){
         const url=new URL(win.location.href);
-        url.searchParams.set("mode",next);
-        if(hubSelections[next])url.searchParams.set("picture",hubSelections[next]);
+        url.searchParams.set("mode",hubMode);
+        url.searchParams.set("tier",String(hubTierFor(hubMode)));
+        if(hubManual[hubMode]&&hubSelections[hubMode])
+          url.searchParams.set("picture",hubSelections[hubMode]);
         else url.searchParams.delete("picture");
         win.history.replaceState(null,"",url.pathname+url.search+url.hash);
       }
     }catch{}
-    pickerView();
+  }
+  function launchHubPicture(p,{fromMystery=false}={}){
+    if(!p)return;
+    hubSelections[hubMode]=p.id;
+    if(hubMode==="curve"||hubMode==="plot"){
+      const url="./"+(hubMode==="curve"?"curve.html":"plot.html")+
+        "?picture="+encodeURIComponent(p.id)+
+        (fromMystery?"&from=mystery&tier="+p.step:"");
+      if(typeof win.location?.assign==="function")win.location.assign(url);
+      else if(win.location)win.location.href=url;
+    }else choosePicture(p.id,hubMode);
+  }
+  function startHubPicture(){
+    const requested=hubManual[hubMode]&&hubSelections[hubMode]?
+      allHubPictures(hubMode,true).find(p=>p.id===hubSelections[hubMode]):null;
+    const p=requested||graphPickMystery(currentMysteryPool(),currentHubRecord);
+    if(!p){pickerView();return;}
+    launchHubPicture(p,{fromMystery:!requested});
+  }
+  function continueHubMystery(){
+    const p=graphContinueMystery(currentMysteryPool(),currentHubRecord);
+    if(p)launchHubPicture(p,{fromMystery:true});
+  }
+  function changeHubTier(tier){
+    if(!GRAPH_MYSTERY_LEVELS.some(t=>t.step===tier))return;
+    hubTiers[hubMode]=tier;hubManual[hubMode]=false;
+    saveGraphMysteryTiers(storage,hubTiers);
+    syncHubUrl();pickerView();
+  }
+  function changeHubMode(next){
+    if(!HUB_MODES.some(x=>x.id===next))return;
+    hubMode=next;
+    hubManual[next]=false;
+    if(next==="fill"||next==="build"){saved.mode=next;persist();}
+    hubTierFor(next);
+    syncHubUrl();pickerView();
   }
   function pickerView(){
     for(const m of HUB_MODES)
       $(m.button).setAttribute("aria-pressed",String(hubMode===m.id));
     const curveSave=readCurveSave(storage),plotSave=readPlotSave(storage);
     const gallery=hubGallery(hubMode);
-    const getRecord=p=>hubRecord(hubMode,p,curveSave,plotSave);
-    const completed=gallery.filter(p=>getRecord(p).done===p.pieces.length).length;
-    const recommended=gallery.find(p=>getRecord(p).done!==p.pieces.length)||
-      gallery[gallery.length-1];
-    $("graphModeDescription").textContent=
-      HUB_MODES.find(m=>m.id===hubMode).description;
-    $("graphGalleryProgress").textContent=completed+" of 5 completed";
+    const practice=hubPracticeGallery(hubMode);
     const extras=hubMode==="fill"||hubMode==="build"?
       graphLegacyExtras(hubMode,saved.records):[];
-    const practice=hubPracticeGallery(hubMode);
-    if(![...gallery,...practice,...extras].some(p=>p.id===hubSelections[hubMode]))
-      hubSelections[hubMode]=recommended.id;
-    const selectedPicture=[...gallery,...practice,...extras].find(
-      p=>p.id===hubSelections[hubMode])||recommended;
+    const all=[...gallery,...practice];
+    const getRecord=p=>hubRecord(hubMode,p,curveSave,plotSave);
+    const tier=hubTierFor(hubMode,{curve:curveSave,plot:plotSave});
+    const pool=graphMysteryPool(hubMode,tier,gallery,practice);
+    const stats=graphMysteryStatus(pool,getRecord);
+    const overall=graphMysteryStatus(all,getRecord);
+    const level=GRAPH_MYSTERY_LEVELS[tier-1];
+    const manual=!!hubManual[hubMode];
+    $("graphModeDescription").textContent=
+      HUB_MODES.find(m=>m.id===hubMode).description;
+    $("graphGalleryProgress").textContent=
+      overall.solved.length+" of "+overall.total+" discovered";
     const track=$("graphStageTrack");
     track.replaceChildren();
+    const levels=$("graphDifficultyChoices");levels.replaceChildren();
     for(const p of gallery){
-      const r=getRecord(p),finished=r.done===p.pieces.length;
+      const tierPool=graphMysteryPool(hubMode,p.step,gallery,practice);
+      const tierStats=graphMysteryStatus(tierPool,getRecord);
+      const finished=tierStats.remaining===0;
+      const currentTier=p.step===tier;
       const item=doc.createElement("span");
       item.className="graph-step-node"+
-        (finished?" is-complete":"")+
-        (p.id===selectedPicture.id?" is-recommended":"");
-      item.setAttribute("aria-label",p.stage+" stage, "+
-        (finished?"completed":r.done+" of "+p.pieces.length+" pieces"));
-      const dot=doc.createElement("span");
-      dot.className="graph-step-number";
+        (finished?" is-complete":"")+(currentTier?" is-recommended":"");
+      item.setAttribute("aria-label",GRAPH_MYSTERY_LEVELS[p.step-1].name+
+        " difficulty, "+tierStats.solved.length+" of "+
+        tierStats.total+" discovered");
+      const dot=doc.createElement("span");dot.className="graph-step-number";
       dot.textContent=finished?"✓":String(p.step);
-      const caption=doc.createElement("span");caption.textContent=p.stage;
+      const caption=doc.createElement("span");
+      caption.textContent=GRAPH_MYSTERY_LEVELS[p.step-1].name;
       item.append(dot,caption);track.append(item);
+      const button=doc.createElement("button");
+      button.type="button";
+      button.className="graph-difficulty-card"+
+        (currentTier?" is-selected":"")+
+        (finished?" is-complete":"");
+      button.setAttribute("aria-pressed",String(currentTier));
+      button.setAttribute("aria-label",GRAPH_MYSTERY_LEVELS[p.step-1].name+
+        ", "+tierStats.solved.length+" of "+tierStats.total+" discovered");
+      const stamp=doc.createElement("span");stamp.className="graph-difficulty-stamp";
+      stamp.textContent=finished?"✓":String(p.step);
+      const info=doc.createElement("span");info.className="graph-difficulty-info";
+      const title=doc.createElement("strong");
+      title.textContent=GRAPH_MYSTERY_LEVELS[p.step-1].name;
+      const details=doc.createElement("small");
+      details.textContent=p.pieces.length+" pieces · "+
+        tierStats.solved.length+" of "+tierStats.total+" discovered";
+      info.append(title,details);
+      const tick=doc.createElement("span");
+      tick.className="graph-difficulty-tick";
+      tick.textContent=currentTier?"●":"○";
+      button.append(stamp,info,tick);
+      button.addEventListener("click",()=>changeHubTier(p.step));
+      levels.append(button);
     }
+    const selectedPicture=allHubPictures(hubMode,true).find(p=>
+      p.id===hubSelections[hubMode]);
+    if(manual&&!selectedPicture)hubManual[hubMode]=false;
+    const actualManual=!!hubManual[hubMode];
     function highlightSelected(){
-      try{
-        if(win.history?.replaceState&&win.location){
-          const url=new URL(win.location.href);
-          url.searchParams.set("mode",hubMode);
-          url.searchParams.set("picture",hubSelections[hubMode]);
-          win.history.replaceState(null,"",url.pathname+url.search+url.hash);
-        }
-      }catch{}
+      syncHubUrl();
       for(const card of [...$("graphPictureCards").children,
         ...$("graphPracticeCards").children,...$("graphExtraCards").children]){
-        const active=card.getAttribute("data-hub-picture")===hubSelections[hubMode];
+        const active=actualManual&&
+          card.getAttribute("data-hub-picture")===hubSelections[hubMode];
         card.setAttribute("aria-pressed",String(active));
         card.classList.toggle("is-selected",active);
       }
-      const p=[...gallery,...practice,...extras].find(p=>
-        p.id===hubSelections[hubMode]);
-      if(p)updateHubPreview(p,hubMode,getRecord(p));
+      if(hubManual[hubMode]&&selectedPicture){
+        $("graphStartPicture").disabled=false;
+        updateHubPreview(selectedPicture,hubMode,getRecord(selectedPicture));
+      }else{
+        $("graphPreviewStage").textContent=tier+" · "+level.name;
+        $("graphPreviewName").textContent="Mystery artwork";
+        $("graphPreviewFocus").textContent=
+          "Choose a "+level.name+" challenge. The picture is a surprise.";
+        $("graphPreviewSkills").textContent="Maths · "+
+          (pictureSkills(gallery[tier-1],hubMode).slice(0,3).join(" · "));
+        $("graphPreviewProgress").textContent=stats.remaining?
+          stats.remaining+" mystery "+(stats.remaining===1?"picture":"pictures")+
+            " still to discover":
+          "All discovered at this difficulty. Explore another level or replay.";
+        $("graphStartPicture").disabled=stats.remaining===0;
+        $("graphStartPicture").textContent=stats.remaining?
+          "Start a "+level.name+" mystery ↗":"All discovered ✓";
+        $("graphPreviewSvg").setAttribute("aria-label",
+          "Empty coordinate canvas; the next mathematical picture is hidden");
+        baseGraph($("graphPreviewSvg"),doc);
+      }
     }
+    $("graphMysteryHint").textContent=stats.remaining?
+      stats.remaining+" new or unfinished "+(stats.remaining===1?"mystery":"mysteries")+
+        " · "+gallery[tier-1].pieces.length+" mathematical pieces each":
+      "All "+stats.total+" discovered! Choose another difficulty or replay from the gallery.";
+    $("graphStartMystery").disabled=stats.remaining===0;
+    $("graphStartMystery").textContent=stats.remaining?
+      "Start a "+level.name+" mystery →":"All discovered ✓";
+    const unfinished=graphContinueMystery(pool,getRecord);
+    $("graphContinueMystery").hidden=!unfinished;
+    $("graphContinueMystery").textContent=unfinished?
+      "Continue your picture · "+getRecord(unfinished).done+" of "+
+        unfinished.pieces.length+" →":"Continue your picture →";
+    const recommended=gallery.find(p=>!graphMysteryFinished(p,getRecord(p)))||
+      gallery[gallery.length-1];
     function makeCard(p,extra=false,practise=false){
-      const r=getRecord(p),finished=r.done===p.pieces.length;
-      const selected=p.id===hubSelections[hubMode];
-      const card=doc.createElement("button");
-      card.type="button";
-      card.className="graph-picture-card"+
-        (finished?" is-complete":"")+
+      const r=getRecord(p),finished=graphMysteryFinished(p,r);
+      const selected=hubManual[hubMode]&&p.id===hubSelections[hubMode];
+      const card=doc.createElement("button");card.type="button";
+      card.className="graph-picture-card"+(finished?" is-complete":"")+
         (selected?" is-selected":"")+
         (!extra&&p.id===recommended.id?" is-recommended":"");
       card.setAttribute("data-hub-picture",p.id);
-      card.setAttribute("aria-pressed",String(selected));
+      card.setAttribute("aria-pressed",String(!!selected));
       card.setAttribute("aria-label",(finished?"Completed: ":
-        r.done||r.line?"Continue: ":"Start: ")+
+        graphMysteryStarted(r)?"Continue: ":"Start: ")+
         (finished?p.name:p.clue)+", "+p.stage+
         ", "+r.done+" of "+p.pieces.length+" pieces. Select to preview.");
       const svg=doc.createElementNS(NS,"svg");
@@ -455,7 +567,7 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       const focus=doc.createElement("span");focus.className="graph-card-maths";
       focus.textContent=pictureSkills(p,hubMode).slice(0,3).join(" · ");
       const go=doc.createElement("span");go.className="graph-card-go";
-      go.textContent=finished?"✓ Completed":r.done||r.line?
+      go.textContent=finished?"✓ Completed":graphMysteryStarted(r)?
         "Continue picture":"Ready to start";
       const progress=doc.createElement("span");progress.className="graph-card-progress";
       progress.setAttribute("aria-hidden","true");
@@ -465,7 +577,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       info.append(stage,name,desc,focus,progress,go);card.append(svg,info);
       card.addEventListener("click",()=>{
         hubSelections[hubMode]=p.id;
-        highlightSelected();
+        hubManual[hubMode]=true;
+        hubTiers[hubMode]=p.step;
+        saveGraphMysteryTiers(storage,hubTiers);
+        pickerView();
       });
       return card;
     }
@@ -857,9 +972,8 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       {value:graphTotalBoundaries(p),label:"Inequalities"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("graphNextPicture").hidden=!!p.practice||p.step===GRAPH_ART_STAGES.length||
-      p.mode!==mode();
-    $("graphNextPicture").textContent="Next picture →";
+    $("graphNextPicture").hidden=false;
+    $("graphNextPicture").textContent="Another mystery →";
   }
   function restart(){
     if(typeof win.confirm==="function"&&!win.confirm(
@@ -980,6 +1094,10 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphModeCurve").addEventListener("click",()=>changeHubMode("curve"));
   $("graphModePlot").addEventListener("click",()=>changeHubMode("plot"));
   $("graphStartPicture").addEventListener("click",startHubPicture);
+  $("graphStartMystery").addEventListener("click",()=>{
+    hubManual[hubMode]=false;startHubPicture();
+  });
+  $("graphContinueMystery").addEventListener("click",continueHubMystery);
   $("graphBack").addEventListener("click",()=>{
     // All answered inequalities are saved; revisit the completed region later.
     cancelBuildRevealTimer();
@@ -1015,10 +1133,13 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   $("graphRestartPlaying").addEventListener("click",restart);
   $("graphChooseAgain").addEventListener("click",()=>setScreen("picker"));
   $("graphNextPicture").addEventListener("click",()=>{
-    // Return to the unified gallery with the next stage already selected.
-    const next=graphModeGallery(mode())[picture().step];
-    if(!next)return;
-    hubMode=mode();hubSelections[hubMode]=next.id;
+    // Next offers another unfinished mystery at this same difficulty.
+    // If the pool is complete, the picker invites another difficulty or replay.
+    hubMode=mode();
+    hubTiers[hubMode]=picture().step;
+    hubManual[hubMode]=false;
+    saveGraphMysteryTiers(storage,hubTiers);
+    syncHubUrl();
     setScreen("picker");
   });
   $("graphReplayReveal").addEventListener("click",openReveal);
