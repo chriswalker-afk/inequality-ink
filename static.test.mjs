@@ -461,7 +461,7 @@ test("Five visible progression steps lead from six to fourteen rows, and extras 
    "morePicturesSection","morePicturesToggle","extraPicturePicker",
    "nextPictureButton"])
    assert.ok(html.includes('id="'+id+'"'),"Missing progression element "+id);
- assert.ok(html.includes("CHOOSE A PICTURE"));
+ assert.ok(html.includes("CHOOSE YOUR DIFFICULTY"));
  const picker=getSection("function renderPicturePicker(){","function updateLevelSelector(){");
  assert.ok(picker.includes("progressionForLevel(level)"));
  assert.ok(picker.includes("extraPicturesForLevel(level)"));
