@@ -981,7 +981,12 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
     $("graphNextPicture").hidden=false;
-    $("graphNextPicture").textContent="Another mystery →";
+    const sameLevel=graphMysteryPool(mode(),p.step,
+      hubGallery(mode()),hubPracticeGallery(mode()));
+    const remaining=graphMysteryStatus(sameLevel,q=>
+      saved.records[key(mode(),q.id)]||blank()).remaining;
+    $("graphNextPicture").textContent=remaining?
+      "Another mystery →":"Choose another difficulty →";
   }
   function restart(){
     if(typeof win.confirm==="function"&&!win.confirm(
