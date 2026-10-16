@@ -3,7 +3,7 @@
 import {PICTURE_LIBRARY,fullPictureWidth,questionCount} from "./picture-engine.mjs";
 import {muralSpritePaths} from "./mural-art.mjs";
 import {
-  MURAL_ZONES,MURAL_WIDTH,muralPlacements,muralDiscoveredIds,
+  MURAL_ZONES,MURAL_WIDTH,muralPlacements,
   rememberMuralDiscoveries,muralModesFor
 } from "./mural-model.mjs";
 
@@ -33,9 +33,7 @@ export function replayUrlFor(picture,mode){
   return "./?muralMode="+encodeURIComponent(available)+
     "&muralPicture="+encodeURIComponent(picture.id);
 }
-let activeId=null;
 function showDiscovery(picture){
-  activeId=picture.id;
   $("muralPictureName").textContent=picture.name;
   $("muralPictureStory").textContent=picture.clue+
     " · "+questionCount(picture)+" inequalities · "+
