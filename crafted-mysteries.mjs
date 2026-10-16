@@ -147,9 +147,100 @@ add("mixed",5,"ancient-pyramid","Ancient Pyramid","Desert Mystery",
 add("paint",5,"undersea-submarine","Undersea Submarine","Deep Dive",
   [[6,9],[4,11],[3,12],[2,13],[1,14],[0,15],[0,15],[0,15],[0,15],[1,14],[2,13],[3,12],[4,11],[6,9]],
   ["#81b9bd","#497d98","#ecc57e"],{paintColors:["#7fc1bb","#f0ce8b","#a2a1cf","#e49ab1"],paintSplit:true,paintBackground:"#d9ecf6",detailColors:["#fcf0bf","#fce2d0","#dff8e7"]});
-add("paint",5,"tropical-parrot","Tropical Parrot","Jungle Colours",
+add("paint",5,"festival-egg","Festival Egg","Colourful Secret",
   [[7,8],[5,10],[3,12],[2,13],[2,13],[1,14],[0,15],[0,15],[1,14],[2,13],[3,12],[4,11],[5,10],[6,9]],
   ["#8dbb93","#578677","#efc27d"],{paintColors:["#77bc8a","#f0cb81","#d28eb1","#81add1"],paintSplit:true,paintBackground:"#e8f4eb",detailColors:["#f6e0bb","#e1f8d9","#ffefce"]});
+
+// Finishing details identify the actual subject, not merely decorate a blob.
+// A dot on the right half is mirrored onto the left in the final artwork.
+// Each entry is [x, row, colour, reveal stage, relative pixel size].
+const FEATURES=Object.freeze({
+  "honey-bee":[
+    [7,2,"#3d4857","glimmers",.68],[8,3,"#f6e4bc","glimmers",.52],
+    [7,4,"#495367","features",.9],[9,4,"#fff0b4","features",.6],
+    [7,5,"#f9e4ba","finishing",.62],[6,6,"#a67654","finishing",.48]
+  ],
+  "ladybird":[
+    [10,3,"#2d4656","glimmers",.9],[12,4,"#344354","glimmers",.85],
+    [11,5,"#394456","features",.9],[13,6,"#334457","features",.8],
+    [9,8,"#ffe1c8","finishing",.6],[8,9,"#fff0d7","finishing",.62]
+  ],
+  "little-house":[
+    [5,2,"#fae7be","glimmers",.64],[4,3,"#f4d3ab","glimmers",.65],
+    [5,4,"#ede0bb","features",.77],[5,5,"#675e6d","features",.86],
+    [4,6,"#816f6b","finishing",.94],[5,6,"#e5dba9","finishing",.65]
+  ],
+  "toy-train":[
+    [7,3,"#f4e5ac","glimmers",.7],[8,4,"#f8e8c5","glimmers",.7],
+    [7,6,"#495b6c","features",.85],[9,7,"#495b6c","features",.82],
+    [9,8,"#53536a","finishing",.88],[8,9,"#f4d7a8","finishing",.62]
+  ],
+  "pirate-flag":[
+    [7,2,"#ecf2ef","glimmers",.8],[7,3,"#ecf2ef","glimmers",.82],
+    [6,4,"#ecf2ef","features",.82],[5,5,"#e1ccb8","features",.7],
+    [5,7,"#f6dfb8","finishing",.66],[5,8,"#836b65","finishing",.75]
+  ],
+  "kitten-face":[
+    [7,1,"#f1b4b5","glimmers",.8],[7,2,"#f1b4b5","glimmers",.7],
+    [6,4,"#42465d","features",.94],[6,5,"#f4e5c7","features",.55],
+    [5,6,"#dd9299","finishing",.85],[5,7,"#7a646a","finishing",.53]
+  ],
+  "cherry-cupcake":[
+    [6,1,"#c65e6c","glimmers",.88],[7,4,"#fff5d1","glimmers",.7],
+    [8,5,"#fcecd6","features",.66],[7,6,"#fdf6e2","features",.75],
+    [7,9,"#b68b74","finishing",.83],[6,10,"#f7e1b7","finishing",.74]
+  ],
+  "robot-helmet":[
+    [9,1,"#f0ddb3","glimmers",.73],[10,3,"#f2ebc8","glimmers",.68],
+    [12,6,"#355873","features",.91],[11,7,"#e2f4fd","features",.82],
+    [12,9,"#4a657c","finishing",.88],[11,10,"#f6d1af","finishing",.73]
+  ],
+  "celebration-cupcake":[
+    [9,1,"#fff5bc","glimmers",.86],[10,4,"#f6e6c5","glimmers",.71],
+    [12,6,"#fff7de","features",.81],[11,7,"#e9bcf0","features",.77],
+    [11,10,"#fef1cc","finishing",.83],[10,12,"#efc39e","finishing",.69]
+  ],
+  "garden-gnome":[
+    [7,3,"#fff1d4","glimmers",.75],[8,5,"#fce7ca","glimmers",.72],
+    [8,7,"#4b4b60","features",.92],[7,8,"#d99c8f","features",.86],
+    [8,10,"#fff7eb","finishing",.9],[8,11,"#f2dfcd","finishing",.88]
+  ],
+  "mushroom-house":[
+    [10,3,"#fff4d3","glimmers",.93],[11,4,"#ffecd3","glimmers",.76],
+    [9,6,"#ffe5b8","features",.82],[8,8,"#a37e70","features",.8],
+    [8,10,"#7b786f","finishing",.97],[8,11,"#897d6b","finishing",.91]
+  ],
+  "smiling-sun":[
+    [5,2,"#fcf2c3","glimmers",.63],[5,3,"#606676","glimmers",.9],
+    [4,4,"#fff0ae","features",.7],[5,4,"#f5df90","features",.6],
+    [4,5,"#886d63","finishing",.72],[4,6,"#ffedb4","finishing",.72]
+  ],
+  "double-decker-bus":[
+    [11,4,"#dbecf4","glimmers",.85],[12,5,"#eaf4f2","glimmers",.85],
+    [11,7,"#dbe8ed","features",.85],[12,8,"#f6e9d1","features",.85],
+    [11,12,"#575c6a","finishing",.92],[11,13,"#535966","finishing",.92]
+  ],
+  "pixel-guitar":[
+    [8,2,"#f5dcb6","glimmers",.7],[8,4,"#ffe9cb","glimmers",.74],
+    [9,7,"#f9ecd8","features",.83],[8,9,"#55495c","features",.98],
+    [9,11,"#f6e3bd","finishing",.7],[8,13,"#e9cea3","finishing",.76]
+  ],
+  "pirate-skull":[
+    [10,3,"#fff3dd","glimmers",.65],[9,4,"#f7e6ce","glimmers",.67],
+    [10,5,"#414454","features",.98],[10,6,"#404556","features",.92],
+    [9,12,"#7c6e70","finishing",.83],[8,13,"#fff6e5","finishing",.65]
+  ],
+  "undersea-submarine":[
+    [9,3,"#edf7db","glimmers",.68],[10,5,"#f8efc8","glimmers",.79],
+    [11,7,"#e7f5e1","features",.95],[12,8,"#f6e8d2","features",.87],
+    [11,10,"#496b87","finishing",.82],[9,12,"#dfedd9","finishing",.79]
+  ],
+  "festival-egg":[
+    [9,3,"#f9e1bb","glimmers",.83],[10,5,"#ecf5ca","glimmers",.82],
+    [12,7,"#fdf0d3","features",.8],[11,8,"#ffe9bb","features",.83],
+    [9,11,"#fff4d8","finishing",.78],[8,13,"#f6ead1","finishing",.72]
+  ]
+});
 
 const COUNT_BY_STAGE=[6,8,10,12,14];
 const WIDTHS=[8,10,12,14,16];
@@ -188,7 +279,7 @@ function pictureFromSpec(spec,index){
     1+Math.round(i*(count-1)/5));
   const decorationColors=options.detailColors||
     ["#fff1cc","#f8dfdd","#d6f4ec"];
-  const details=ys.map((y,i)=>{
+  const details=FEATURES[id]||ys.map((y,i)=>{
     const [left,right]=spans[y-1];
     const centre=mode==="mirror"?0:w/2;
     const maxOffset=mode==="mirror"?right:Math.max(0,right-centre);
