@@ -557,8 +557,6 @@ export function validateGraphPictureLibrary(){
           (mode.id==="fill"?6:5):(mode.id==="fill"?9:8))))
         throw Error("Advanced linear art missing from "+mode.id+" stage "+step);
     }
-    if(false)
-      throw Error("Step Up practice must match core difficulty");
   }
   return true;
 }
