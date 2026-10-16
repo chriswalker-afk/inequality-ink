@@ -27,14 +27,15 @@ test("Graph Art offers five freely accessible mathematical difficulties in four 
   for(const mode of GRAPH_MYSTERY_MODES){
     const [core,practice]=galleries(mode);
     assert.equal(core.length,5);
-    assert.equal(practice.length,1);
+    assert.equal(practice.length,5);
     for(const tier of GRAPH_MYSTERY_LEVELS){
       const pool=graphMysteryPool(mode,tier.step,core,practice);
-      assert.equal(pool.length,tier.step===2&&mode!=="build"?2:1,
+      assert.equal(pool.length,tier.step===1?5:tier.step===2&&mode!=="build"?2:1,
         mode+" tier "+tier.step);
       assert.ok(pool.every(p=>p.step===tier.step&&p.mode===mode));
       assert.equal(new Set(pool.map(p=>p.id)).size,pool.length);
       if(tier.step===2&&mode!=="build")assert.ok(pool.some(p=>p.practice));
+      if(tier.step===1)assert.equal(pool.filter(p=>p.quickSpark).length,4);
       assert.ok(pool.every(p=>p.practiceType!=="reverse"),
         "A reverse-reading challenge must remain an opt-in variation");
     }
