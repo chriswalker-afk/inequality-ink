@@ -7,11 +7,11 @@
   <meta name="description" content="Practise inequalities on interactive number lines and reveal colourful pixel-art pictures as you go." />
   <title>Inequality Ink | Pixel-art maths</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M12 12h18v18H12zm22 0h18v18H34zM12 34h18v18H12z' fill='%23f6a17e'/%3E%3Cpath d='M34 34h18v18H34z' fill='%237cc2af'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles.css?v=student-feedback-v1" />
+  <link rel="stylesheet" href="./styles.css?v=difficulty-first-v1" />
   <link rel="stylesheet" href="./studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="./help/how-to-play.css?v=guide-v1" />
   <script type="module" src="./help/how-to-play.mjs?v=guide-v1"></script>
-  <script type="module" src="./app.mjs?v=student-feedback-v1"></script>
+  <script type="module" src="./app.mjs?v=difficulty-first-v1"></script>
 </head>
 <body>
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -66,19 +66,26 @@
         </div>
         <div class="picture-picker-shell">
           <div class="picture-picker-heading">
-            <span class="eyebrow">CHOOSE A PICTURE</span>
-            <span id="picturePickerStatus" aria-live="polite">5 steps to explore</span>
+            <span class="eyebrow">CHOOSE YOUR DIFFICULTY</span>
+            <span id="picturePickerStatus" aria-live="polite">Five levels of discovery</span>
           </div>
-          <p id="pictureJourneyHelp" class="picture-journey-help">Start with a quick win, then build to bigger pictures.</p>
+          <p id="pictureJourneyHelp" class="picture-journey-help">Choose the maths. The picture stays a surprise.</p>
           <div class="picture-path-heading">
-            <strong>Your picture journey</strong>
-            <span id="picturePathProgress" aria-live="polite">0 of 5 completed</span>
+            <strong>Your discoveries</strong>
+            <span id="picturePathProgress" aria-live="polite">Choose a challenge</span>
           </div>
-          <div id="pictureStepTrack" class="picture-step-track" aria-label="Five-step picture journey"></div>
-          <div id="picturePicker" class="picture-picker" role="group" aria-label="Choose a picture"></div>
+          <div id="pictureStepTrack" class="picture-step-track" aria-label="Five difficulty levels"></div>
+          <div id="difficultyPicker" class="difficulty-picker" role="group" aria-label="Choose mathematical difficulty"></div>
+          <div id="mysteryDecision" class="mystery-decision">
+            <p id="mysteryTierStatus" role="status" aria-live="polite"></p>
+            <button type="button" id="mysteryStartButton" class="button button-primary">Start a mystery →</button>
+            <button type="button" id="mysteryContinueButton" class="button button-light" hidden>Continue your picture →</button>
+          </div>
           <details id="morePicturesSection" class="more-pictures">
-            <summary id="morePicturesToggle">More pictures</summary>
-            <div id="extraPicturePicker" class="picture-picker extra-picture-picker" role="group" aria-label="More pictures"></div>
+            <summary id="morePicturesToggle">Picture gallery · choose or replay</summary>
+            <p class="gallery-description">Optional: choose a particular picture or replay one you have already found. Unfinished mysteries are shown by clue only.</p>
+            <div id="picturePicker" class="picture-picker" role="group" aria-label="Main picture gallery"></div>
+            <div id="extraPicturePicker" class="picture-picker extra-picture-picker" role="group" aria-label="Other pictures"></div>
           </details>
           <div class="picture-variety-note">
             <span>Want something different?</span>
