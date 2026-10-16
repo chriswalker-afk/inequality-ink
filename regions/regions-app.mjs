@@ -522,7 +522,16 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
           "Start a "+level.name+" mystery ↗":"All discovered ✓";
         $("graphPreviewSvg").setAttribute("aria-label",
           "Empty coordinate canvas; the next mathematical picture is hidden");
-        baseGraph($("graphPreviewSvg"),doc);
+        const mysteryCanvas=$("graphPreviewSvg");
+        baseGraph(mysteryCanvas,doc);
+        textSvg(doc,mysteryCanvas,SIZE/2,SIZE/2+29,"?",{
+          "text-anchor":"middle","font-size":142,"font-weight":900,
+          fill:"#86bcae","fill-opacity":.53,"pointer-events":"none"
+        });
+        textSvg(doc,mysteryCanvas,SIZE/2,SIZE/2+75,"MYSTERY",{
+          "text-anchor":"middle","font-size":15,"font-weight":850,
+          "letter-spacing":4,fill:"#718d86","pointer-events":"none"
+        });
       }
     }
     $("graphMysteryHint").textContent=stats.remaining?
