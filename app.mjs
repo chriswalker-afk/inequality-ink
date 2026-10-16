@@ -1461,7 +1461,7 @@ function finish({animate=false}={}){
   clearRevealTimers();
   const picture=activePicture();
   save.completed=true;store();
-  rememberMuralDiscoveries(localStorage,state.progress,picture.id);
+  try{rememberMuralDiscoveries(localStorage,state.progress,picture.id);}catch{}
   $("muralEarnedLink").href="./mural.html?found="+encodeURIComponent(picture.id);
   $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
   $("finishTitle").textContent=picture.name+"!";
