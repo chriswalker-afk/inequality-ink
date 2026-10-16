@@ -114,11 +114,11 @@ function decorations(rows,family,w,n,colours){
   const decorations=[],groups=["glimmer","highlights","finishing"];
   // Deliberately only place details where real filled pixel squares exist.
   for(let j=0;j<3;j++){
-    const y=Math.round(1+(n-1)*(j+1)/4);
+    const y=1+j*2;
     const [from,to]=rows[y-1], centre=family==="half"?0:w/2-1;
     const selected=clip(centre,from,to);
     decorations.push([family==="half"?w+selected:selected,y,colours[j],groups[j]]);
-    const below=clip(y+1,1,n),[left,right]=rows[below-1];
+    const below=y+1,[left,right]=rows[below-1];
     const second=clip(family==="half"?Math.min(2,right):w/2-1,left,right);
     if(below!==y)decorations.push([family==="half"?w+second:second,below,colours[j],groups[j]]);
   }
