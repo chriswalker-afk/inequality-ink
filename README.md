@@ -132,6 +132,46 @@ uncompleted pictures. They start the chosen task immediately, with no
 additional confirmation or compulsory help. Returning to any previous
 picture retains its own progress and replays.
 
+## Graph Art Pass 2 — Step Up reaches five mysteries per mode
+
+The second variety batch adds **13 original Step Up pictures**, expanding
+Graph Art from 40 to **53 distinct artworks**. All four modes now offer
+**five automatically selectable mysteries at both Quick Spark and Step Up**,
+with three genuine mathematical pieces per Step Up picture. The independent
+saved progress records of every earlier picture remain untouched.
+
+| Mode | New Step Up discoveries | Mathematical emphasis |
+| --- | --- | --- |
+| **Find & Fill** | Bubble Fish; Potted Sunflower; Tiny Lighthouse | Identify common regions between sloping straight lines, plus axis boundaries |
+| **Build & Shade** | Happy Penguin; Mountain Cabin; Hot Air Balloon; Desert Cactus | Choose the correct half-plane and solid/dashed style for rising and falling gradients |
+| **Curve & Fill** | Sea Turtle; Swirly Lollipop; Blooming Tulip | Circles, translated parabolas, intersections, and the role of restrictive straight boundaries |
+| **Plot & Shade** | Moonlit Lighthouse; Geometric Cat; Garden Daisy | Construct a line, parabola or circle from mathematical information before shading the common region |
+
+These are **real inequality pictures**, not pre-painted image masks.
+Their convex polygons are derived from active edge inequalities; curved and
+circular regions are defined by their equations; Plot & Shade tasks use
+points that pass the game's exact graphical construction checker. Every new
+picture has an independent ID, thematic decorative features and a staged
+big reveal.
+
+Students continue to choose a mode and difficulty first; the existing
+**unfinished-only mystery selector** automatically draws from the larger
+pools. Partially completed pictures resume where they stopped, and the
+optional gallery allows deliberate selection and replay. **Diamond Kite**
+remains a sixth, gallery-only reverse-reading variation in Build & Shade;
+it is excluded from regular randomised choices because it uses different
+controls.
+
+**Next Pass 2 batches:** expand Ink Builder, Brain Stretch and Masterpiece,
+then build the separate completed-only Graph Art mural. The current
+library has **40 standard choices across the two easiest levels** plus
+13 other unique pictures, including the reverse-reading bonus.
+
+Tests enforce the exact pool sizes, mathematical shapes and signatures,
+strict boundary semantics, graph construction points and full three-piece
+completion with saved progress in every mode. All original picture IDs,
+questions, mathematical marking, touches and reveals are preserved.
+
 ## Graph Art Pass 2 — four additional Quick Spark pictures per mode
 
 The first picture-variety batch is now live in the Graph Art library.
@@ -159,9 +199,9 @@ All original stories, curves, plotting workflows, reveals and optional
 reverse-reading work remain intact. The optional picture gallery also includes
 the new artwork for deliberate selection or replay.
 
-**Subsequent Pass 2 batches:** fill the Step Up pools with varied intermediate
-maths, then expand Ink Builder, Brain Stretch and Masterpiece. This first
-batch deliberately avoids diluting harder mathematics just to increase counts.
+**Subsequent Pass 2 batches:** Step Up has since been expanded to five
+choices in every mode. Next are Ink Builder, Brain Stretch and Masterpiece,
+without diluting their mathematics just to increase picture counts.
 A separate completed-only **Graph Art mural** is planned for a later pass.
 
 A dedicated test suite validates all 20 Quick Spark choices, the new 16
@@ -177,9 +217,9 @@ picture without previewing unrevealed artwork.
 
 - **Start a mystery** randomly chooses an unfinished picture at the selected
   difficulty, preferring untouched art and never automatically replaying an
-  already completed picture. The current library honestly offers **one
-  standard picture at each difficulty**, plus optional Step Up alternatives. The reverse-reading Diamond Kite stays gallery-only.
-  Expanding to five per difficulty belongs to Pass 2, not this change.
+  already completed picture. At the time of Pass 1, there was only **one
+  standard picture at most difficulties**. Pass 2 has since expanded both
+  Quick Spark and Step Up to five choices; Diamond Kite remains gallery-only.
 - **Continue your picture** resumes partly completed work, including saved
   graph points in Plot & Shade and a partly built inequality in Build & Shade.
 - The five difficulties remain freely selectable. When everything at one
