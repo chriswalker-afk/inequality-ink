@@ -1636,7 +1636,7 @@ test("Difficulty-first random mystery avoids completed art and resumes partial a
   assert.equal($("difficultyPicker").children.length,5);
   const second=$("difficultyPicker").children[1];
   second.click();
-  assert.equal(second.getAttribute("aria-pressed"),"true");
+  assert.equal($("difficultyPicker").children[1].getAttribute("aria-pressed"),"true");
   assert.ok($("mysteryTierStatus").textContent.includes("questions each"));
   const old=JSON.parse(localStorage.getItem("inequality-ink-v5"));
   const oldCompleted=new Set(Object.entries(old.progress).filter(([k,r])=>
