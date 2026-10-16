@@ -205,3 +205,51 @@ test("Completed Step Up artworks have distinct silhouettes and meaningful staged
     }
   }
 });
+
+
+test("Every new displayed linear inequality has exactly the mathematical meaning it claims",()=>{
+  const fractions={"½":.5,"⅓":1/3,"⅔":2/3,"¼":.25,"¾":.75,
+    "⅕":.2,"⅖":.4,"⅗":.6,"⅘":.8};
+  function number(token){
+    let t=token.replaceAll("−","-").trim();
+    if(t===""||t==="+")return 1;
+    if(t==="-")return -1;
+    const sign=t.startsWith("-")?-1:1;
+    if(t.startsWith("-")||t.startsWith("+"))t=t.slice(1);
+    if(Object.hasOwn(fractions,t))return sign*fractions[t];
+    if(t.includes("/")){
+      const [num,den]=t.split("/").map(Number);
+      return sign*num/den;
+    }
+    return sign*Number(t);
+  }
+  for(const p of LINEAR_STEP_UPS)for(const piece of p.pieces)
+    for(const rule of piece.rules){
+      const match=/^([xy])\s*([<>≤≥])\s*(.+)$/.exec(rule.text);
+      assert.ok(match,"Unreadable mathematical inequality: "+rule.text);
+      const [,varName,sign,rhs]=match;
+      assert.equal(rule.inclusive,sign==="≤"||sign==="≥");
+      const compact=rhs.replaceAll(" ","");
+      function threshold(x){
+        const pos=compact.indexOf("x");
+        if(pos<0)return number(compact);
+        const slope=number(compact.slice(0,pos));
+        const tail=compact.slice(pos+1);
+        const intercept=tail?number(tail):0;
+        return slope*x+intercept;
+      }
+      for(const [x,y]of[[0.15,.33],[-1.65,2.3],[3.45,-2.6],
+          [-3.85,-3.35],[.72,3.61],[2.17,.86]]){
+        const value=varName==="x"?x:y,expected=threshold(x);
+        assert.ok(Number.isFinite(expected),rule.text);
+        const dist=Math.abs(evaluateRegionRule(rule,x,y))/
+          Math.hypot(rule.a,rule.b);
+        if(dist<1e-6)continue;
+        const displayed=(sign==="≤"||sign==="<")?
+          value<expected:value>expected;
+        assert.equal(pointSatisfiesAll([rule],x,y),displayed,
+          "Displayed "+rule.text+" contradicts its stored coefficients at ("+
+            x+", "+y+")");
+      }
+    }
+});
