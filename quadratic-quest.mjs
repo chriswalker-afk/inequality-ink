@@ -1,3 +1,5 @@
+import {QUEST_EXTRA_DEFINITIONS} from "./quadratic-quest-extra.mjs";
+
 // A self-contained quadratic-inequality extension to Inequality Ink.
 // A correct REAL solution unlocks a decorative row; its pixels are not an
 // integer sampling of the quadratic solution set (which can be disconnected).
@@ -37,7 +39,7 @@ export const QUEST_TOTAL=QUEST_QUESTIONS.length;
 export const QUEST_LEGACY_SAVE_KEY=QUEST_SAVE_KEY;
 export const QUEST_SAVE_KEY_V2="inequality-ink-quadratic-quest-v2";
 export const QUEST_STAGE_NAMES=Object.freeze([
-  "Starter","Step Up","Building","Challenge","Big Finish"
+  "Quick Spark","Step Up","Ink Builder","Brain Stretch","Masterpiece"
 ]);
 const sign=n=>n<0?"− "+Math.abs(n):"+ "+n;
 function quadraticTerm(coefficient,power,first=false){
@@ -94,7 +96,7 @@ function makePicture(id,name,stage,focus,axis,art,questions){
     }),questions:Object.freeze(questions)
   });
 }
-export const QUEST_PICTURES=Object.freeze([
+export const QUEST_CORE_PICTURES=Object.freeze([
   makePicture("prism","Prism of Possibilities",1,
     "Find the roots; choose between or outside",QUEST_AXIS,QUEST_ART,QUEST_QUESTIONS),
   makePicture("petals","Petal Parabola",2,
@@ -210,11 +212,80 @@ export const QUEST_PICTURES=Object.freeze([
       makeQuestion("p5-14","expanded",2,-5,6,"<")
     ])
 ]);
+// Four additional original pictures in each stage. The original five stay at
+// indices 0-4 with their exact authored questions, IDs and progress untouched.
+export const QUEST_TIER_FOCUS=Object.freeze([
+  "Factorised quadratics · roots, signs and endpoints",
+  "Expanded monic quadratics · factorise first",
+  "Rearrange inequalities to zero · choose the right region",
+  "Scaled and non-monic quadratics · handle negative coefficients",
+  "Mixed forms · decide your own method"
+]);
+const AXES=Object.freeze([
+  {min:-5,max:5},{min:-6,max:6},{min:-7,max:7},
+  {min:-8,max:8},{min:-8,max:8}
+]);
+const ROOT_PAIRS=Object.freeze([
+  [-4,-2],[-4,-1],[-4,1],[-4,2],[-4,3],[-3,-2],[-3,0],
+  [-3,2],[-3,4],[-2,-1],[-2,1],[-2,3],[-2,4],[-1,1],
+  [-1,3],[-1,4],[0,2],[0,3],[1,3],[1,4],[-5,1],[-5,3],
+  [-2,5],[-4,5],[-6,-2],[-6,3],[2,6],[-3,6]
+]);
+const SIGNS=Object.freeze(["<",">=","<=",">"]);
+const MASTER_FORMS=Object.freeze([
+  "factorised","expanded","rearranged","scaled","expanded",
+  "rearranged","scaled","factorised","expanded","rearranged",
+  "scaled","expanded","factorised","rearranged"
+]);
+function extraQuestions(definition,variant){
+  const {stage,id}=definition,axis=AXES[stage-1];
+  const candidates=ROOT_PAIRS.filter(([lo,hi])=>
+    lo>axis.min&&hi<axis.max);
+  const count=4+stage*2;
+  return Array.from({length:count},(_,i)=>{
+    const [lo,hi]=candidates[(i*11+variant*5+stage)%candidates.length];
+    const operator=SIGNS[(i+variant*2)%SIGNS.length];
+    let form="factorised",a=1,rhs=0;
+    if(stage===2){
+      form="expanded";a=i===count-1?-1:1;
+    }else if(stage===3){
+      form=i%4===3?"expanded":"rearranged";
+      a=i>=count-2?-1:1;
+      if(form==="rearranged")rhs=(i%2?-1:1)*(2+variant+i);
+    }else if(stage===4){
+      form=["scaled","expanded","rearranged","scaled"][i%4];
+      a=[2,3,-2,2,-3,4,3,-2,-4,2,3,-3][i];
+      if(form==="rearranged")rhs=(i%2?-1:1)*(4+i+variant);
+    }else if(stage===5){
+      form=MASTER_FORMS[i];
+      a=[1,-1,2,-2,3,1,-3,4,-2,1,2,-3,-1,3][i];
+      if(form==="rearranged")rhs=(i%2?-1:1)*(5+i+variant);
+    }
+    return makeQuestion(id+"-q"+String(i+1).padStart(2,"0"),
+      form,a,lo,hi,operator,rhs);
+  });
+}
+export const QUEST_EXTRA_PICTURES=Object.freeze(
+  QUEST_EXTRA_DEFINITIONS.map(def=>{
+    const variant=QUEST_EXTRA_DEFINITIONS.filter(p=>p.stage===def.stage)
+      .findIndex(p=>p.id===def.id);
+    return Object.freeze({
+      ...makePicture(def.id,def.name,def.stage,def.focus,
+        AXES[def.stage-1],def.art,extraQuestions(def,variant)),
+      clue:def.clue
+    });
+  }));
+export const QUEST_PICTURES=Object.freeze([
+  ...QUEST_CORE_PICTURES,...QUEST_EXTRA_PICTURES
+]);
+export const questPicturesForTier=step=>
+  QUEST_PICTURES.filter(p=>p.stage===step);
+
 export function questPictureById(id){
   return QUEST_PICTURES.find(p=>p.id===id)||null;
 }
 export function questPictureForStep(step){
-  return QUEST_PICTURES[step-1]||null;
+  return QUEST_CORE_PICTURES[step-1]||null;
 }
 export function questQuestionCount(picture){return picture.questions.length;}
 
@@ -288,12 +359,16 @@ export function quadraticExplanation(q){
 // Validate the authored mathematical journey and artwork rather than assuming
 // that matching integer pixels is sufficient for a quadratic inequality.
 export function validateQuadraticQuest(){
-  if(QUEST_PICTURES.length!==5)throw Error("Quadratic Quest needs five stages.");
+  if(QUEST_PICTURES.length!==25)throw Error("Quadratic Quest needs five pictures per difficulty.");
+  for(let step=1;step<=5;step++)if(questPicturesForTier(step).length!==5)
+    throw Error("Quadratic Quest tier "+step+" needs five pictures.");
   const ids=new Set(),questionIds=new Set();
   const counts=[6,8,10,12,14];
-  for(let step=0;step<5;step++){
-    const picture=QUEST_PICTURES[step],{axis,art,questions}=picture;
-    if(ids.has(picture.id)||picture.stage!==step+1||
+  for(const [index,picture] of QUEST_PICTURES.entries()){
+    const {axis,art,questions}=picture,step=picture.stage-1;
+    if(ids.has(picture.id)||!Number.isInteger(picture.stage)||
+      picture.stage<1||picture.stage>5||
+      (index<5&&picture.stage!==index+1)||
       questions.length!==counts[step]||art.rows.length!==counts[step])
       throw Error("Invalid picture progression at "+(step+1));
     ids.add(picture.id);
