@@ -176,7 +176,7 @@ const FEATURES=Object.freeze({
     [9,8,"#53536a","finishing",.88],[8,9,"#f4d7a8","finishing",.62]
   ],
   "pirate-flag":[
-    [7,2,"#ecf2ef","glimmers",.8],[7,3,"#ecf2ef","glimmers",.82],
+    [6,2,"#ecf2ef","glimmers",.8],[7,3,"#ecf2ef","glimmers",.82],
     [6,4,"#ecf2ef","features",.82],[5,5,"#e1ccb8","features",.7],
     [5,7,"#f6dfb8","finishing",.66],[5,8,"#836b65","finishing",.75]
   ],
