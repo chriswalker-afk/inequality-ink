@@ -142,7 +142,7 @@ picture without previewing unrevealed artwork.
 - **Start a mystery** randomly chooses an unfinished picture at the selected
   difficulty, preferring untouched art and never automatically replaying an
   already completed picture. The current library honestly offers **one
-  picture at each difficulty, plus a second Step Up picture** in each mode.
+  standard picture at each difficulty**, plus optional Step Up alternatives. The reverse-reading Diamond Kite stays gallery-only.
   Expanding to five per difficulty belongs to Pass 2, not this change.
 - **Continue your picture** resumes partly completed work, including saved
   graph points in Plot & Shade and a partly built inequality in Build & Shade.
