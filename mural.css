@@ -1,0 +1,151 @@
+:root{
+  --navy:#283c55;--teal:#368b76;--teal-dark:#2a705f;
+  --muted:#718292;--cream:#f6f4ec;--paper:#fffefa;--stroke:#e5e6df;
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;color:var(--navy);background:var(--cream)}
+button,a{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+button:focus-visible,a:focus-visible,.mural-viewport:focus-visible,
+.mural-discovery:focus-visible{outline:3px solid #e6a876;outline-offset:3px}
+[hidden]{display:none!important}
+.mural-page{max-width:1600px;margin:0 auto;padding:16px clamp(14px,2.7vw,42px) 24px}
+.mural-topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 0 18px}
+.mural-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#293b51}
+.mural-brand strong{display:block;font-size:1.35rem;letter-spacing:-.06em;line-height:1.13}
+.mural-brand small{display:block;font-size:.67rem;font-weight:700;letter-spacing:.04em;color:#898b91}
+.brand-accent{color:#e27f73}
+.brand-mark{display:grid;grid-template-columns:repeat(2,12px);gap:3px;transform:rotate(-9deg)}
+.brand-mark i{display:block;width:12px;height:12px;border-radius:2px;background:#e88779}
+.brand-mark i:nth-child(2){background:#293b51}
+.brand-mark i:nth-child(3){background:#91caba}
+.brand-mark i:nth-child(4){background:#f0c77e}
+.mural-top-actions{display:flex;align-items:center;gap:12px}
+.mural-pill{background:#e5f3e9;border-radius:20px;color:#43846f;font-size:.74rem;font-weight:850;padding:8px 12px}
+.mural-back{background:#fffdf9;border:1px solid #dedfdc;border-radius:11px;
+  text-decoration:none;font-size:.76rem;font-weight:800;padding:10px 13px}
+.mural-back:hover{border-color:#87b3a6;background:#f4fbf6}
+.mural-intro{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:12px 5px 26px}
+.eyebrow{font-size:.69rem;color:#a77372;letter-spacing:.13em;font-weight:900}
+.mural-heading h1{font-size:clamp(2.65rem,5vw,4.9rem);letter-spacing:-.085em;
+  line-height:1.08;margin:11px 0 9px;font-weight:850}
+.mural-heading h1 em{font-style:normal;color:#d77f74}
+.mural-heading p{max-width:680px;font-size:clamp(.87rem,1.4vw,1rem);
+  line-height:1.56;color:#66788a;margin:0}
+.mural-progress{min-width:200px;display:grid;grid-template-columns:39px 1fr;
+  align-items:center;gap:6px 12px;background:#fffefa;border:1px solid var(--stroke);
+  border-radius:18px;padding:14px 17px;box-shadow:0 10px 33px #37495b0c}
+.mural-progress-orb{display:grid;place-items:center;width:39px;height:39px;
+  border-radius:12px;background:#e4f4e7;color:#3d9076;font-size:1.15rem}
+.mural-progress strong{display:block;letter-spacing:-.05em;font-size:1.5rem;line-height:1}
+.mural-progress span:not(.mural-progress-orb span){font-size:.71rem;color:#71828a;font-weight:730}
+.mural-progress-track{grid-column:1/-1;background:#edf0eb;border-radius:50px;height:6px;overflow:hidden;margin-top:5px}
+.mural-progress-track span{display:block;background:linear-gradient(90deg,#73b9a0,#b2d7ae);height:100%;width:0;transition:width .4s}
+.mural-frame{border:1px solid #dedfd8;border-radius:22px;overflow:hidden;background:#fffdf9;
+  box-shadow:0 16px 52px #4153671c}
+.mural-controls{display:flex;justify-content:space-between;align-items:center;
+  gap:12px;padding:14px 18px;background:#fffefa;border-bottom:1px solid #e8e9e0}
+.mural-controls-title{display:grid;gap:4px;min-width:210px}
+.mural-controls-title strong{font-size:.91rem}
+.mural-controls-title small{font-size:.69rem;color:#74818d}
+.mural-zones{display:flex;gap:6px;flex-wrap:wrap}
+.mural-zones button{white-space:nowrap;background:#f7f8f4;border:1px solid #e2e9e2;
+  border-radius:999px;min-height:37px;font-size:.73rem;padding:8px 12px;
+  font-weight:800;color:#697985;transition:background .17s,border-color .17s,color .17s}
+.mural-zones button:hover{background:#ecf5ed}
+.mural-zones button[aria-current="true"]{background:#e4f4e9;border-color:#9ccdb4;color:#347c67}
+.mural-viewport{height:681px;min-height:0;
+  position:relative;overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain;
+  scrollbar-width:thin;scrollbar-color:#9bc9b6 #e8f0e7;
+  -webkit-overflow-scrolling:touch;touch-action:pan-x;outline-offset:-4px;
+  background:#dcefeb}
+.mural-world{display:block;width:4482px;height:681px;max-width:none;
+  shape-rendering:geometricPrecision;/* Natural horizontal scrolling at a fixed scale. */}
+.mural-discovery{cursor:pointer;outline:none;transition:opacity .2s}
+.mural-discovery:hover .mural-sprite{filter:brightness(1.08)}
+.mural-discovery .mural-focus-ring{display:none}
+.mural-discovery:focus-visible .mural-focus-ring{display:block;stroke:#e5a86f;stroke-width:1.3}
+.mural-discovery .mural-sprite{shape-rendering:crispEdges;filter:url(#rewardShadow)}
+@keyframes muralArrive{
+  from{opacity:0}
+  to{opacity:1}
+}
+.mural-discovery.recently-found{animation:muralArrive .55s both}
+.mural-bottom{display:flex;align-items:center;justify-content:space-between;
+  gap:14px;padding:12px 18px;min-height:59px}
+.mural-bottom p{font-size:.73rem;color:#71858e;margin:0;line-height:1.45}
+.mural-continue{white-space:nowrap;text-decoration:none;border-radius:11px;
+  border:1px solid #ccded4;padding:9px 12px;font-size:.76rem;
+  font-weight:850;background:#ecf6ed;color:#387d69}
+.mural-continue:hover{background:#ddf2e5}
+.mural-footnote{font-size:.73rem;line-height:1.65;max-width:910px;color:#7e858a;
+  margin:16px auto;text-align:center}
+.mural-footer{display:flex;justify-content:space-between;gap:10px;font-size:.66rem;
+  font-weight:850;letter-spacing:.09em;color:#a39b93;margin-top:25px;
+  border-top:1px solid #e6e0d8;padding:20px 0}
+.mural-footer span:first-child{color:#dc8c7f}
+.mural-footer span:last-child{font-weight:650;letter-spacing:0}
+.mural-details{position:fixed;inset:0;border:1px solid #deded5;border-radius:22px;
+  background:#fffefa;max-width:min(420px,calc(100vw - 28px));width:100%;
+  max-height:calc(100dvh - 28px);padding:25px 26px;box-shadow:0 32px 80px #20385255;color:#30445b}
+.mural-details::backdrop{background:#1f3048a8;backdrop-filter:blur(4px)}
+.mural-dialog-close{position:absolute;top:13px;right:13px;border:1px solid #e6e6df;
+  border-radius:50%;background:#faf9f5;width:35px;height:35px;color:#53697c}
+.mural-detail-head{padding-right:25px}
+.mural-detail-head h2{margin:9px 0 5px;font-size:1.8rem;letter-spacing:-.05em}
+.mural-detail-head p{font-size:.85rem;color:#687d84;line-height:1.5;margin:0}
+.mural-detail-preview{display:grid;place-items:center;min-height:260px;margin:17px 0;
+  border:1px solid #dce7e1;border-radius:16px;
+  background:radial-gradient(ellipse at 35% 28%,#f4fcf7,#e2efee 95%)}
+.mural-detail-preview svg{width:min(75%,260px);max-height:240px;
+  image-rendering:pixelated;overflow:visible}
+.mural-detail-actions{display:grid;gap:8px}
+.mural-detail-actions a,.mural-detail-actions button{min-height:46px;padding:12px 16px;
+  border-radius:11px;text-align:center;text-decoration:none;font-weight:850;
+  border:1px solid #dce5df;font-size:.85rem}
+.mural-replay{background:#2f735f;color:white;border-color:#2f735f!important}
+.mural-replay:hover{background:#378a6f}
+.mural-dismiss{background:#f7faf6;color:#56776a}
+@media(max-width:1100px){
+  .mural-controls{flex-wrap:wrap}
+  .mural-zones{width:100%}
+}
+@media(max-width:720px){
+  .mural-page{padding:10px 12px 22px}
+  .mural-topbar{padding:6px 1px 13px;flex-wrap:wrap}
+  .mural-brand strong{font-size:1.18rem}
+  .mural-brand small{font-size:.61rem}
+  .mural-top-actions{margin-left:auto;gap:8px}
+  .mural-pill{display:none}
+  .mural-back{padding:9px 10px;font-size:.72rem}
+  .mural-intro{padding:10px 2px 17px;align-items:flex-start;gap:14px}
+  .mural-heading h1{font-size:clamp(2.3rem,10vw,3.5rem);margin:6px 0 7px}
+  .mural-heading .eyebrow{font-size:.58rem}
+  .mural-heading p{font-size:.76rem}
+  .mural-progress{min-width:108px;padding:9px;grid-template-columns:1fr;gap:3px;border-radius:13px}
+  .mural-progress-orb{display:none}
+  .mural-progress strong{font-size:1.28rem}
+  .mural-progress span:not(.mural-progress-orb span){font-size:.62rem}
+  .mural-progress-track{height:5px}
+  .mural-frame{border-radius:17px}
+  .mural-controls{padding:10px 11px;gap:9px}
+  .mural-controls-title strong{font-size:.8rem}
+  .mural-controls-title small{font-size:.65rem}
+  .mural-zones{flex-wrap:nowrap;overflow-x:auto;padding-bottom:3px;scrollbar-width:none}
+  .mural-zones::-webkit-scrollbar{display:none}
+  .mural-zones button{min-height:37px;padding:8px 10px;font-size:.69rem}
+  .mural-viewport{height:566px;min-height:0}
+  .mural-world{width:3726px;height:566px}
+  .mural-bottom{padding:10px 12px;align-items:flex-start;gap:8px}
+  .mural-bottom p{font-size:.67rem}
+  .mural-continue{font-size:.69rem;padding:8px;white-space:normal;text-align:center}
+  .mural-footnote{font-size:.68rem;padding:0 5px}
+  .mural-footer{font-size:.59rem}
+  .mural-footer span:last-child{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;
+    transition-duration:0.01ms!important;scroll-behavior:auto!important}
+}

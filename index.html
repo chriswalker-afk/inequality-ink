@@ -7,11 +7,11 @@
   <meta name="description" content="Practise inequalities on interactive number lines and reveal colourful pixel-art pictures as you go." />
   <title>Inequality Ink | Pixel-art maths</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M12 12h18v18H12zm22 0h18v18H34zM12 34h18v18H12z' fill='%23f6a17e'/%3E%3Cpath d='M34 34h18v18H34z' fill='%237cc2af'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles.css?v=difficulty-first-v1" />
+  <link rel="stylesheet" href="./styles.css?v=my-mural-v1" />
   <link rel="stylesheet" href="./studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="./help/how-to-play.css?v=guide-v1" />
   <script type="module" src="./help/how-to-play.mjs?v=guide-v1"></script>
-  <script type="module" src="./app.mjs?v=five-mysteries-v1"></script>
+  <script type="module" src="./app.mjs?v=my-mural-v1"></script>
 </head>
 <body>
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -27,6 +27,7 @@
           <a class="studio-tab is-active" href="./" aria-current="page"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.2"/><rect x="11" y="2" width="7" height="7" rx="1.2"/><rect x="2" y="11" width="7" height="7" rx="1.2"/><rect x="11" y="11" width="7" height="7" rx="1.2"/></svg></span><span>Pixel Art</span></a>
           <a class="studio-tab" href="./regions/"><span class="studio-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none"><path d="M2.5 2.5v15h15"/><path d="m2.5 12 7.5-7 7.5 8v4.5h-15z" fill="currentColor" fill-opacity=".17"/><path d="m2.5 12 7.5-7 7.5 8" stroke-linejoin="round"/></svg></span><span>Graph Art</span></a>
         </nav>
+        <a class="mural-nav-link" href="./mural.html" aria-label="Open My Mural: your completed pictures"><span aria-hidden="true">✦</span><span class="mural-nav-label"> My Mural</span></a>
         <button type="button" id="helpButton" class="top-button" data-how-to-play>How to play <span aria-hidden="true">?</span></button>
       </div>
     </header>
@@ -522,6 +523,7 @@
             <div><b id="hintsStat">—</b><span>Hints used</span></div>
           </div>
           <p class="finish-note" id="finishNote">Great work! Your next picture is waiting to be imagined.</p>
+          <a id="muralEarnedLink" class="mural-earned-link" href="./mural.html">✦ Added to My Mural · Explore your world →</a>
           <div class="finish-actions">
             <button type="button" class="button button-light" id="playAgain">Play again ↻</button>
             <button type="button" class="button button-light" id="downloadArt">Save picture ↓</button>

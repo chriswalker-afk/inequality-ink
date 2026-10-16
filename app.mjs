@@ -1,4 +1,5 @@
 import {LEVELS,LEVEL_IDS,tutorialFor,identicalSolution,formatInterval,fmt} from "./model.mjs";
+import {rememberMuralDiscoveries} from "./mural-model.mjs?v=mural-v1";
 import {
  PICTURE_LIBRARY,pictureById,picturesForLevel,defaultPictureForLevel,
  progressionForLevel,extraPicturesForLevel,progressionStep,PICTURE_TIERS,mysteryPool,mysteryTier,
@@ -77,6 +78,22 @@ if(PREVIOUS_MIXED_PATH.has(previousMixedSelection)&&
    !previousMixedRecord?.done&&!previousMixedRecord?.completed){
   state.selectedPictures.mixed=defaultPictureForLevel("mixed").id;
 }
+// A completed mural object can be revisited without resetting its save.
+const muralParams=new URLSearchParams(window.location?.search||"");
+const requestedMuralId=muralParams.get("muralPicture");
+const requestedMuralMode=muralParams.get("muralMode");
+if(requestedMuralId&&LEVEL_IDS.includes(requestedMuralMode)){
+  const picture=PICTURE_LIBRARY.find(p=>p.id===requestedMuralId);
+  if(picture?.levels.includes(requestedMuralMode)){
+    state.activeLevel=requestedMuralMode;
+    state.selectedPictures[requestedMuralMode]=picture.id;
+    selectedTier=mysteryTier(picture,requestedMuralMode);
+    manualPicture=true;
+  }
+}
+// Archive existing completed pictures before Play Again clears its row record.
+// All original progress and scores stay untouched.
+try{rememberMuralDiscoveries(localStorage,state.progress);}catch{}
 const activePicture=()=>pictureById(state.selectedPictures[state.activeLevel]);
 const activeKey=()=>progressKey(state.activeLevel,activePicture().id);
 let save=state.progress[activeKey()]||(state.progress[activeKey()]=blank());
@@ -1444,6 +1461,8 @@ function finish({animate=false}={}){
   clearRevealTimers();
   const picture=activePicture();
   save.completed=true;store();
+  try{rememberMuralDiscoveries(localStorage,state.progress,picture.id);}catch{}
+  $("muralEarnedLink").href="./mural.html?found="+encodeURIComponent(picture.id);
   $("finishLevelLabel").textContent=LEVELS[state.activeLevel].name;
   $("finishTitle").textContent=picture.name+"!";
   const step=progressionStep(picture,state.activeLevel),
