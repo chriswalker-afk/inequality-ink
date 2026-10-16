@@ -138,9 +138,9 @@ export function complexQuestion(piece){
     "z":"z − ("+complexLabel(piece.centre)+")";
   const relation=piece.strict?"<":"≤";
   const modulus="|"+centre+"| "+relation+" "+piece.radius;
+  if(piece.kind==="disc")return modulus;
   const argument=complexAngleLabel(piece.from)+" "+relation+" arg("+
     centre+") "+relation+" "+complexAngleLabel(piece.to);
-  if(piece.kind==="disc")return modulus;
   if(piece.kind==="sector")return argument;
   return modulus+"    and    "+argument;
 }
