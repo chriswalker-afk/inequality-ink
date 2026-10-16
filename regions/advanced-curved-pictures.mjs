@@ -136,15 +136,15 @@ const qRules=(id,kind,x,y,step,num)=>{
    rules.push(vline(id+"-right",x+.5,"left",!hard));
  }else if(kind==="band"){
    rules.push(par(id+"-band-low",-.5,x,y-.5,"above"));
-   rules.push(par(id+"-band-high",-.5,x,y+.75,"below",!strict));
+   rules.push(par(id+"-band-high",-.5,x,y+1,"below",!strict));
    rules.push(vline(id+"-band-left",x-1.5,"right"));
    rules.push(vline(id+"-band-right",x+1.5,"left"));
  }else if(kind==="vpetal"){
-   rules.push(ab(id+"-v-lower",x,y-.25,.5,"above",!strict));
-   rules.push(par(id+"-v-upper",-.5,x,y+1.75,"below"));
+   rules.push(ab(id+"-v-lower",x,y-.5,.5,"above",!strict));
+   rules.push(par(id+"-v-upper",-.5,x,y+2,"below"));
  }else if(kind==="spear"){
-   rules.push(ab(id+"-v-top",x,y+1.75,-1,"below",!strict));
-   rules.push(ab(id+"-v-bottom",x,y-.75,1,"above"));
+   rules.push(ab(id+"-v-top",x,y+1.5,-1,"below",!strict));
+   rules.push(ab(id+"-v-bottom",x,y-.5,1,"above"));
  }else throw Error("Unknown mathematically drawn region "+kind);
  return Object.freeze(rules);
 };
