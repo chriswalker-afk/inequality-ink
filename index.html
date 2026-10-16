@@ -117,11 +117,11 @@
           <div class="quest-invite-copy">
             <span class="eyebrow">OPTIONAL EXTENSION ✦</span>
             <h2 id="questInviteTitle">Quadratic Quest</h2>
-            <p>Five optional mystery pictures, from simple factorised quadratics to a full mixed challenge. Your normal picture journey stays separate.</p>
+            <p>Five difficulties, each with five mystery pictures—from factorised quadratics to mixed challenges. Your normal picture journey stays separate.</p>
           </div>
           <div class="quest-invite-actions">
             <button type="button" id="questEnter" class="button button-light">Explore Quadratic Quest →</button>
-            <span id="questEntryProgress">5 pictures · 6 to 14 questions · Separate progress</span>
+            <span id="questEntryProgress">25 pictures · 5 difficulties · Separate progress</span>
           </div>
         </section>
       </section>
@@ -350,21 +350,30 @@
           <div class="quest-picker-heading">
             <div>
               <span class="eyebrow">YOUR QUADRATIC JOURNEY</span>
-              <h2 id="questPickerTitle">Choose a picture</h2>
-              <p>Start with six accessible questions, then work towards fourteen. Choose any stage; the main challenges are unaffected.</p>
+              <h2 id="questPickerTitle">Choose your difficulty</h2>
+              <p>Five difficulty levels, five mystery pictures in each. Start anywhere: discover new art, continue an unfinished picture or replay from your gallery.</p>
             </div>
-            <strong id="questJourneyProgress" aria-live="polite">0 of 5 complete</strong>
+            <strong id="questJourneyProgress" aria-live="polite">0 of 25 discovered</strong>
           </div>
-          <div id="questStepTrack" class="picture-step-track" aria-label="Five quadratic picture stages"></div>
-          <div id="questPicturePicker" class="quest-picture-grid" role="group" aria-label="Choose a quadratic mystery picture"></div>
-          <div class="quest-picture-actions">
+          <div id="questStepTrack" class="picture-step-track" aria-label="Five quadratic difficulty levels"></div>
+          <div id="questDifficultyPicker" class="quest-difficulty-choices" role="group" aria-label="Choose quadratic inequality difficulty"></div>
+          <div class="quest-picture-actions quest-mystery-decision">
             <div>
-              <strong id="questSelectedTitle">Prism of Possibilities</strong>
-              <p id="questSelectedSummary">Starter · 6 questions · Find the roots</p>
+              <strong id="questSelectedTitle">Mystery artwork</strong>
+              <p id="questSelectedSummary">Quick Spark · 6 questions · Five pictures to discover</p>
+              <p id="questTierStatus" aria-live="polite">0 of 5 pictures discovered at this difficulty</p>
             </div>
-            <button type="button" class="button button-primary" id="questStart">Start picture ↗</button>
+            <div class="quest-mystery-buttons">
+              <button type="button" class="button button-primary" id="questStart">Start a mystery →</button>
+              <button type="button" class="button button-light" id="questContinueMystery" hidden>Continue your picture →</button>
+            </div>
           </div>
-          <p class="quest-picker-note">Each correct quadratic solution reveals one decorative row. You can switch pictures without losing your work.</p>
+          <details id="questPictureGallery" class="quest-optional-gallery">
+            <summary>Picture gallery · choose or replay</summary>
+            <p>Prefer a particular picture? These five artworks have independent saved progress. Completed pictures can be revisited here without starting a new mystery.</p>
+            <div id="questPicturePicker" class="quest-picture-grid" role="group" aria-label="Optional pictures in the selected difficulty"></div>
+          </details>
+          <p class="quest-picker-note">Each correct quadratic solution reveals one row. Pictures and progress save automatically on this device; no difficulty is locked.</p>
         </section>
         <div id="questProgress" class="quest-progress" aria-label="Quadratic Quest picture progress" hidden>
           <strong id="questProgressText">0 of 6 rows revealed</strong>
@@ -501,7 +510,7 @@
           <details class="quest-solution-review"><summary>Review all six solutions</summary><ol id="questSolutions"></ol></details>
           <div class="finish-actions">
             <button type="button" class="button button-primary" id="questReplay">Play again ↻</button>
-            <button type="button" class="button button-primary" id="questNextPicture" hidden>Next picture →</button>
+            <button type="button" class="button button-primary" id="questNextPicture" hidden>Another mystery →</button>
             <button type="button" class="button button-light" id="questFinishBack">Choose a picture ↶</button>
             <button type="button" class="button button-light" id="questRevealAgain">View reveal ✦</button>
           </div>
