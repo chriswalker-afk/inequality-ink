@@ -423,7 +423,6 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
   function changeHubMode(next){
     if(!HUB_MODES.some(x=>x.id===next))return;
     hubMode=next;
-    hubManual[next]=false;
     if(next==="fill"||next==="build"){saved.mode=next;persist();}
     hubTierFor(next);
     syncHubUrl();pickerView();
