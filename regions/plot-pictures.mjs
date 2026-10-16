@@ -3,6 +3,7 @@
 import {q,parabola,vertical,absolute,circleRule,regionPaths,satisfiesAll} from "./curved-engine.mjs";
 import {checkConstruction} from "./plot-engine.mjs";
 import {PLOT_QUICK_SPARKS} from "./plot-quick-sparks.mjs";
+import {PLOT_STEP_UPS} from "./plot-step-ups.mjs";
 const rule=(id,text,coeffs,side,inclusive=true)=>q(id,text,coeffs,side,inclusive);
 const line=rule;
 const V=(id,text,x,side,inclusive=true)=>vertical(id,text,x,side,inclusive);
@@ -397,7 +398,7 @@ const snowGlobe=Object.freeze({...picture(2,"snow-globe","Snow Globe",
 
 export const PLOT_PICTURES=Object.freeze([umbrella,ice,rainbow,lantern,rocket]);
 export const PLOT_PICTURE=umbrella;
-export const PLOT_PRACTICE_PICTURES=Object.freeze([snowGlobe,...PLOT_QUICK_SPARKS]);
+export const PLOT_PRACTICE_PICTURES=Object.freeze([snowGlobe,...PLOT_QUICK_SPARKS,...PLOT_STEP_UPS]);
 export const plotAllPictures=Object.freeze([...PLOT_PICTURES,...PLOT_PRACTICE_PICTURES]);
 export const plotPicture=id=>plotAllPictures.find(p=>p.id===id)||null;
 export const plotSteps=part=>part.plots||(part.plot?[part.plot]:[]);
@@ -458,9 +459,10 @@ export function validatePlotGallery(){
       throw Error("Incorrect Plot & Shade progression");
     ids.add(p.id);validatePlotPicture(p);
   });
-  if(PLOT_PRACTICE_PICTURES.length!==5||snowGlobe.pieces.length!==3||
+  if(PLOT_PRACTICE_PICTURES.length!==8||snowGlobe.pieces.length!==3||
     !snowGlobe.practice||snowGlobe.step!==2||ids.has(snowGlobe.id)||
-    PLOT_PRACTICE_PICTURES.filter(p=>p.step===1&&p.quickSpark).length!==4)
+    PLOT_PRACTICE_PICTURES.filter(p=>p.step===1&&p.quickSpark).length!==4||
+    PLOT_PRACTICE_PICTURES.filter(p=>p.step===2&&p.pieces.length===3).length!==4)
     throw Error("Plot practice needs four Quick Sparks plus one Step Up");
   for(const extra of PLOT_PRACTICE_PICTURES){
     if(ids.has(extra.id)||extra.mode!=="plot"||!extra.practice)
