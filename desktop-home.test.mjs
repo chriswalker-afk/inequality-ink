@@ -43,7 +43,7 @@ test("Homepage regrouping has balanced divs, no duplicate IDs, and same five mod
   assert.equal(new Set(ids).size,ids.length);
   assert.equal([...intro.matchAll(/data-level="(?:mirror|full|solve|mixed|paint)"/g)].length,5);
   assert.ok(app.includes('function updateLevelSelector(){'));
-  assert.ok(app.includes('$("startButton").onclick=start;'));
+  assert.ok(app.includes('$("startButton").onclick=startFromHome;'));
   assert.ok(app.includes('$("practiceButton").onclick=startPractice;'));
 });
 test("Large desktops use a three-column start-first workspace",()=>{

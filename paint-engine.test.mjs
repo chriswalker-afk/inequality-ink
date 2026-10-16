@@ -8,7 +8,7 @@ import {isInInterval} from "./model.mjs";
 
 const ids=["paint-rocket","paint-flower","paint-robot"];
 test("Three colour puzzles validate and work with the existing picture registry",()=>{
- assert.equal(validatePictureLibrary().length,34);
+ assert.equal(validatePictureLibrary().length,84);
  for(const id of ids){
   const p=pictureById(id);
   assert.deepEqual(p.levels,["paint"]);

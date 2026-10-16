@@ -1519,3 +1519,31 @@ body.paint-session{overflow:hidden}
   #playScreen .question-footer #checkButton{padding:11px 8px;font-size:.76rem}
   #playScreen .question-footer #hintButton{font-size:.68rem;padding:9px 5px}
 }
+
+
+/* Difficulty-first mystery selector, compact enough for the desktop first fold. */
+.difficulty-picker{display:grid;gap:7px;margin:9px 0}
+.difficulty-card{width:100%;display:flex;align-items:center;gap:10px;
+  background:#fffdfa;border:1.5px solid #e3e0da;border-radius:12px;
+  text-align:left;padding:10px 11px;min-height:58px;color:#304560}
+.difficulty-card:hover{border-color:#9cbfb2;background:#f9fcf9}
+.difficulty-card.selected{border:2px solid #579b8c;background:#eaf6ef;
+  padding:9.5px 10.5px;box-shadow:0 2px 0 #376d5d25}
+.difficulty-stamp{display:grid;place-items:center;flex:0 0 35px;
+  width:35px;height:35px;border-radius:9px;background:#f7eae3;
+  color:#c37b71;font-weight:900;font-size:1rem}
+.difficulty-card.selected .difficulty-stamp{background:#cce9dc;color:#357662}
+.difficulty-copy{display:grid;gap:3px;min-width:0;flex:1}
+.difficulty-copy strong{font-size:.86rem;line-height:1.2}
+.difficulty-copy small{font-size:.69rem;line-height:1.3;color:#758194}
+.difficulty-status{color:#6fac9b;font-size:1.1rem;font-weight:800}
+.mystery-decision{padding:10px 11px;margin:10px 0;border:1px dashed #c5dcd0;
+  background:#f2f9f4;border-radius:12px;display:grid;gap:8px}
+.mystery-decision p{margin:0;color:#4c7466;font-size:.74rem}
+#mysteryStartButton{width:100%;min-height:45px}
+#mysteryStartButton:disabled{opacity:.6}
+#mysteryContinueButton{min-height:39px;font-size:.79rem}
+.gallery-description{font-size:.73rem;color:#6f8190;line-height:1.5;padding:4px 11px}
+#morePicturesSection .picture-picker{margin-top:9px}
+#morePicturesSection .picture-option{min-height:55px}
+@media(max-width:740px){.difficulty-card{min-height:59px}.mystery-decision{margin-bottom:15px}}

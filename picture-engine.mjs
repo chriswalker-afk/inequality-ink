@@ -1,6 +1,6 @@
 // Reusable, picture-independent question, artwork and validation engine.
 // New pictures only require a definition in pictures.mjs.
-import {PICTURE_DEFINITIONS} from "./pictures.mjs?v=student-feedback-v1";
+import {PICTURE_DEFINITIONS} from "./pictures.mjs?v=difficulty-first-v1";
 import {isInInterval,identicalSolution,formatInterval,formatLinear} from "./model.mjs";
 import {makePaintQuestion,validatePaintPicture} from "./paint-engine.mjs";
 import {mathematicalStage,boundedEndpointPreferences,oneSidedOpenPreference,
@@ -29,6 +29,16 @@ export function extraPicturesForLevel(level){
   if(!LEVELS_FOR_PICTURE.includes(level))throw Error("Unknown difficulty: "+level);
   return PICTURE_LIBRARY.filter(p=>p.levels.includes(level)&&
     !Number.isInteger(progressionStep(p,level)));
+}
+// The student-facing difficulty groups include both original and new art.
+// Historical bonus maths keep their original mathematical stage.
+export function mysteryTier(picture,level){
+  return picture.progression?.[level]??picture.legacyMathStage?.[level]??5;
+}
+export function mysteryPool(level,tier){
+  if(!LEVELS_FOR_PICTURE.includes(level)||!Number.isInteger(tier)||tier<1||tier>5)
+    throw Error("Unknown mystery tier");
+  return PICTURE_LIBRARY.filter(p=>p.levels.includes(level)&&mysteryTier(p,level)===tier);
 }
 export function picturesForLevel(level){
   return [...progressionForLevel(level),...extraPicturesForLevel(level)];
