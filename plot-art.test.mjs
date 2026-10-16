@@ -373,13 +373,13 @@ test("Plot picture deep links launch directly and return to unified Graph Art",(
 
 test("Snow Globe practices two circles and a line in a separate saved Plot & Shade picture",()=>{
   assert.equal(validatePlotGallery(),true);
-  assert.equal(PLOT_PRACTICE_PICTURES.length,8);
+  assert.equal(PLOT_PRACTICE_PICTURES.length,20);
   const p=PLOT_PRACTICE_PICTURES[0];
   assert.equal(p.step,2);
   assert.equal(p.pieces.length,3);
   const s=session();
   assert.equal(s.$("plotPictureCards").children.length,5);
-  assert.equal(s.$("plotPracticeCards").children.length,8);
+  assert.equal(s.$("plotPracticeCards").children.length,20);
   s.$("plotPracticeCards").children[0].click();
   assert.equal(s.$("plotGameTitle").textContent,p.name);
   for(const part of p.pieces){
