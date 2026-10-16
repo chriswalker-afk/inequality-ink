@@ -6,7 +6,7 @@ import {
 } from "./curved-engine.mjs";
 import {
   CURVE_PICTURES,CURVE_PRACTICE_PICTURES,curveAllPictures,CURVE_STAGES,curvePicture,validateCurveGallery
-} from "./curve-pictures.mjs?v=graph-step-ups-v1";
+} from "./curve-pictures.mjs?v=graph-advanced-v1";
 
 const NS="http://www.w3.org/2000/svg",SIZE=620,PAD=52,GRID=SIZE-2*PAD;
 const px=x=>PAD+(x-WORLD.xmin)*GRID/(WORLD.xmax-WORLD.xmin);
