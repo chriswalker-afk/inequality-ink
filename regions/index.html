@@ -8,11 +8,11 @@
   <title>Graph Art | Inequality Ink</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232c3b57'/%3E%3Cpath d='M9 32 32 8 55 32 32 56Z' fill='%237cc2af'/%3E%3Cpath d='M9 32 32 8 32 32Z' fill='%23f6a17e'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="../styles.css?v=paint-desktop-v3" />
-  <link rel="stylesheet" href="./regions.css?v=phase6-v1" />
+  <link rel="stylesheet" href="./regions.css?v=difficulty-graph-v1" />
   <link rel="stylesheet" href="../studio-design.css?v=pass3-v1" />
   <link rel="stylesheet" href="../help/how-to-play.css?v=guide-v1" />
   <script type="module" src="../help/how-to-play.mjs?v=guide-v3"></script>
-  <script type="module" src="./regions-app.mjs?v=phase6-v1"></script>
+  <script type="module" src="./regions-app.mjs?v=difficulty-graph-v1"></script>
 </head>
 <body class="regions-page">
   <div class="ambient ambient-a" aria-hidden="true"></div>
@@ -77,23 +77,33 @@
 
           <section class="graph-picture-picker graph-hub-pictures" aria-labelledby="graphPictureHeading">
             <div class="graph-hub-panel-heading">
-              <span class="eyebrow">CHOOSE A PICTURE</span>
+              <span class="eyebrow">CHOOSE YOUR DIFFICULTY</span>
               <div class="graph-hub-picture-heading">
-                <h2 id="graphPictureHeading">Your picture journey</h2>
-                <span id="graphGalleryProgress" aria-live="polite">0 of 5 completed</span>
+                <h2 id="graphPictureHeading">Choose your challenge</h2>
+                <span id="graphGalleryProgress" aria-live="polite">0 discoveries</span>
               </div>
             </div>
-            <div id="graphStageTrack" class="graph-stage-track" role="group" aria-label="Five picture stages, from Starter to Big Finish"></div>
-            <div id="graphPictureCards" class="graph-picture-grid" role="group" aria-label="Select one of five pictures"></div>
-            <details id="graphPracticeSection" class="graph-more-pictures graph-practice-section">
-              <summary>More practice at the same level</summary>
-              <p>A fresh picture at Step Up difficulty. Entirely optional, with its own saved progress.</p>
-              <div id="graphPracticeCards" class="graph-picture-grid graph-practice-cards" role="group" aria-label="Optional practice pictures"></div>
-            </details>
-            <details id="graphMorePictures" class="graph-more-pictures" hidden>
-              <summary>Earlier pictures with saved progress</summary>
-              <p>Your earlier artwork is still here and keeps its own progress.</p>
-              <div id="graphExtraCards" class="graph-picture-grid graph-extra-grid" role="group" aria-label="Earlier pictures"></div>
+            <div id="graphStageTrack" class="graph-stage-track" role="group" aria-label="Progress through five mathematical difficulties"></div>
+            <div id="graphDifficultyChoices" class="graph-difficulty-choices" role="group" aria-label="Choose Graph Art mathematical difficulty"></div>
+            <p id="graphMysteryHint" class="graph-mystery-hint" role="status" aria-live="polite">Choose your challenge; your picture is a surprise.</p>
+            <div class="graph-mystery-cta">
+              <button type="button" id="graphStartMystery" class="button button-primary">Start a mystery →</button>
+              <button type="button" id="graphContinueMystery" class="button button-light" hidden>Continue your picture →</button>
+            </div>
+            <details id="graphPictureGallery" class="graph-more-pictures graph-mystery-gallery">
+              <summary>Picture gallery · choose or replay</summary>
+              <p>Optional: choose a particular picture or revisit one you have discovered. Your existing pictures and progress remain here.</p>
+              <div id="graphPictureCards" class="graph-picture-grid" role="group" aria-label="Original five-stage picture gallery"></div>
+              <details id="graphPracticeSection" class="graph-more-pictures graph-practice-section">
+                <summary>Extra picture at Step Up</summary>
+                <p>Another challenge at the same maths level, with independent saved progress.</p>
+                <div id="graphPracticeCards" class="graph-picture-grid graph-practice-cards" role="group" aria-label="Optional practice pictures"></div>
+              </details>
+              <details id="graphMorePictures" class="graph-more-pictures" hidden>
+                <summary>Earlier pictures with saved progress</summary>
+                <p>Your earlier artwork is still here and keeps its own progress.</p>
+                <div id="graphExtraCards" class="graph-picture-grid graph-extra-grid" role="group" aria-label="Earlier pictures"></div>
+              </details>
             </details>
           </section>
 
@@ -101,21 +111,21 @@
             <div class="graph-hub-panel-heading">
               <span class="eyebrow">YOUR CANVAS</span>
               <div class="graph-hub-picture-heading">
-                <h2 id="graphPreviewHeading">Your next picture</h2>
+                <h2 id="graphPreviewHeading">Your next mystery</h2>
                 <span id="graphPreviewStage" class="graph-hub-stage">1 · Starter</span>
               </div>
             </div>
             <div class="graph-hub-art-frame">
-              <svg id="graphPreviewSvg" viewBox="0 0 620 620" role="img" aria-label="Preview of the selected mathematical picture"></svg>
+              <svg id="graphPreviewSvg" viewBox="0 0 620 620" role="img" aria-label="Coordinate canvas. The mystery artwork is still hidden."></svg>
               <span class="graph-hub-art-sticker" aria-hidden="true">real maths ✦</span>
             </div>
             <div class="graph-hub-art-info">
-              <strong id="graphPreviewName">Mystery picture</strong>
-              <p id="graphPreviewFocus">Choose a picture to begin.</p>
+              <strong id="graphPreviewName">Mystery artwork</strong>
+              <p id="graphPreviewFocus">Select the maths you want to practise.</p>
               <p id="graphPreviewSkills" class="graph-skill-note"></p>
               <p id="graphPreviewProgress" aria-live="polite">A quick win to get you started.</p>
             </div>
-            <button type="button" class="button button-primary graph-hub-start" id="graphStartPicture">Start picture ↗</button>
+            <button type="button" class="button button-primary graph-hub-start" id="graphStartPicture">Start a mystery ↗</button>
             <p class="graph-hub-reassurance">Your work saves automatically on this device · No login needed</p>
           </section>
         </div>
@@ -207,8 +217,8 @@
           <button type="button" id="graphReplayReveal" class="button button-light">Watch reveal ✦</button>
           <button type="button" id="graphSavePicture" class="button button-light">Save picture ↓</button>
           <button type="button" id="graphRestart" class="button button-light">Play again ↻</button>
-          <button type="button" id="graphNextPicture" class="button button-primary">Explore the next picture →</button>
-          <button type="button" id="graphChooseAgain" class="button button-light">Choose a picture</button>
+          <button type="button" id="graphNextPicture" class="button button-primary">Another mystery →</button>
+          <button type="button" id="graphChooseAgain" class="button button-light">Choose a challenge</button>
         </div>
       </section>
 
