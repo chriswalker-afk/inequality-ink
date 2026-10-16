@@ -1027,3 +1027,47 @@ test("New Build & Shade Step Up supports gradients, strict lines and an independ
   const restored=session(Object.fromEntries(s.store),"?mode=build&picture="+p.id);
   assert.equal(restored.app.readProgress().records["build:"+p.id].done,3);
 });
+
+
+test("Ink Builder, Brain Stretch and Masterpiece Find & Fill art all complete and persist their actual polygons",()=>{
+  for(const tier of [3,4,5]){
+    const p=graphPracticeGallery("fill").find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p,"Missing new fill difficulty "+tier);
+    const s=session({},"?mode=fill&picture="+p.id),{$}=s;
+    $("graphStartPicture").click();
+    assert.equal($("graphPlay").hidden,false);
+    for(const [i,part] of p.pieces.entries()){
+      const at=centroid(intersectRegion(part.rules));
+      assert.equal(graphCellAt(part,at.x,at.y)?.correct,true,part.id);
+      s.app.pickAt(at.x,at.y);
+      $("graphCheckFill").click();
+      assert.equal(s.app.readProgress().records["fill:"+p.id].done,i+1);
+    }
+    assert.equal($("graphSummary").hidden,false);
+    s.app.showFinished();
+    assert.equal($("graphReveal").getAttribute("open"),"");
+    const restored=session(Object.fromEntries(s.store),
+      "?mode=fill&picture="+p.id);
+    assert.equal(restored.app.readProgress().records["fill:"+p.id].done,
+      p.pieces.length,"Advanced completed work must survive refresh");
+  }
+});
+test("Ink Builder, Brain Stretch and Masterpiece Build & Shade mysteries can finish with correct gradient sides and dashes",()=>{
+  for(const tier of [3,4,5]){
+    const p=graphPracticeGallery("build").find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p);
+    const s=session({},"?mode=build&picture="+p.id),{$}=s;
+    $("graphStartPicture").click();
+    for(const part of p.pieces){
+      answerRules(s,part);
+      finishBuildPiece(s);
+    }
+    assert.equal($("graphSummary").hidden,false);
+    assert.equal(s.app.readProgress().records["build:"+p.id].done,p.pieces.length);
+    s.app.showFinished();
+    const restored=session(Object.fromEntries(s.store),
+      "?mode=build&picture="+p.id);
+    assert.equal(restored.app.readProgress().records["build:"+p.id].done,
+      p.pieces.length);
+  }
+});
