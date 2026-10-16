@@ -60,12 +60,12 @@ test("Graph Art begins Pass 2 with exactly five independent Quick Spark pictures
   const all=[...GRAPH_ART_PICTURES,...GRAPH_PRACTICE_PICTURES,
     ...CURVE_PICTURES,...CURVE_PRACTICE_PICTURES,
     ...PLOT_PICTURES,...PLOT_PRACTICE_PICTURES];
-  assert.equal(all.length,40);
-  assert.equal(new Set(all.map(p=>p.id)).size,40,"Independent progress IDs cannot collide");
+  assert.equal(all.length,53);
+  assert.equal(new Set(all.map(p=>p.id)).size,53,"Independent progress IDs cannot collide");
   for(const mode of MODES){
     const [core,practice]=allByMode(mode);
     assert.equal(core.length,5);
-    assert.equal(practice.length,5);
+    assert.equal(practice.length,mode==="build"?9:8);
     assert.equal(practice.filter(p=>p.step===1&&p.quickSpark).length,4);
     const starter=graphMysteryPool(mode,1,core,practice);
     assert.equal(starter.length,5,mode+" has fewer than five first challenges");
@@ -79,7 +79,7 @@ test("Graph Art begins Pass 2 with exactly five independent Quick Spark pictures
     }),()=>0),starter[4]);
     assert.equal(graphPickMystery(starter,p=>({done:p.pieces.length}),()=>0),null);
   }
-  assert.deepEqual(MODES.map(m=>allByMode(m).flat().length),[10,10,10,10]);
+  assert.deepEqual(MODES.map(m=>allByMode(m).flat().length),[13,14,13,13]);
 });
 
 test("All twenty-five old mathematical artworks and saved picture identifiers remain intact",()=>{
