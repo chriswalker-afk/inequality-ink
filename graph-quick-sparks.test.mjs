@@ -30,7 +30,8 @@ const allByMode=mode=>mode==="fill"||mode==="build"?
   [graphModeGallery(mode),graphPracticeGallery(mode)]:
   mode==="curve"?[CURVE_PICTURES,CURVE_PRACTICE_PICTURES]:
   [PLOT_PICTURES,PLOT_PRACTICE_PICTURES];
-const detailsByStage=p=>[1,2,3].map(stage=>
+const detailsByStage=p=>(p.mode==="fill"||p.mode==="build"?
+  [0,1,2]:[1,2,3]).map(stage=>
   p.details.filter(d=>d.stage===stage).length);
 const canvasMask=p=>{
   const inside=p.mode==="fill"||p.mode==="build"?pointSatisfiesAll:curvedInside;
