@@ -687,24 +687,71 @@ button.graph-rule-item{width:100%;font:inherit;cursor:pointer;text-align:left}
   .graph-difficulty-card{transition:none}
 }
 
-/* Shared Graph Art mural entry points: accessible without adding another hub panel. */
-.regions-page .graph-mural-link{display:inline-flex;align-items:center;justify-content:center;
-  text-decoration:none;white-space:nowrap;font-weight:800;font-size:.77rem;
-  color:#2e7867;background:#e8f6ee;border:1px solid #a8d0be;border-radius:10px;
-  min-height:40px;padding:9px 13px}
-.regions-page .graph-mural-link:hover{background:#d7f0e2;border-color:#75b49b}
-.graph-mural-promo{display:flex;align-items:center;gap:10px;margin:0 0 12px;
-  border-radius:12px;border:1px solid #b6d7c7;background:#eef8f0;
-  color:#356a60;text-decoration:none;padding:11px 15px;font-size:.73rem}
-.graph-mural-promo span:first-child{font-size:.65rem;color:#448b79;
-  font-weight:900;letter-spacing:.07em;white-space:nowrap}
-.graph-mural-promo strong{color:#2e594f;font-size:.83rem}
-.graph-mural-promo span:last-child{margin-left:auto}
-.graph-mural-promo:hover{background:#e0f2e8}
+/* Graph Art My Mural navigation.
+   The shared desktop header places .top-button items in the rightmost
+   grid cell. My Mural MUST use the same separately positioned
+   .mural-nav-link pattern as Pixel Art, or How to play overlaps it. */
+.regions-page .graph-mural-link{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  text-decoration:none;white-space:nowrap;font-weight:850;font-size:.78rem;
+  color:#2e7867;background:#e8f6ee;border:1px solid #a8d0be;
+  border-radius:11px;min-height:39px;padding:9px 12px;
+}
+.regions-page .graph-mural-link .mural-nav-label{
+  display:inline;white-space:nowrap;
+}
+.regions-page .graph-mural-link:hover{
+  color:#236450;background:#d7f0e2;border-color:#75b49b;
+}
+.regions-page .graph-mural-link:focus-visible,
+.regions-page .graph-mural-promo:focus-visible{
+  outline:3px solid #d89a6d;outline-offset:3px;
+}
+.graph-mural-promo{
+  display:flex;align-items:center;gap:10px;margin:0 0 12px;
+  border-radius:13px;border:1px solid #a8d3bf;background:#e8f7ee;
+  color:#356a60;text-decoration:none;padding:12px 15px;font-size:.74rem;
+  transition:background .15s,border-color .15s,box-shadow .15s;
+}
+.graph-mural-promo > .graph-mural-promo-kicker{
+  font-size:.66rem;color:#387b67;font-weight:900;
+  letter-spacing:.075em;white-space:nowrap;
+}
+.graph-mural-promo strong{color:#2d5a4f;font-size:.86rem;}
+.graph-mural-promo > .graph-mural-promo-detail{
+  color:#5d8074;font-size:.72rem;line-height:1.4;
+}
+.graph-mural-promo > .graph-mural-promo-action{
+  margin-left:auto;background:#fffdf8;border:1px solid #8bbda6;
+  border-radius:9px;padding:9px 12px;white-space:nowrap;
+  font-weight:850;color:#236e58;font-size:.74rem;
+}
+.graph-mural-promo:hover,.graph-mural-promo:focus-visible{
+  background:#dbf2e4;border-color:#7daf9c;
+  box-shadow:0 5px 14px #40776113;
+}
+.graph-mural-promo:hover .graph-mural-promo-action{
+  background:#f7fff9;border-color:#55947d;
+}
 @media(max-width:780px){
- .regions-page .graph-mural-link{min-height:36px;font-size:.68rem;padding:8px 10px}
- .graph-mural-promo{flex-wrap:wrap;gap:5px 9px;padding:9px 11px}
- .graph-mural-promo span:last-child{flex-basis:100%;margin:0;font-size:.66rem}
+  .regions-page .graph-mural-link{
+    min-height:36px;font-size:.72rem;padding:8px 11px;
+  }
+  .graph-mural-promo{flex-wrap:wrap;gap:6px 9px;padding:11px 12px;}
+  .graph-mural-promo > .graph-mural-promo-detail{
+    flex:1 1 100%;order:3;font-size:.67rem;
+  }
+  .graph-mural-promo > .graph-mural-promo-action{
+    order:2;margin-left:auto;padding:7px 10px;
+  }
+}
+@media(max-width:520px){
+  /* On narrow phones, retain full button labels rather than hiding
+     the destination behind an ambiguous star icon. */
+  .regions-page .top-actions{flex-wrap:wrap;}
+  .regions-page .studio-switch{flex:1 1 100%;width:100%;}
+  .regions-page .graph-mural-link,
+  .regions-page .graph-help-link{flex:1 1 0;justify-content:center;text-align:center;}
 }
 
 
