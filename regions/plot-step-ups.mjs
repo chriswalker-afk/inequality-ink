@@ -155,12 +155,12 @@ export const PLOT_STEP_UPS=Object.freeze([
         ],"Place the vertex, then plot another point on the arch.")
       ]),
       part("daisy-centre","The honey-gold centre","#e6b878",[
-        circleRule("daisy-centre-disc","(x − 0)² + (y − 2.2)² ≤ 1",
-          0,2.2,1),
+        circleRule("daisy-centre-disc","x² + (y − 2)² ≤ 1",
+          0,2,1),
         q("daisy-centre-floor","y ≥ 1.75",[1.75],"above")
       ],[
-        T("daisy-centre-disc","circle",[0,2.2],[1,2.2],[
-          "The circle centre is at (0, 2.2), with radius 1.",
+        T("daisy-centre-disc","circle",[0,2],[1,2],[
+          "The circle centre is at (0, 2), with radius 1.",
           "The centre and any point one unit away determine the circle."
         ],"Place the centre first, then an edge point one unit away.")
       ])
