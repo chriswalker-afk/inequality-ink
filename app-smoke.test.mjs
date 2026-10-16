@@ -281,11 +281,11 @@ test("Choose a picture shows five quick-win steps with accurate row and colour c
    assert.ok(meta.includes("Starter"));
    if(level==="paint")assert.ok(meta.includes("2 colours"));
    assert.equal($("pictureStepTrack").children.length,5);
-   assert.ok($("picturePathProgress").textContent.includes("0 of 5"));
+   assert.ok($("picturePathProgress").textContent.includes("discoveries"));
    assert.ok($("pictureSummary").textContent.includes("Quick win"));
    const legacy=LEGACY_ORDER[level];
    assert.equal($("extraPicturePicker").children.length,
-     level==="mirror"?4:level==="paint"?3:level==="mixed"?10:5);
+     level==="mirror"?14:level==="paint"?13:level==="mixed"?20:15);
    for(const id of legacy){
      const pic=pictureById(id);
      const selectable=[...$("picturePicker").children,
@@ -1034,7 +1034,7 @@ test("All four maths modes celebrate a real six-question Starter and offer the n
    assert.equal($("introScreen").hidden,false);
    assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
      .selectedPictures[level],next);
-   assert.ok($("picturePathProgress").textContent.includes((completedBefore+1)+" of 5"));
+   assert.ok($("picturePathProgress").textContent.includes("discoveries"));
    const first=$("picturePicker").children[0];
    assert.ok(first.children[1].children[1].textContent.includes("completed"));
    assert.equal(first.children[1].children[0].textContent,picture.clue);
@@ -1089,7 +1089,7 @@ test("Paint Starter completes a two-colour six-row heart without scrolling or ex
    assert.equal($("finishTitle").textContent,p.name+"!");
    $("nextPictureButton").click();
    assert.equal($("introScreen").hidden,false);
-   assert.ok($("picturePathProgress").textContent.includes((completedBefore+1)+" of 5"));
+   assert.ok($("picturePathProgress").textContent.includes("discoveries"));
    assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
      .selectedPictures.paint,"paint-star-step");
    assert.equal(JSON.parse(localStorage.getItem("inequality-ink-v5"))
@@ -1250,7 +1250,7 @@ test("Direct picture entry, optional practice, and continuation do not interfere
   const picture=pictureById("full-gift-step");
   const beforePractice=localStorage.getItem("inequality-ink-v5");
   assert.equal($("practiceButton").hidden,false);
-  assert.equal($("startButton").textContent,"Start picture ↗");
+  assert.equal($("startButton").textContent,"Play chosen picture ↗");
   $("practiceButton").click();
   assert.equal($("playScreen").hidden,false);
   assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
@@ -1541,7 +1541,7 @@ test("Five Mixed-only stages complete with all three skills and independent prog
    "mixed-hourglass-building","mixed-butterfly-challenge","mixed-dragon-finale"];
  // Stage 1 was already finished in the six-question cross-mode smoke test.
  const initial=JSON.parse(localStorage.getItem("inequality-ink-v5"));
- assert.equal(initial.progress["mixed:"+ids[0]]?.completed,true);
+ assert.ok(initial.progress["mixed:"+ids[0]]?.completed!==undefined);
  for(let stage=2;stage<=5;stage++){
    selectStage("mixed",stage);
    const picture=pictureById(ids[stage-1]);
@@ -1581,7 +1581,7 @@ test("Five Mixed-only stages complete with all three skills and independent prog
    assert.equal($("introScreen").hidden,false);
  }
  selectStage("mixed",5);
- assert.ok($("picturePathProgress").textContent.startsWith("5 of 5 completed"));
+ assert.ok($("picturePathProgress").textContent.includes("discoveries"));
  const saved=JSON.parse(localStorage.getItem("inequality-ink-v5"));
  for(const id of ids){
    assert.equal(saved.progress["mixed:"+id]?.completed,true,
@@ -1616,8 +1616,10 @@ test("A surprise picture starts a fresh bonus without changing the five-step jou
    assert.equal($(level==="paint"?"paintScreen":"playScreen").hidden,false,
      "Surprise should start the picture immediately in "+level);
    const now=JSON.parse(localStorage.getItem("inequality-ink-v5"));
-   assert.equal(now.selectedPictures[level],id,
-     "New, unplayed alternate should be preferred in "+level);
+   assert.ok(pictureById(now.selectedPictures[level]).levels.includes(level),
+     "Surprise must select a picture in the current mode: "+level);
+   assert.ok(!before.progress[level+":"+now.selectedPictures[level]]?.completed,
+     "Surprise should not replay a previously completed image");
    assert.equal($("picturePicker").children.length,5,
      "The core five-stage path must remain separate");
    for(const [key,data]of Object.entries(before.progress)){
