@@ -117,6 +117,40 @@ add("paint",4,"mushroom-house","Mushroom House","Secret Woodland",
   [[5,8],[3,10],[1,12],[0,13],[0,13],[1,12],[4,9],[4,9],[4,9],[4,9],[4,9],[3,10]],
   ["#d58f89","#a66870","#e4cbac"],{paintColors:["#d88686","#f1d7b3","#9eb79b"],paintBackground:"#e7f3ed",detailColors:["#fff1c6","#ffe4b9","#f6e8cf"]});
 
+// MASTERPIECE: two additional high-detail reveals in each mode, ensuring
+// the finished site has 125 genuinely distinct works of art, not just 125
+// game-mode appearances of shared pictures.
+add("mirror",5,"castle-keep","Castle Keep","Royal Hideaway",
+  [[0,2],[0,2],[0,9],[0,7],[0,7],[0,9],[0,9],[0,9],[0,9],[0,9],[0,9],[0,9],[0,7],[0,7]],
+  ["#a1b5cd","#617994","#c7927e"],{bands:[[3,4,"#c39b89"],[10,12,"#c49e8e"]],detailColors:["#fff2bf","#e5f5e2","#ffdfad"]});
+add("mirror",5,"peacock-fan","Peacock Fan","Colourful Feathers",
+  [[0,2],[0,5],[0,8],[0,9],[0,9],[0,9],[0,9],[0,9],[0,8],[0,6],[0,4],[0,3],[0,2],[0,1]],
+  ["#77b9ac","#417f85","#bc9fdb"],{bands:[[4,8,"#8e9ec9"],[12,14,"#668e9c"]],detailColors:["#ffe7ad","#e9ccee","#d9f6e0"]});
+add("full",5,"volcano","Volcano","Lava Adventure",
+  [[7,8],[6,9],[5,10],[5,10],[4,11],[4,11],[3,12],[3,12],[2,13],[2,13],[1,14],[1,14],[0,15],[0,15]],
+  ["#b9a299","#806f77","#e89e6c"],{bands:[[1,5,"#e4a46a"],[12,14,"#8e7774"]],detailColors:["#ffe6a8","#ebaf85","#f8c893"]});
+add("full",5,"double-decker-bus","Double-Decker Bus","City Lights",
+  [[4,11],[3,12],[2,13],[1,14],[1,14],[1,14],[1,14],[1,14],[1,14],[1,14],[0,15],[0,15],[2,13],[3,12]],
+  ["#dc8c7f","#935b62","#d7b88b"],{bands:[[11,14,"#bf9d79"]],detailColors:["#f8edc3","#d7edfa","#fff2d0"]});
+add("solve",5,"pixel-guitar","Pixel Guitar","Music Maker",
+  [[6,9],[6,9],[6,9],[6,9],[5,10],[4,11],[3,12],[2,13],[2,13],[2,13],[3,12],[4,11],[5,10],[6,9]],
+  ["#daa67b","#9a705f","#c4a2c5"],{bands:[[1,4,"#97748c"],[10,14,"#ddbb8b"]],detailColors:["#f7edca","#f8e1d5","#fcdbb1"]});
+add("solve",5,"space-cruiser","Space Cruiser","Beyond the Moon",
+  [[7,8],[6,9],[5,10],[5,10],[4,11],[3,12],[2,13],[1,14],[0,15],[0,15],[1,14],[3,12],[5,10],[7,8]],
+  ["#95b8d6","#527fa7","#e6b786"],{bands:[[9,14,"#d2a8a6"]],detailColors:["#edfaff","#fff2be","#d7f4e4"]});
+add("mixed",5,"pirate-skull","Pirate Skull","Treasure Trouble",
+  [[4,11],[2,13],[1,14],[0,15],[0,15],[0,15],[0,15],[1,14],[2,13],[3,12],[4,11],[4,11],[4,11],[5,10]],
+  ["#e5d5bc","#8c827f","#c99a7d"],{bands:[[11,14,"#d2bca7"]],detailColors:["#f3e7d3","#716c7a","#fff8e2"]});
+add("mixed",5,"ancient-pyramid","Ancient Pyramid","Desert Mystery",
+  [[7,8],[6,9],[6,9],[5,10],[5,10],[4,11],[4,11],[3,12],[3,12],[2,13],[2,13],[1,14],[1,14],[0,15]],
+  ["#e2c486","#9b866c","#e9d5aa"],{bands:[[12,14,"#c5a779"]],detailColors:["#ffedc6","#d9b78f","#f7e1b2"]});
+add("paint",5,"undersea-submarine","Undersea Submarine","Deep Dive",
+  [[6,9],[4,11],[3,12],[2,13],[1,14],[0,15],[0,15],[0,15],[0,15],[1,14],[2,13],[3,12],[4,11],[6,9]],
+  ["#81b9bd","#497d98","#ecc57e"],{paintColors:["#7fc1bb","#f0ce8b","#a2a1cf","#e49ab1"],paintSplit:true,paintBackground:"#d9ecf6",detailColors:["#fcf0bf","#fce2d0","#dff8e7"]});
+add("paint",5,"tropical-parrot","Tropical Parrot","Jungle Colours",
+  [[7,8],[5,10],[3,12],[2,13],[2,13],[1,14],[0,15],[0,15],[1,14],[2,13],[3,12],[4,11],[5,10],[6,9]],
+  ["#8dbb93","#578677","#efc27d"],{paintColors:["#77bc8a","#f0cb81","#d28eb1","#81add1"],paintSplit:true,paintBackground:"#e8f4eb",detailColors:["#f6e0bb","#e1f8d9","#ffefce"]});
+
 const COUNT_BY_STAGE=[6,8,10,12,14];
 const WIDTHS=[8,10,12,14,16];
 const MIRROR_WIDTHS=[6,7,8,9,10];
@@ -165,8 +199,8 @@ function pictureFromSpec(spec,index){
   });
   let paint;
   if(mode==="paint"){
-    const palette=["S","A","B","C"].slice(0,[2,2,3,4,5][tier-1]);
-    const names=["Background","Main colour","Highlight","Accent"];
+    const palette=["S","A","B","C","D"].slice(0,[2,2,3,4,5][tier-1]);
+    const names=["Background","Main colour","Highlight","Accent","Detail"];
     const hex=[options.paintBackground,...options.paintColors];
     const colours=Object.fromEntries(palette.map((key,i)=>[
       key,{name:names[i],hex:hex[i]}
