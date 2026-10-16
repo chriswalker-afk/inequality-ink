@@ -422,7 +422,8 @@ test("Five unique cards switch between modes, track stage status and show saved 
   assert.equal($("graphPictureCards").children.length,5);
   assert.equal($("graphStageTrack").children.length,5);
   assert.match($("graphGalleryProgress").textContent,/1 of 10 discovered/);
-  assert.ok($("graphStageTrack").children[0].className.includes("is-complete"));
+  assert.ok(!$("graphStageTrack").children[0].className.includes("is-complete"),
+    "One completed starter does not complete the new five-picture tier");
   assert.equal($("graphPictureCards").children[1].children[1].children[1].textContent,
     "Home Sweet Home");
   $("graphModeBuild").click();
@@ -637,8 +638,8 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   assert.match($("graphGalleryProgress").textContent,/5 of 10 discovered/);
   assert.equal($("graphStageTrack").children.length,5);
   assert.equal($("graphStageTrack").children.filter(x=>
-    x.className.includes("is-complete")).length,4,
-    "The extra Step Up practice artwork remains undiscovered");
+    x.className.includes("is-complete")).length,3,
+    "Quick Spark and Step Up still contain undiscovered extras");
   $("graphModeBuild").click();
   assert.match($("graphGalleryProgress").textContent,/0 of 10 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
@@ -864,7 +865,9 @@ test("Difficulty-first hub keeps all unfinished artwork secret until the student
   assert.match($("graphMysteryHint").textContent,/5 new or unfinished mysteries/);
   $("graphStartMystery").click();
   assert.equal($("graphPlay").hidden,false);
-  assert.equal(s.app.readProgress().picture,"signal-flag");
+  assert.ok(graphModeGallery("fill").some(p=>p.id===s.app.readProgress().picture)||
+    graphPracticeGallery("fill").some(p=>p.id===s.app.readProgress().picture&&p.step===1),
+    "A Quick Spark mystery must select one of its five eligible pictures");
   assert.equal($("graphReveal").getAttribute("open"),null);
   $("graphBack").click();
   assert.equal($("graphPreviewName").textContent,"Mystery artwork");
