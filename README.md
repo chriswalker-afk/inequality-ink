@@ -4,7 +4,39 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 **Live site:** https://chriswalker-afk.github.io/inequality-ink/
 
-> **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
+> **Difficulty-first mystery play:** Students choose one of five mathematics modes and a difficulty, then discover one of at least **five pictures** at that level. The original [five-stage progression](PICTURE_PROGRESSION_PLAN.md), optional gallery and saved picture records are preserved; no compulsory practice delays starting.
+
+## Five pictures per difficulty per mode (October 2026)
+
+The Pixel Art library now contains **125 distinct artworks**. Because some
+historical artworks are playable in more than one mode, there are **143
+separately selectable mode/picture combinations**.
+
+All **25 mode/difficulty pools** now contain at least **five playable
+pictures** (five modes × five difficulty levels). This release adds **41
+individually authored designs** to the previous 84, with a deliberate
+emphasis on the easier tiers where variety was missing.
+
+| Mode | New Quick Spark | New Step Up | New Ink Builder | New Brain Stretch | New Masterpiece |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mirror Mode | 2 | 1 | 2 | 2 | 2 |
+| Full Picture | 2 | 1 | 2 | 2 | 2 |
+| Solve & Paint | 2 | 2 | 1 | 2 | 2 |
+| Mixed Challenge | 1 | 0 (already five) | 1 | 1 | 2 |
+| Paint by Inequalities | 2 | 2 | 1 | 2 | 2 |
+
+New art uses deliberately shaped pixel silhouettes rather than repeating a
+single oval or triangle. Finishing details include subject-specific eyes,
+windows, wheels, doors, antennae, portholes and patterned decorations.
+All artwork is represented by genuine inequalities or colour-interval
+questions at the correct mathematical level.
+
+**Gameplay is unchanged:** unfinished pictures are selected randomly,
+partially completed pictures can be resumed, finished pictures are excluded
+from automatic selection, and the gallery allows deliberate replay. Every
+new picture has its own ID and save record; older student work is untouched.
+Automated tests enforce pool sizes, silhouette shape snapshots, colour rules
+and mathematical correctness.
 
 ## Difficulty-first Pixel Art mysteries (October 2026)
 
@@ -13,8 +45,9 @@ and one of five mathematical difficulties**, rather than select a named picture.
 The difficulties are **Quick Spark** (6 questions), **Step Up** (8), **Ink
 Builder** (10), **Brain Stretch** (12), and **Masterpiece** (14).
 
-- Each difficulty contains a pool of at least three independently saved
-  pictures; fifty new tier-matched pictures span the five Pixel Art modes.
+- Each difficulty now contains **at least five** independently saved
+  pictures, including the previous fifty-bank additions and the new
+  hand-authored artwork in this release.
 - **Start a mystery** chooses randomly from unplayed art at the selected mode
   and difficulty. Completed art never enters this automatic draw. Partially
   completed work is offered as a separate **Continue your picture** action.
