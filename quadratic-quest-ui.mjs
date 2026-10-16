@@ -242,7 +242,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
       number.textContent=finished?"✓":"✦";
       const content=doc.createElement("span");content.className="quest-picture-content";
       const name=doc.createElement("strong");
-      name.textContent=finished?p.name:p.clue||"Mystery artwork";
+      name.textContent=finished?p.name:p.clue||p.name;
       const focus=doc.createElement("small");focus.textContent=p.focus;
       const note=doc.createElement("em");
       note.textContent=(4+2*tier)+" questions · "+(
