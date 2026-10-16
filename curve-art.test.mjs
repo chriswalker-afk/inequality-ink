@@ -306,8 +306,9 @@ test("A new parabolic Quick Spark plays through both regions and all three finis
   const s=session({},true,"?picture="+p.id);
   assert.equal(s.$("curvePlay").hidden,false);
   assert.equal(s.$("curveGameTitle").textContent,p.name);
-  for(const part of p.pieces){
-    const {x,y}=interior(part);
+  // Use deliberately interior points: near-edge selections should remain
+  // unselectable in the real game, and a test must respect that tolerance.
+  for(const [x,y] of [[0,2],[0,-1]]){
     s.app.pickAt(x,y);
     s.$("graphCheckFill").click();
   }
