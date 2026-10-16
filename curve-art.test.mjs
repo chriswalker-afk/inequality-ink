@@ -340,3 +340,20 @@ test("A new translated-parabola Step Up mystery completes all three regions and 
   assert.equal(second.$("curveSummary").hidden,false);
   assert.equal(second.app.readProgress().records[p.id].done,3);
 });
+
+
+test("All three advanced Curve & Fill tiers can be solved, fully revealed and resumed",()=>{
+  for(const tier of [3,4,5]){
+    const p=CURVE_PRACTICE_PICTURES.find(x=>x.advancedVariety&&x.step===tier);
+    assert.ok(p);
+    const s=session({},true,"?picture="+p.id);
+    assert.equal(s.$("curvePlay").hidden,false);
+    finish(s,p);
+    assert.equal(s.app.readProgress().records[p.id].done,p.pieces.length);
+    s.$("curveRevealSkip").click();
+    assert.ok(details(s.$("graphRevealSvg")).length>=12);
+    const saved=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+    assert.equal(saved.$("curveSummary").hidden,false);
+    assert.equal(saved.app.readProgress().records[p.id].done,p.pieces.length);
+  }
+});
