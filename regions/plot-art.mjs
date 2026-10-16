@@ -449,7 +449,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     ]);
     $("plotNextPicture").hidden=!fromMystery&&
       (!!p.practice||p.step===PLOT_PICTURES.length);
-    if(fromMystery)$("plotNextPicture").textContent="Another mystery →";
+    if(fromMystery)$("plotNextPicture").textContent="Explore more challenges →";
   }
   function setScreen(next){
     screen=next;
