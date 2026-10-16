@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f6f4ec">
+<meta name="description" content="Explore every completed Graph Art mystery in one growing mathematical mural.">
+<title>My Graph Art Mural · Inequality Ink</title>
+<link rel="stylesheet" href="./graph-mural.css?v=1">
+<script type="module" src="./graph-mural.mjs?v=1"></script>
+</head>
+<body>
+<div class="page">
+<header class="topbar">
+  <a class="brand" href="../"><span class="brand-icon">◩</span><span><strong>Inequality<span>Ink</span></strong><small>Make maths into art</small></span></a>
+  <nav class="toplinks" aria-label="Mural navigation"><a href="../mural.html">Pixel Art mural</a><a href="./">← Graph Art studio</a></nav>
+</header>
+<main>
+<section class="intro">
+  <div><span class="eyebrow">GRAPH ART · YOUR COLLECTION</span><h1>My <em>mural.</em></h1>
+  <p>Every picture you've completed adds a real mathematical artwork to this connected world. Explore what you've created, from Starter to Big Finish.</p></div>
+  <div class="progress" aria-live="polite"><strong><span id="foundCount">0</span><small> / <span id="totalCount">0</span> discoveries</small></strong><div class="track"><span id="progressFill"></span></div><small>Across four Graph Art challenges</small></div>
+</section>
+<section class="frame" aria-label="Your completed Graph Art world">
+<div class="controls">
+  <div class="control-title"><strong>Explore your artwork</strong><small>Swipe or scroll sideways · tap a discovery to revisit it</small></div>
+  <div class="filters" role="group" aria-label="Filter discovered artwork by challenge">
+    <button data-mode="all" aria-pressed="true">All modes</button>
+    <button data-mode="fill" aria-pressed="false">Find &amp; Fill</button>
+    <button data-mode="build" aria-pressed="false">Build &amp; Shade</button>
+    <button data-mode="curve" aria-pressed="false">Curve &amp; Fill</button>
+    <button data-mode="plot" aria-pressed="false">Plot &amp; Shade</button>
+  </div>
+</div>
+<nav class="zones" aria-label="Jump to difficulty level">
+  <button data-zone="tier-1" aria-current="true">01 · Starter</button>
+  <button data-zone="tier-2">02 · Step Up</button>
+  <button data-zone="tier-3">03 · Building</button>
+  <button data-zone="tier-4">04 · Challenge</button>
+  <button data-zone="tier-5">05 · Big Finish</button>
+</nav>
+<div class="viewport" id="muralViewport" tabindex="0" role="region" aria-label="Horizontally scrollable five-difficulty Graph Art mural">
+  <svg id="muralWorld" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5600 890" aria-labelledby="worldTitle worldDesc" role="group">
+    <title id="worldTitle">Your connected Graph Art landscape</title>
+    <desc id="worldDesc">A five-part mathematical landscape containing only artworks you have completed.</desc>
+    <defs>
+      <pattern id="graphGrid" width="35" height="35" patternUnits="userSpaceOnUse"><path d="M35 0H0V35" fill="none" stroke="#bed4d1" stroke-width="1" opacity=".42"/></pattern>
+      <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#304958" flood-opacity=".16"/></filter>
+    </defs>
+    <rect width="5600" height="890" fill="#f7f5ee"/>
+    <rect width="5600" height="890" fill="url(#graphGrid)"/>
+    <path d="M0 720Q260 650 520 720T1120 720 T2240 710 T3360 700 T4480 720 T5600 700 V890H0Z" fill="#deeadb"/>
+    <path d="M0 795Q330 735 680 795T1440 782T2310 790T3300 782T4400 775T5600 790 V890H0Z" fill="#c1d9cb"/>
+    <g fill="none" stroke="#a8c9c0" stroke-width="4" opacity=".75">
+      <path d="M0 670Q250 530 490 660T1120 640 T2240 645 T3360 650 T4480 635 T5600 660"/>
+      <path d="M0 690Q250 550 490 680T1120 660 T2240 665 T3360 670 T4480 655 T5600 680" stroke-dasharray="12 17"/>
+    </g>
+    <g id="muralLabels"></g>
+    <g id="muralItems"></g>
+  </svg>
+</div>
+<div class="bottom"><p id="emptyNote">Finish your first Graph Art picture to see your mathematics become part of this world.</p><a href="./">Keep creating →</a></div>
+</section>
+<p class="footnote">Only completed pictures appear here. Each has a permanent place even when you play it again. Your discoveries are saved on this device, without an account.</p>
+</main>
+<footer>INEQUALITY INK <span>✳</span> GRAPH ART · EVERY DISCOVERY MAKES A DIFFERENCE</footer>
+</div>
+<dialog id="discoveryDialog" aria-labelledby="discoveryTitle">
+  <button type="button" id="closeDialog" class="close" aria-label="Close discovery">×</button>
+  <span class="eyebrow">✦ IN YOUR COLLECTION</span>
+  <h2 id="discoveryTitle">Your masterpiece</h2>
+  <p id="discoveryDescription"></p>
+  <div class="detailArt"><svg id="detailSvg" viewBox="0 0 620 620" role="img" aria-label="Completed mathematical artwork"></svg></div>
+  <p id="discoverySkills" class="skills"></p>
+  <div class="dialogActions"><a id="replayLink" href="./">Revisit picture ↗</a><button type="button" id="doneDialog">Back to mural</button></div>
+</dialog>
+</body></html>
