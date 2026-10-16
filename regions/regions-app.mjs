@@ -258,10 +258,6 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     $("graphPicker").hidden=next!=="picker";
     $("graphPlay").hidden=next!=="play";
     $("graphSummary").hidden=next!=="summary";
-    // The studio now uses the contextual How to play control; there is no
-    // redundant instruction panel below the picker.
-    const how=$("how-graph-art-works");
-    if(how)how.hidden=next==="play";
     if(next==="picker")pickerView();
     if(next==="play"){
       // A saved finished boundary resumes on its review, while selecting a
