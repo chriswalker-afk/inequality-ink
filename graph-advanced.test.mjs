@@ -209,7 +209,7 @@ test("Displayed standard-form, slope-form and fractional inequalities are mathem
   const displayed=rule=>{
     const t=rule.text.replaceAll("−","-").replaceAll("≤","<=").replaceAll("≥",">=");
     const standard=/^(-?\d*)x\s+([+-])\s+(\d*)y\s+(<=|>=|<|>)\s+(.+)$/.exec(t);
-    const slope=/^y\s+(<=|>=|<|>)\s+(.+?)x(?:\s+([+-])\s+(.+))?$/.exec(t);
+    const slope=/^y\s+(<=|>=|<|>)\s+(.*?)x(?:\s+([+-])\s+(.+))?$/.exec(t);
     const axis=/^([xy])\s+(<=|>=|<|>)\s+(.+)$/.exec(t);
     if(standard){
       const A=value(standard[1]),C=value(standard[3])*(standard[2]==="-"?-1:1);
