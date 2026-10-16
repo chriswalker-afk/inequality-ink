@@ -1,9 +1,7 @@
 // Connected My Mural experience. No hidden pictures are mounted in the DOM.
 // The same mathematical pixel-art definitions as the game render every reward.
-import {
-  PICTURE_LIBRARY,fullPictureWidth,picturePixelAt,pictureColourAt,
-  pictureFinalDetails,questionCount
-} from "./picture-engine.mjs";
+import {PICTURE_LIBRARY,fullPictureWidth,questionCount} from "./picture-engine.mjs";
+import {muralSpritePaths} from "./mural-art.mjs";
 import {
   MURAL_ZONES,MURAL_WIDTH,muralPlacements,muralDiscoveredIds,
   rememberMuralDiscoveries,muralModesFor
@@ -26,21 +24,8 @@ function element(tag,attrs={},parent){
   return node;
 }
 function paintPaths(picture,parent){
-  const fills=new Map(),width=fullPictureWidth(picture);
-  const add=(colour,rect)=>{
-    fills.set(colour,(fills.get(colour)||"")+rect);
-  };
-  for(let y=0;y<picture.height;y++)for(let x=0;x<width;x++){
-    if(!picturePixelAt(picture,x,y,{full:true}))continue;
-    const colour=pictureColourAt(picture,x,y,{full:true});
-    add(colour,"M"+x+" "+y+"h1v1h-1z");
-  }
-  for(const mark of pictureFinalDetails(picture)){
-    const y=mark.y+(1-mark.height)/2;
-    add(mark.color,"M"+mark.x+" "+y+"h1v"+mark.height+"h-1z");
-  }
-  for(const [colour,d] of fills)
-    element("path",{d,fill:colour,"shape-rendering":"crispEdges"},parent);
+  for(const {fill,d} of muralSpritePaths(picture))
+    element("path",{d,fill,"shape-rendering":"crispEdges"},parent);
 }
 // Exported for browser-free mathematical/unit verification.
 export function replayUrlFor(picture,mode){
