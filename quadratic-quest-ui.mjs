@@ -1,6 +1,7 @@
 import {
-  QUEST_SAVE_KEY,QUEST_SAVE_KEY_V2,QUEST_PICTURES,questPictureById,
-  questPictureForStep,quadraticAnswer,sameQuadraticAnswer,quadraticSolutionText,
+  QUEST_SAVE_KEY,QUEST_SAVE_KEY_V2,QUEST_PICTURES,QUEST_STAGE_NAMES,
+  QUEST_TIER_FOCUS,questPicturesForTier,questPictureById,
+  quadraticAnswer,sameQuadraticAnswer,quadraticSolutionText,
   quadraticHints,quadraticExplanation,quadraticValue,validateQuadraticQuest
 } from "./quadratic-quest.mjs";
 import {initWorkingPad} from "./working-space.mjs";
@@ -21,24 +22,24 @@ function validProgress(raw,picture){
     hints:raw.hints,replay:raw.replay};
 }
 function initialState(){
-  return {selectedPicture:"prism",
-    progress:Object.fromEntries(QUEST_PICTURES.map(p=>[p.id,fresh()]))};
+  return {selectedPicture:"prism",selectedTier:1,
+    progress:Object.fromEntries(QUEST_PICTURES.map(p=>[p.id,fresh()])),
+    discoveries:[]};
 }
 function suggestedPicture(state,explicitSelection=false){
   const selected=questPictureById(state.selectedPicture);
-  // A consciously chosen unfinished picture survives reload; an already
-  // completed picture instead points students towards their next step.
   if(selected){
     const done=state.progress[selected.id].done;
     if(done<selected.questions.length&&(done>0||explicitSelection))
       return selected.id;
   }
   return QUEST_PICTURES.find(p=>
-    state.progress[p.id].done<p.questions.length)?.id||"nova";
+    state.progress[p.id].done<p.questions.length)?.id||
+      state.selectedPicture;
 }
 export function readQuadraticSave(storage){
   const state=initialState();
-  let explicitSelection=false;
+  let explicitSelection=false,explicitTier=false;
   try{
     const current=storage.getItem(QUEST_SAVE_KEY_V2);
     if(current!==null){
@@ -51,19 +52,51 @@ export function readQuadraticSave(storage){
           state.selectedPicture=parsed.selectedPicture;
           explicitSelection=true;
         }
+        if(Number.isInteger(parsed.selectedTier)&&
+          parsed.selectedTier>=1&&parsed.selectedTier<=5){
+          state.selectedTier=parsed.selectedTier;
+          explicitTier=true;
+        }
+        if(Array.isArray(parsed.discoveries))
+          state.discoveries=parsed.discoveries.filter(id=>
+            typeof id==="string"&&!!questPictureById(id));
       }
     }else{
-      // One-way migration: keep the existing Prism-of-Possibilities prototype
-      // record exactly as it was. Never clear or rewrite the legacy v1 key.
+      // Preserve the original Prism progress and prototype save unmodified.
       const legacy=storage.getItem(QUEST_SAVE_KEY);
       if(legacy!==null)
         state.progress.prism=validProgress(JSON.parse(legacy),QUEST_PICTURES[0]);
     }
   }catch{
-    // Corrupt individual saves must never stop the site loading.
+    // Corrupt or unavailable localStorage must never prevent play.
   }
+  state.discoveries=[...new Set([...state.discoveries,
+    ...QUEST_PICTURES.filter(p=>state.progress[p.id].done===p.questions.length)
+      .map(p=>p.id)])];
   state.selectedPicture=suggestedPicture(state,explicitSelection);
+  if(!explicitTier)
+    state.selectedTier=questPictureById(state.selectedPicture)?.stage||1;
   return state;
+}
+// A separate, testable mystery-pool policy shared by the screen and next-step
+// navigation. "Start" never silently replays a completed image.
+export function quadraticMysteryStatus(pictures,progress,discovered=[]){
+  const known=new Set(discovered);
+  const completed=pictures.filter(p=>known.has(p.id)||
+    progress[p.id]?.done===p.questions.length);
+  const newPictures=pictures.filter(p=>!known.has(p.id)&&
+    (progress[p.id]?.done||0)===0);
+  const partial=pictures.filter(p=>(progress[p.id]?.done||0)>0&&
+    progress[p.id].done<p.questions.length);
+  return {total:pictures.length,completed,newPictures,partial};
+}
+export function pickQuadraticMystery(pictures,progress,discovered=[],random=Math.random){
+  const {newPictures}=quadraticMysteryStatus(pictures,progress,discovered);
+  if(!newPictures.length)return null;
+  const n=Number(random());
+  const i=Number.isFinite(n)?
+    Math.max(0,Math.min(newPictures.length-1,Math.floor(n*newPictures.length))):0;
+  return newPictures[i];
 }
 function mk(doc,tag,attributes={},parent=null){
   const node=doc.createElementNS(SVG,tag);
@@ -91,7 +124,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     progress=state.progress[state.selectedPicture],
     question=null,draft=null,
     locked=false,attempts=0,hintsShown=0,timer=null,pointer=null,
-    view="picker";
+    view="picker",manualSelection=false;
   const axis=()=>picture.axis;
   const xFor=n=>50+(n-axis().min)*540/(axis().max-axis().min);
   const xOf=clientX=>{
@@ -107,80 +140,149 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     if(timer!==null){clearTimeout(timer);timer=null;}
     pointer=null;
   }
-  function completedCount(){
-    return QUEST_PICTURES.filter(p=>
-      state.progress[p.id].done===p.questions.length).length;
+  function discovered(p){
+    return state.discoveries.includes(p.id)||
+      state.progress[p.id].done===p.questions.length;
+  }
+  function completedCount(){return state.discoveries.length;}
+  function tierPictures(){return questPicturesForTier(state.selectedTier);}
+  function tierStatus(){
+    return quadraticMysteryStatus(tierPictures(),state.progress,state.discoveries);
   }
   function updateEntry(){
-    const finished=completedCount(),any=QUEST_PICTURES.some(p=>state.progress[p.id].done>0);
-    $("questEnter").textContent=finished===5?
+    const finished=completedCount(),any=QUEST_PICTURES.some(p=>
+      state.progress[p.id].done>0);
+    $("questEnter").textContent=finished===QUEST_PICTURES.length?
       "View Quadratic Quest ↗":any?"Continue Quadratic Quest ↗":
       "Explore Quadratic Quest →";
-    $("questEntryProgress").textContent=finished===5?
-      "5 of 5 pictures complete · Replay any picture":
-      finished+" of 5 pictures complete · Separate progress";
+    $("questEntryProgress").textContent=finished+" of "+
+      QUEST_PICTURES.length+" pictures discovered · Five per difficulty";
   }
-  function setPicture(id,{save=true}={}){
+  function setPicture(id,{save=true,manual=true}={}){
     const next=questPictureById(id);
     if(!next)throw Error("Unknown Quadratic Quest picture "+id);
     picture=next;
     state.selectedPicture=id;
+    state.selectedTier=next.stage;
     progress=state.progress[id];
+    manualSelection=manual;
     if(save)store();
     renderPicker();
   }
+  function selectTier(tier){
+    if(!Number.isInteger(tier)||tier<1||tier>5)return;
+    state.selectedTier=tier;
+    manualSelection=false;
+    store();
+    renderPicker();
+  }
+  function continuedPicture(){
+    const partial=tierStatus().partial;
+    const newPartial=partial.filter(p=>!discovered(p));
+    const available=newPartial.length?newPartial:partial;
+    return available.find(p=>p.id===state.selectedPicture)||available[0]||null;
+  }
   function renderPicker(){
-    const done=completedCount();
-    $("questJourneyProgress").textContent=done+" of 5 completed";
-    const suggested=QUEST_PICTURES.find(p=>
-      state.progress[p.id].done<p.questions.length);
+    const done=completedCount(),tier=state.selectedTier;
+    const status=tierStatus(),tierName=QUEST_STAGE_NAMES[tier-1];
+    const chosen=manualSelection&&picture.stage===tier?picture:null;
+    $("questJourneyProgress").textContent=done+" of "+
+      QUEST_PICTURES.length+" discovered";
     const track=$("questStepTrack");
     track.replaceChildren();
-    for(const p of QUEST_PICTURES){
-      const el=doc.createElement("span");
-      el.className="picture-step"+(state.progress[p.id].done===p.questions.length?
-        " picture-step--done":suggested?.id===p.id?" picture-step--next":"");
-      el.textContent=String(p.stage);
-      el.setAttribute("title",p.stageLabel);
-      track.append(el);
+    const levels=$("questDifficultyPicker");levels.replaceChildren();
+    for(let step=1;step<=5;step++){
+      const stats=quadraticMysteryStatus(questPicturesForTier(step),
+        state.progress,state.discoveries);
+      const allDone=stats.completed.length===stats.total;
+      const selected=step===tier;
+      const marker=doc.createElement("span");
+      marker.className="picture-step"+
+        (allDone?" picture-step--done":selected?" picture-step--next":"");
+      marker.textContent=allDone?"✓":String(step);
+      marker.setAttribute("title",QUEST_STAGE_NAMES[step-1]+
+        ": "+stats.completed.length+" of "+stats.total+" discovered");
+      track.append(marker);
+      const button=doc.createElement("button");button.type="button";
+      button.className="difficulty-card quest-difficulty-card"+
+        (selected?" selected":"")+(allDone?" is-complete":"");
+      button.setAttribute("aria-pressed",String(selected));
+      button.setAttribute("aria-label",QUEST_STAGE_NAMES[step-1]+
+        ", "+stats.completed.length+" of five discoveries");
+      const stamp=doc.createElement("span");stamp.className="difficulty-stamp";
+      stamp.textContent=allDone?"✓":String(step);
+      const copy=doc.createElement("span");copy.className="difficulty-copy";
+      const label=doc.createElement("strong");
+      label.textContent=QUEST_STAGE_NAMES[step-1];
+      const description=doc.createElement("small");
+      description.textContent=(4+2*step)+" quadratic inequalities · "+
+        QUEST_TIER_FOCUS[step-1];
+      const progressLabel=doc.createElement("small");
+      progressLabel.className="quest-difficulty-progress";
+      progressLabel.textContent=stats.completed.length+" of 5 discovered";
+      copy.append(label,description,progressLabel);
+      const tick=doc.createElement("span");tick.className="difficulty-status";
+      tick.textContent=allDone?"✓":selected?"●":"○";
+      button.append(stamp,copy,tick);
+      button.addEventListener("click",()=>selectTier(step));
+      levels.append(button);
     }
-    const picker=$("questPicturePicker");
-    picker.replaceChildren();
-    for(const p of QUEST_PICTURES){
-      const save=state.progress[p.id],doneRows=save.done,
-        finished=doneRows===p.questions.length;
-      const button=doc.createElement("button");
-      button.type="button";
-      button.className="quest-picture-choice"+
-        (p.id===picture.id?" selected":"")+
-        (p.id===suggested?.id?" quest-picture-choice--next":"");
-      button.setAttribute("aria-pressed",String(p.id===picture.id));
-      const number=doc.createElement("span");
-      number.className="quest-picture-number";
-      number.textContent=String(p.stage);
-      const content=doc.createElement("span");
-      content.className="quest-picture-content";
+    const gallery=$("questPicturePicker");
+    gallery.replaceChildren();
+    for(const p of tierPictures()){
+      const save=state.progress[p.id],finished=discovered(p),
+        selected=chosen?.id===p.id;
+      const button=doc.createElement("button");button.type="button";
+      button.className="quest-picture-choice"+(selected?" selected":"")+
+        (finished?" quest-picture-choice--complete":"");
+      button.setAttribute("aria-pressed",String(selected));
+      button.setAttribute("aria-label",(finished?"Revisit completed picture: ":
+        save.done?"Continue picture: ":"Select picture: ")+p.name);
+      const number=doc.createElement("span");number.className="quest-picture-number";
+      number.textContent=finished?"✓":"✦";
+      const content=doc.createElement("span");content.className="quest-picture-content";
       const name=doc.createElement("strong");
-      name.textContent=p.name;
-      const focus=doc.createElement("small");
-      focus.textContent=p.focus;
-      const label=doc.createElement("em");
-      label.textContent=p.stageLabel+" · "+p.questions.length+" questions"+
-        (finished?" · Complete":doneRows?" · "+doneRows+" done":"");
-      content.append(name,focus,label);
-      const status=doc.createElement("span");
-      status.className="quest-picture-status";
-      status.textContent=finished?"●":p.id===picture.id?"◉":"○";
-      status.setAttribute("aria-hidden","true");
-      button.append(number,content,status);
+      name.textContent=finished?p.name:p.clue||"Mystery artwork";
+      const focus=doc.createElement("small");focus.textContent=p.focus;
+      const note=doc.createElement("em");
+      note.textContent=(4+2*tier)+" questions · "+(
+        finished&&save.done===p.questions.length?"✓ Discovered":
+        save.done?save.done+" of "+p.questions.length+" completed":
+        finished?"Discovered · replay available":"Not started");
+      content.append(name,focus,note);
+      const hint=doc.createElement("span");hint.className="quest-picture-status";
+      hint.textContent=finished?"✓":selected?"◉":"○";
+      button.append(number,content,hint);
       button.addEventListener("click",()=>setPicture(p.id));
-      picker.append(button);
+      gallery.append(button);
     }
-    $("questSelectedTitle").textContent=picture.name;
-    $("questSelectedSummary").textContent=picture.stageLabel+
-      " · "+picture.questions.length+" questions · "+picture.focus;
-    $("questStart").textContent=progress.done===picture.questions.length?
-      "View completed picture ↗":progress.done?"Continue picture ↗":"Start picture ↗";
+    $("questTierStatus").textContent=status.completed.length+
+      " of 5 pictures discovered · "+
+      status.newPictures.length+" new mysteries waiting";
+    if(chosen){
+      $("questSelectedTitle").textContent=discovered(chosen)?
+        chosen.name:chosen.clue||chosen.name;
+      $("questSelectedSummary").textContent=tierName+" · "+
+        chosen.questions.length+" questions · "+chosen.focus;
+      $("questStart").disabled=false;
+      $("questStart").textContent=discovered(chosen)&&
+        state.progress[chosen.id].done===chosen.questions.length?
+          "View completed picture ↗":
+        state.progress[chosen.id].done?"Continue picture ↗":"Start picture ↗";
+    }else{
+      $("questSelectedTitle").textContent="Mystery artwork";
+      $("questSelectedSummary").textContent=tierName+" · "+
+        (4+2*tier)+" questions · Five pictures to discover";
+      $("questStart").disabled=status.newPictures.length===0;
+      $("questStart").textContent=status.newPictures.length?
+        "Start a mystery →":"All new mysteries discovered ✓";
+    }
+    const continuing=continuedPicture();
+    $("questContinueMystery").hidden=!continuing;
+    if(continuing)$("questContinueMystery").textContent=
+      "Continue your picture · "+state.progress[continuing.id].done+" of "+
+      continuing.questions.length+" →";
+    $("questNextPicture").hidden=false;
     updateEntry();
   }
   function renderArt(target,done,{final=false}={}){
