@@ -881,9 +881,11 @@ test("Difficulty selection restores per-mode levels and never alters student gam
   $("graphDifficultyChoices").children[1].click();
   assert.equal(JSON.parse(s.store.get("inequality-ink-graph-mystery-tiers-v1")).build,2);
   const restored=session(Object.fromEntries(s.store));
-  assert.equal(restored.$("graphDifficultyChoices").children[4].getAttribute("aria-pressed"),"true");
-  restored.$("graphModeBuild").click();
+  // The active Graph Art mode itself was saved as Build; preferences persist
+  // independently and switching back to Fill restores its Masterpiece level.
   assert.equal(restored.$("graphDifficultyChoices").children[1].getAttribute("aria-pressed"),"true");
+  restored.$("graphModeFill").click();
+  assert.equal(restored.$("graphDifficultyChoices").children[4].getAttribute("aria-pressed"),"true");
 });
 test("Step Up mystery randomiser skips solved art; Continue resumes exact partial work",()=>{
   const core=graphModeGallery("fill")[1],bonus=graphPracticeGallery("fill")[0];
