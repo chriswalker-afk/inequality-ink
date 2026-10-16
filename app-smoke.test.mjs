@@ -1295,7 +1295,7 @@ test("Direct picture entry, optional practice, and continuation do not interfere
   assert.equal($("exitPracticeButton").hidden,true);
   answerCurrent(picture,0,"full");
   $("changeLevelButton").click();
-  assert.equal($("startButton").textContent,"Continue picture ↗");
+  assert.equal($("startButton").textContent,"Continue chosen picture ↗");
   const afterRow=localStorage.getItem("inequality-ink-v5");
   $("practiceButton").click();
   assert.equal($("questionStep").textContent,"PRACTICE 1 OF 2");
@@ -1551,7 +1551,7 @@ test("Five Mixed-only stages complete with all three skills and independent prog
    // file. Preserve that completed journey rather than implicitly replaying.
    if(JSON.parse(localStorage.getItem("inequality-ink-v5")).
      progress["mixed:"+picture.id]?.completed)continue;
-   assert.ok($("pictureJourneyHelp").textContent.includes("Mirror Mode"));
+   assert.ok($("pictureJourneyHelp").textContent.includes("Choose the maths"));
    assert.ok($("pictureSummary").textContent.includes("3 skills"));
    $("startButton").click();
    assert.equal($("playScreen").hidden,false);
