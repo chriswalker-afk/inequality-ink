@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  QUEST_PICTURES,QUEST_QUESTIONS,QUEST_TOTAL,QUEST_ART,QUEST_AXIS,
+  QUEST_PICTURES,QUEST_CORE_PICTURES,QUEST_EXTRA_PICTURES,QUEST_STAGE_NAMES,
+  QUEST_QUESTIONS,QUEST_TOTAL,QUEST_ART,QUEST_AXIS,questPicturesForTier,
   QUEST_SAVE_KEY,QUEST_SAVE_KEY_V2,
   questPictureById,questPictureForStep,questQuestionCount,
   formatQuadraticQuestion,quadraticStandardForm,
@@ -10,31 +11,57 @@ import {
   quadraticSolutionText,quadraticHints,quadraticExplanation,
   validateQuadraticQuest
 } from "./quadratic-quest.mjs";
-import {readQuadraticSave} from "./quadratic-quest-ui.mjs";
+import {readQuadraticSave,quadraticMysteryStatus,pickQuadraticMystery} from "./quadratic-quest-ui.mjs";
 
-test("All five pictures and fifty question rows follow the intended progression",()=>{
+test("Five distinct pictures per difficulty retain the original maths and art",()=>{
   assert.equal(validateQuadraticQuest(),true);
-  assert.equal(QUEST_PICTURES.length,5);
-  assert.deepEqual(QUEST_PICTURES.map(p=>p.questions.length),[6,8,10,12,14]);
-  assert.deepEqual(QUEST_PICTURES.map(p=>p.stageLabel),
-    ["Starter","Step Up","Building","Challenge","Big Finish"]);
-  assert.deepEqual(QUEST_PICTURES.map(p=>p.name),[
-    "Prism of Possibilities","Petal Parabola","Skyline Arc",
-    "Crystal Path","Nova Finale"]);
-  assert.equal(QUEST_PICTURES.reduce((n,p)=>n+p.questions.length,0),50);
+  assert.equal(QUEST_PICTURES.length,25);
+  assert.equal(QUEST_CORE_PICTURES.length,5);
+  assert.equal(QUEST_EXTRA_PICTURES.length,20);
+  assert.deepEqual(QUEST_CORE_PICTURES.map(p=>p.questions.length),[6,8,10,12,14]);
+  assert.deepEqual(QUEST_STAGE_NAMES,
+    ["Quick Spark","Step Up","Ink Builder","Brain Stretch","Masterpiece"]);
+  assert.deepEqual(QUEST_CORE_PICTURES.map(p=>p.name),
+    ["Prism of Possibilities","Petal Parabola","Skyline Arc",
+     "Crystal Path","Nova Finale"]);
+  assert.equal(QUEST_PICTURES.reduce((n,p)=>n+p.questions.length,0),250);
+  const ids=new Set(),questions=new Set(),art=new Set();
+  for(let stage=1;stage<=5;stage++){
+    const pool=questPicturesForTier(stage);
+    assert.equal(pool.length,5);
+    assert.equal(questPictureForStep(stage),pool[0]);
+    assert.ok(pool.every(p=>p.questions.length===4+2*stage));
+  }
   for(const p of QUEST_PICTURES){
     assert.equal(questPictureById(p.id),p);
-    assert.equal(questPictureForStep(p.stage),p);
     assert.equal(questQuestionCount(p),p.art.rows.length);
+    assert.ok(!ids.has(p.id));ids.add(p.id);
     assert.ok(p.art.rows.every(row=>row.length===p.art.rows[0].length));
     assert.ok(p.art.rows.every(row=>/[A-Z]/.test(row)));
+    const shape=p.art.rows.join("|");
+    assert.ok(!art.has(shape),"reused image for "+p.id);art.add(shape);
     for(const q of p.questions){
+      assert.ok(!questions.has(q.id),"duplicate question "+q.id);questions.add(q.id);
       assert.ok(q.roots[0]>p.axis.min&&q.roots[1]<p.axis.max);
       assert.equal(q.factor.includes("undefined"),false);
     }
   }
   assert.equal(questPictureForStep(6),null);
   assert.equal(questPictureById("missing"),null);
+});
+test("Automatic mystery selection skips completed and partial work",()=>{
+  const pool=questPicturesForTier(1),progress=Object.fromEntries(
+    pool.map(p=>[p.id,{done:0}]));
+  progress[pool[0].id].done=6;
+  progress[pool[1].id].done=3;
+  const stats=quadraticMysteryStatus(pool,progress,[pool[0].id]);
+  assert.equal(stats.completed.length,1);
+  assert.equal(stats.partial.length,1);
+  assert.equal(stats.newPictures.length,3);
+  for(let i=0;i<3;i++)assert.equal(
+    pickQuadraticMystery(pool,progress,[pool[0].id],()=>i/3)?.id,pool[i+2].id);
+  for(const p of pool.slice(2))progress[p.id].done=p.questions.length;
+  assert.equal(pickQuadraticMystery(pool,progress,[pool[0].id]),null);
 });
 test("The existing Prism prototype, artwork, question IDs and answers are unchanged",()=>{
   const prism=QUEST_PICTURES[0];
@@ -112,7 +139,7 @@ test("Both unbounded rays and excluded or included roots are marked precisely",(
   assert.equal(quadraticSolutionText(quadraticAnswer(QUEST_QUESTIONS[3])),
     "x ≤ −1  or  x ≥ 3");
 });
-test("Hint sequences and full worked explanations suit all fifty questions",()=>{
+test("Hint sequences and worked explanations suit all 250 questions",()=>{
   for(const p of QUEST_PICTURES)for(const q of p.questions){
     const hints=quadraticHints(q),explanation=quadraticExplanation(q);
     assert.equal(hints.length,3);
@@ -134,7 +161,7 @@ test("Existing v1 completed Prism progress migrates to independent v2 saves",()=
   assert.deepEqual(migrated.progress.prism,old);
   assert.equal(migrated.selectedPicture,"petals",
     "Completed prototype should suggest the next unfinished picture");
-  assert.deepEqual(QUEST_PICTURES.slice(1).map(p=>migrated.progress[p.id].done),
+  assert.deepEqual(QUEST_CORE_PICTURES.slice(1).map(p=>migrated.progress[p.id].done),
     [0,0,0,0]);
   assert.deepEqual(JSON.parse(storage.getItem(QUEST_SAVE_KEY)),old,
     "Legacy key is left untouched during migration");
