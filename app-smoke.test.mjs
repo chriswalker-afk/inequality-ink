@@ -1328,7 +1328,7 @@ test("Optional practice stays within small picture number lines and excludes Pai
 });
 
 
-test("Quadratic Quest has five selectable stages, all complete correctly and retain main-game progress",()=>{
+test("Quadratic Quest difficulty-first chooser preserves the five original complete playable journeys",()=>{
   $("chooseLevelButton").click();
   const mainSave=localStorage.getItem("inequality-ink-v5");
   assert.equal($("quadraticScreen").hidden,true);
@@ -1337,14 +1337,18 @@ test("Quadratic Quest has five selectable stages, all complete correctly and ret
   assert.equal($("introScreen").hidden,true);
   assert.equal($("questSelect").hidden,false);
   assert.equal($("questPlaying").hidden,true);
+  assert.equal($("questDifficultyPicker").children.length,5);
   assert.equal($("questPicturePicker").children.length,5);
-  assert.equal($("questJourneyProgress").textContent,"0 of 5 completed");
-  assert.equal($("questStart").textContent,"Start picture ↗");
+  assert.equal($("questJourneyProgress").textContent,"0 of 25 discovered");
+  assert.equal($("questStart").textContent,"Start a mystery →");
 
-  // Switching to a later picture is allowed: stages are suggestions, not locks.
-  $("questPicturePicker").children[4].click();
+  // Every difficulty is selectable and its gallery contains five choices.
+  $("questDifficultyPicker").children[4].click();
+  assert.equal($("questPicturePicker").children.length,5);
+  $("questPicturePicker").children[0].click();
   assert.equal($("questSelectedTitle").textContent,"Nova Finale");
   assert.equal($("questSelectedSummary").textContent.includes("14 questions"),true);
+  $("questDifficultyPicker").children[0].click();
   $("questPicturePicker").children[0].click();
   assert.equal($("questSelectedTitle").textContent,"Prism of Possibilities");
 
@@ -1446,7 +1450,10 @@ test("Quadratic Quest has five selectable stages, all complete correctly and ret
   assert.equal($("questNextPicture").hidden,false);
 
   for(let stage=1;stage<5;stage++){
-    $("questNextPicture").click(); // Automatically begins the next picture.
+    $("questFinishBack").click();
+    $("questDifficultyPicker").children[stage].click();
+    $("questPicturePicker").children[0].click();
+    $("questStart").click(); // Deliberate gallery selection of original artwork.
     const picture=QUEST_PICTURES[stage];
     assert.equal($("questSelect").hidden,true);
     assert.equal($("questPlaying").hidden,false);
@@ -1462,13 +1469,13 @@ test("Quadratic Quest has five selectable stages, all complete correctly and ret
     assert.equal($("questSolutions").children.length,picture.questions.length);
     assert.equal($("questRevealArt").children.length,
       picture.art.rows.length*picture.art.rows[0].length);
-    assert.equal($("questNextPicture").hidden,stage===4);
+    assert.equal($("questNextPicture").hidden,false);
     $("questRevealClose").click();
   }
   assert.equal($("questEntryProgress").textContent,
-    "5 of 5 pictures complete · Replay any picture");
+    "5 of 25 pictures discovered · Five per difficulty");
   let save=JSON.parse(localStorage.getItem(QUEST_SAVE_KEY_V2));
-  assert.equal(QUEST_PICTURES.every(p=>
+  assert.equal(QUEST_PICTURES.slice(0,5).every(p=>
     save.progress[p.id].done===p.questions.length),true);
   assert.equal(save.progress.prism.firstTry,5);
   assert.equal(save.progress.prism.hints,1);
@@ -1476,9 +1483,10 @@ test("Quadratic Quest has five selectable stages, all complete correctly and ret
 
   $("questFinishBack").click();
   assert.equal($("questSelect").hidden,false);
-  assert.equal($("questJourneyProgress").textContent,"5 of 5 completed");
+  assert.equal($("questJourneyProgress").textContent,"5 of 25 discovered");
+  $("questDifficultyPicker").children[2].click();
   assert.equal($("questPicturePicker").children.length,5);
-  $("questPicturePicker").children[2].click();
+  $("questPicturePicker").children[0].click();
   assert.equal($("questStart").textContent,"View completed picture ↗");
   $("questStart").click();
   assert.equal($("questFinished").hidden,false);
@@ -1501,6 +1509,7 @@ test("Quadratic Quest has five selectable stages, all complete correctly and ret
 test("Quadratic Quest includes keyboard-toggle, drag, and independent selector navigation",()=>{
   $("questEnter").click();
   assert.equal($("questSelect").hidden,false);
+  $("questDifficultyPicker").children[0].click();
   $("questPicturePicker").children[0].click();
   $("questStart").click();
   // The completed Prism opens its own finish view. Replay preserves other stages.
