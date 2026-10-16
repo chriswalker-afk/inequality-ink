@@ -34,3 +34,9 @@ jobs:
           node --check regions/plot-engine.mjs
           node --check regions/plot-pictures.mjs
           node --check regions/plot-art.mjs
+          node --check regions/complex-quest-model.mjs
+          node --check regions/complex-quest-geometry.mjs
+          node --check regions/complex-quest-app.mjs
+          node --check regions/graph-mural-model.mjs
+          node --check regions/graph-mural-art.mjs
+          node --check regions/graph-mural.mjs
