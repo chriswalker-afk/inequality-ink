@@ -6,6 +6,36 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Picture progression implemented:** [Read the original picture progression plan](PICTURE_PROGRESSION_PLAN.md). Each mode offers five ordered quick-win pictures (6, 8, 10, 12 and 14 questions) and a separate **More pictures** gallery retaining the original artwork and saved results. No compulsory practice questions delay the first six-row Starter.
 
+## Difficulty-first Pixel Art mysteries (October 2026)
+
+Pixel Art's main desktop and mobile homepage now asks students to **choose a mode
+and one of five mathematical difficulties**, rather than select a named picture.
+The difficulties are **Quick Spark** (6 questions), **Step Up** (8), **Ink
+Builder** (10), **Brain Stretch** (12), and **Masterpiece** (14).
+
+- Each difficulty contains a pool of at least three independently saved
+  pictures; fifty new tier-matched pictures span the five Pixel Art modes.
+- **Start a mystery** chooses randomly from unplayed art at the selected mode
+  and difficulty. Completed art never enters this automatic draw. Partially
+  completed work is offered as a separate **Continue your picture** action.
+- Once everything at a difficulty is discovered, the main Start control is
+  disabled with a completion message. Students can instead freely choose
+  another level or deliberately replay via the **Picture gallery**.
+- Students may freely choose any difficulty at any time. Nothing is locked
+  behind another level, and no new tutorials are compulsory.
+- The optional gallery contains every original core picture and bonus.
+  Choosing a particular picture there preserves the older direct-play and
+  replay workflow. Existing per-picture save IDs, question generators,
+  completed artwork reveals and scores are unchanged.
+- Discovered pictures are counted within their difficulty pool; completion is
+  not inferred from another picture at the same mathematical tier.
+- Existing open/closed-circle touch shortcuts and the no-login design remain.
+
+This release preserves all historical artworks and adds independently validated
+new ones. Mathematical validation includes the authentic inequalities for
+each generated row, stage-appropriate endpoint and algebra profiles, coloured
+paint rules, connectivity, and final-detail placement.
+
 ## Student feedback pass — Pixel Art
 
 The pixel studio's five-step journeys and student saves remain unchanged. The
