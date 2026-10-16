@@ -12,11 +12,11 @@ import {makePaintQuestion} from "./paint-engine.mjs";
 const MODES=["mirror","full","solve","mixed","paint"];
 const ROWS=[6,8,10,12,14];
 const EXPECTED_ADDITIONS={
-  mirror:[2,1,2,2,0],
-  full:[2,1,2,2,0],
-  solve:[2,2,1,2,0],
-  mixed:[1,0,1,1,0],
-  paint:[2,2,1,2,0]
+  mirror:[2,1,2,2,2],
+  full:[2,1,2,2,2],
+  solve:[2,2,1,2,2],
+  mixed:[1,0,1,1,2],
+  paint:[2,2,1,2,2]
 };
 function mask(picture){
   const width=fullPictureWidth(picture);
@@ -25,8 +25,8 @@ function mask(picture){
       picturePixelAt(picture,x,row+1,{full:true})?"#":".").join("")).join("/");
 }
 test("At least five real, mathematically matched pictures in every mode/difficulty pool",()=>{
-  assert.equal(CRAFTED_MYSTERIES.length,31);
-  assert.equal(PICTURE_LIBRARY.length,115);
+  assert.equal(CRAFTED_MYSTERIES.length,41);
+  assert.equal(PICTURE_LIBRARY.length,125);
   const unique=new Set(PICTURE_LIBRARY.map(p=>p.id));
   assert.equal(unique.size,PICTURE_LIBRARY.length);
   for(const mode of MODES){
@@ -50,7 +50,7 @@ test("At least five real, mathematically matched pictures in every mode/difficul
         "Every mystery clue must be unique within a difficulty");
     }
   }
-  assert.equal(PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0),133);
+  assert.equal(PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0),143);
 });
 test("New silhouettes are individually authored, distinct, connected and embellished",()=>{
   const signatures=new Set();
@@ -59,7 +59,7 @@ test("New silhouettes are individually authored, distinct, connected and embelli
     assert.ok(!signatures.has(key),"Repeated silhouette "+p.id);
     signatures.add(key);
     assert.equal(p.craftedMystery,true);
-    assert.match(p.id,/^gallery-(mirror|full|solve|mixed|paint)-[1-4]-/);
+    assert.match(p.id,/^gallery-(mirror|full|solve|mixed|paint)-[1-5]-/);
     assert.equal(p.levels.length,1,
       "New images have independently saved per-mode progress");
     assert.equal(p.height,p.rows.length+2);
@@ -128,5 +128,5 @@ test("Every original artwork remains present and the complete library validates"
     "full-star-starter","mixed-dragon-finale","paint-heart-starter",
     "mirror-evergreen-bonus","solve-balloon-bonus","bank-mirror-1-1"
   ])assert.ok(pictureById(id),"Existing progress key "+id+" must remain");
-  assert.equal(validatePictureLibrary().length,115);
+  assert.equal(validatePictureLibrary().length,125);
 });
