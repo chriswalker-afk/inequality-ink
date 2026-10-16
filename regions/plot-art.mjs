@@ -76,11 +76,17 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     reveal=$("plotReveal"),revealSvg=$("plotRevealSvg");
   const restored=readPlotSave(storage);
   let saved={picture:restored.picture,records:restored.records};
-  const requestedPicture=new URLSearchParams(win.location?.search||"").get("picture");
+  const params=new URLSearchParams(win.location?.search||"");
+  const requestedPicture=params.get("picture");
   const linkedPicture=plotPicture(requestedPicture)?.id||null;
+  const fromMystery=params.get("from")==="mystery";
   function returnToHub(id=saved.picture){
     if(!linkedPicture||typeof win.location?.assign!=="function")return false;
-    win.location.assign("./?mode=plot&picture="+encodeURIComponent(id));
+    // Mystery-first journeys return to the selected difficulty, without
+    // exposing another picture or accidentally turning on manual gallery mode.
+    const query=fromMystery?"./?mode=plot&tier="+picture().step:
+      "./?mode=plot&picture="+encodeURIComponent(id);
+    win.location.assign(query);
     return true;
   }
   let save=saved.records[saved.picture]||fresh();
@@ -441,7 +447,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
       {value:p.pieces.reduce((n,part)=>n+plotSteps(part).length,0),label:"Graphs plotted"},
       {value:p.step+" / 5",label:"Stage complete"}
     ]);
-    $("plotNextPicture").hidden=!!p.practice||p.step===PLOT_PICTURES.length;
+    $("plotNextPicture").hidden=!fromMystery&&
+      (!!p.practice||p.step===PLOT_PICTURES.length);
+    if(fromMystery)$("plotNextPicture").textContent="Another mystery →";
   }
   function setScreen(next){
     screen=next;
