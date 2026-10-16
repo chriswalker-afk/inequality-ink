@@ -1458,6 +1458,8 @@ body.paint-session{overflow:hidden}
  white-space:nowrap;font-size:.78rem;font-weight:900;min-height:39px
 }
 .mural-nav-link:hover{background:#e1f3e7}
+/* Do not add a control to the tightly packed one-screen painting workspace. */
+body.paint-session .mural-nav-link{display:none}
 .mural-nav-link:focus-visible,.mural-earned-link:focus-visible{
  outline:3px solid #e6a876;outline-offset:3px
 }
