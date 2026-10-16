@@ -509,6 +509,8 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     progress.attempts+=attempts;
     progress.hints+=hintsShown;
     if(attempts===1&&hintsShown===0)progress.firstTry++;
+    if(progress.done===picture.questions.length&&!state.discoveries.includes(picture.id))
+      state.discoveries.push(picture.id);
     store();renderProgress();
     feedback("Correct! "+quadraticSolutionText(expected)+
       ". Another picture row is revealed.",true);
@@ -563,7 +565,11 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
       " quadratic inequalities. One bright discovery.";
     $("questFinalStats").textContent=progress.firstTry+"/"+picture.questions.length+
       " questions correct first time without hints · "+progress.hints+" hints used";
-    $("questNextPicture").hidden=picture.stage===5;
+    $("questNextPicture").hidden=false;
+    const waiting=quadraticMysteryStatus(tierPictures(),
+      state.progress,state.discoveries).newPictures;
+    $("questNextPicture").textContent=waiting.length?
+      "Another mystery →":"Choose another difficulty →";
     const list=$("questSolutions");list.replaceChildren();
     for(const q of picture.questions){
       const li=doc.createElement("li");
@@ -594,7 +600,7 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     renderPicker();
     win.scrollTo?.({top:0,behavior:"instant"});
   }
-  function beginPicture(){
+  function startSelectedPicture(){
     cancelTimer();closeReveal();
     view="playing";
     $("questSelect").hidden=true;
@@ -611,6 +617,20 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     if(progress.done===picture.questions.length)finish(false);
     else loadQuestion();
     win.scrollTo?.({top:0,behavior:"instant"});
+  }
+  function beginPicture(){
+    const chosen=manualSelection&&picture.stage===state.selectedTier?
+      picture:pickQuadraticMystery(tierPictures(),
+        state.progress,state.discoveries);
+    if(!chosen)return;
+    setPicture(chosen.id,{manual:manualSelection});
+    startSelectedPicture();
+  }
+  function continueMystery(){
+    const chosen=continuedPicture();
+    if(!chosen)return;
+    setPicture(chosen.id,{manual:false});
+    startSelectedPicture();
   }
   function open(){
     cancelTimer();onShow();showPicker();
@@ -633,13 +653,20 @@ export function initQuadraticQuest({doc,onShow,onReturn,storage=localStorage,win
     beginPicture();
   }
   function nextPicture(){
-    const next=questPictureForStep(picture.stage+1);
-    if(!next)return;
-    setPicture(next.id);beginPicture();
+    const next=pickQuadraticMystery(tierPictures(),
+      state.progress,state.discoveries);
+    if(next){
+      setPicture(next.id,{manual:false});
+      startSelectedPicture();
+    }else{
+      manualSelection=false;
+      showPicker();
+    }
   }
   $("questEnter").addEventListener("click",open);
   $("questBack").addEventListener("click",back);
   $("questStart").addEventListener("click",beginPicture);
+  $("questContinueMystery").addEventListener("click",continueMystery);
   $("questNextPicture").addEventListener("click",nextPicture);
   $("questRestart").addEventListener("click",()=>restart());
   $("questFinishBack").addEventListener("click",showPicker);
