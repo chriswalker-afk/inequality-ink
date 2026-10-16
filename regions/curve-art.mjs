@@ -319,7 +319,7 @@ export function initCurveArt({doc=document,storage=localStorage,win=window}={}){
   }
   function summaryView(){
     const p=picture();
-    $("curveMuralLink").href="./graph-mural.html?found="+encodeURIComponent("curve:"+p.id);
+    if($("curveMuralLink"))$("curveMuralLink").href="./graph-mural.html?found="+encodeURIComponent("curve:"+p.id);
     $("curveSummaryTitle").textContent=p.name;
     $("curveSummaryText").textContent=
       "You created "+p.pieces.length+" coloured shapes by finding the intersection of their curved inequalities.";
