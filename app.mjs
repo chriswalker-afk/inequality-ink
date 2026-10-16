@@ -1,7 +1,7 @@
 import {LEVELS,LEVEL_IDS,tutorialFor,identicalSolution,formatInterval,fmt} from "./model.mjs";
 import {
  PICTURE_LIBRARY,pictureById,picturesForLevel,defaultPictureForLevel,
- progressionForLevel,extraPicturesForLevel,progressionStep,PICTURE_TIERS,
+ progressionForLevel,extraPicturesForLevel,progressionStep,PICTURE_TIERS,mysteryPool,mysteryTier,
  pictureWidth,fullPictureWidth,pictureHeight,questionCount,pictureAxis,
  makePictureQuestion,picturePaintedValues,picturePixelAt,pictureColourAt,
  pictureBackgroundAt,pictureFinalDetails,pictureDetailStages,validatePictureLibrary
@@ -23,6 +23,7 @@ const HISTORICAL_DEFAULT_IDS={
 const defaults=()=>({activeLevel:"mirror",selectedPictures:defaultSelection(),progress:{}});
 const progressKey=(level,pictureId)=>level+":"+pictureId;
 let state=defaults();
+let selectedTier=1,manualPicture=false;
 function safeProgress(raw,picture){
  if(!raw||typeof raw!=="object"||!Number.isInteger(raw.done)||raw.done<0||
    raw.done>questionCount(picture)||!Number.isInteger(raw.tutorial)||
@@ -33,6 +34,7 @@ try{
  const current=JSON.parse(localStorage.getItem(KEY));
  if(current&&typeof current==="object"&&LEVELS[current.activeLevel]){
    state.activeLevel=current.activeLevel;
+   if(Number.isInteger(current.selectedTier)&&current.selectedTier>=1&&current.selectedTier<=5)selectedTier=current.selectedTier;
    for(const level of LEVEL_IDS){
      const requested=current.selectedPictures?.[level];
      if(picturesForLevel(level).some(p=>p.id===requested))state.selectedPictures[level]=requested;
@@ -82,7 +84,7 @@ const syncProgress=()=>{
  const key=activeKey();
  save=state.progress[key]||(state.progress[key]=blank());
 };
-const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{}};
+const store=()=>{try{localStorage.setItem(KEY,JSON.stringify({...state,selectedTier}));}catch{}};
 let paintQuestion=null,paintBrush=null,paintLocked=false,paintAdvanceTimer=null,
  paintErrorTimer=null,paintPointer=null,paintCells=[],paintFocusCells=[],
  paintSelectedRuleIndex=null;
@@ -355,6 +357,7 @@ function question(){
 function selectLevel(level){
  if(!LEVELS[level])return;
  state.activeLevel=level;
+ manualPicture=false;
  if(!picturesForLevel(level).some(p=>p.id===state.selectedPictures[level])){
    state.selectedPictures[level]=defaultPictureForLevel(level).id;
  }
@@ -362,6 +365,9 @@ function selectLevel(level){
  syncProgress();store();updateLevelSelector();
 }
 function selectPicture(id){
+ manualPicture=true;
+ const chosen=pictureById(id);
+ selectedTier=mysteryTier(chosen,state.activeLevel);
  if(!picturesForLevel(state.activeLevel).some(p=>p.id===id))return;
  state.selectedPictures[state.activeLevel]=id;
  $("practiceStatus").hidden=true;
@@ -375,7 +381,7 @@ function surprisePicture(){
  const extras=extraPicturesForLevel(level),core=progressionForLevel(level);
  const remaining=items=>items.filter(p=>
    !state.progress[progressKey(level,p.id)]?.completed&&p.id!==activePicture().id);
- const newBonus=remaining(extras.filter(p=>p.studentEncore));
+ const newBonus=remaining(extras.filter(p=>mysteryTier(p,level)===selectedTier));
  const otherBonus=remaining(extras);
  const otherCore=remaining(core);
  const alternatives=newBonus.length?newBonus:
@@ -386,35 +392,95 @@ function surprisePicture(){
  selectPicture(p.id);
  start(); // The single action immediately begins the selected picture.
 }
+const TIER_NAMES=["Quick Spark","Step Up","Ink Builder","Brain Stretch","Masterpiece"];
+const tierNames=tier=>TIER_NAMES[tier-1];
+function tierProgress(level,tier){
+ const pool=mysteryPool(level,tier);
+ return {pool,solved:pool.filter(p=>state.progress[progressKey(level,p.id)]?.completed),
+   underway:pool.filter(p=>{const r=state.progress[progressKey(level,p.id)];return r?.done>0&&!r.completed;})};
+}
+function chooseTier(tier){
+ if(!Number.isInteger(tier)||tier<1||tier>5)return;
+ selectedTier=tier;manualPicture=false;
+ store();updateLevelSelector();
+}
+function mysteryPick(level,tier){
+ const {pool,underway}=tierProgress(level,tier);
+ const untouched=pool.filter(p=>{
+   const r=state.progress[progressKey(level,p.id)];
+   return !r?.completed&&!r?.done;
+ });
+ // Do not abandon partly completed work automatically; Continue is explicit.
+ const alternatives=untouched.length?untouched:
+   pool.filter(p=>!state.progress[progressKey(level,p.id)]?.completed);
+ if(!alternatives.length)return null;
+ return alternatives[Math.floor(Math.random()*alternatives.length)];
+}
+function beginMystery({continueExisting=false}={}){
+ const {underway}=tierProgress(state.activeLevel,selectedTier);
+ const next=continueExisting?underway[0]:mysteryPick(state.activeLevel,selectedTier);
+ if(!next){updateLevelSelector();return;}
+ state.selectedPictures[state.activeLevel]=next.id;
+ manualPicture=false;syncProgress();store();start();
+}
+function startFromHome(){
+ if(manualPicture)start();
+ else beginMystery();
+}
+function renderDifficultyPicker(){
+ const picker=$("difficultyPicker");picker.replaceChildren();
+ const level=state.activeLevel;
+ const totals=Array.from({length:5},(_,i)=>tierProgress(level,i+1));
+ const solvedAll=totals.reduce((sum,t)=>sum+t.solved.length,0);
+ const totalAll=totals.reduce((sum,t)=>sum+t.pool.length,0);
+ $("picturePickerStatus").textContent=solvedAll+" of "+totalAll+" discovered";
+ $("picturePathProgress").textContent=solvedAll+" discoveries · "+totalAll+" possible";
+ for(const [i,t] of totals.entries()){
+   const tier=i+1,selected=tier===selectedTier;
+   const card=document.createElement("button");card.type="button";
+   card.className="difficulty-card"+(selected?" selected":"");
+   card.setAttribute("aria-pressed",String(selected));
+   card.setAttribute("aria-label",tierNames(tier)+", "+t.solved.length+" of "+t.pool.length+" discovered");
+   const stamp=document.createElement("span");stamp.className="difficulty-stamp";
+   stamp.textContent=t.solved.length===t.pool.length?"✓":String(tier);
+   const copy=document.createElement("span");copy.className="difficulty-copy";
+   const heading=document.createElement("strong");heading.textContent=tierNames(tier);
+   const sub=document.createElement("small");sub.textContent=(4+2*tier)+" questions · "+
+     (level==="paint"?[2,2,3,4,5][i]+" colours · ":"")+
+     t.solved.length+" of "+t.pool.length+" discovered";
+   copy.append(heading,sub);
+   const status=document.createElement("span");status.className="difficulty-status";
+   status.textContent=tier===selectedTier?"●":"○";
+   card.append(stamp,copy,status);
+   card.addEventListener("click",()=>chooseTier(tier));picker.append(card);
+ }
+ const {pool,solved,underway}=totals[selectedTier-1];
+ const remaining=pool.length-solved.length;
+ $("mysteryTierStatus").textContent=remaining?
+   remaining+" mysteries still to discover · "+(4+2*selectedTier)+" questions each":
+   "All "+pool.length+" discovered! Browse the gallery to replay.";
+ $("mysteryStartButton").disabled=remaining===0;
+ $("mysteryStartButton").textContent=remaining?"Start a "+tierNames(selectedTier)+" mystery →":"All discovered ✓";
+ $("mysteryContinueButton").hidden=underway.length===0;
+ $("mysteryContinueButton").textContent=underway.length?
+   "Continue your picture · "+underway[0].done+" of "+(4+2*selectedTier)+" →":"Continue your picture →";
+ const track=$("pictureStepTrack");track.replaceChildren();
+ for(const [i,t]of totals.entries()){
+   const marker=document.createElement("span");marker.className="picture-step"+
+     (i+1===selectedTier?" picture-step--next":"")+
+     (t.solved.length===t.pool.length?" picture-step--done":"");
+   marker.textContent=i+1;track.append(marker);
+ }
+}
 function renderPicturePicker(){
  const level=state.activeLevel,core=progressionForLevel(level),
    extras=extraPicturesForLevel(level),
    picker=$("picturePicker"),bonus=$("extraPicturePicker");
  picker.replaceChildren();bonus.replaceChildren();
- $("picturePickerStatus").textContent="5 steps · "+extras.length+
-   (extras.length===1?" more picture":" more pictures");
  $("pictureJourneyHelp").textContent=level==="paint"?
-   "Start with two colours and work up to five. Every finished picture counts.":
-   level==="mixed"?
-     "Five original pictures. Each needs Mirror Mode, Full Picture and Solve & Paint skills.":
-     "Start with six quick questions. Each picture grows a little bigger.";
- const complete=core.filter(p=>
-   state.progress[progressKey(level,p.id)]?.completed).length;
- const next=core.find(p=>!state.progress[progressKey(level,p.id)]?.completed);
- $("picturePathProgress").textContent=complete+" of 5 completed"+
-   (next?" · Next: "+next.clue:" · All five finished!");
- const track=$("pictureStepTrack");
- track.replaceChildren();
- for(const [i,picture] of core.entries()){
-   const progress=state.progress[progressKey(level,picture.id)]||blank();
-   const dot=document.createElement("span");
-   dot.className="picture-step"+(progress.completed?" picture-step--done":
-     picture.id===next?.id?" picture-step--next":"");
-   dot.textContent=progress.completed?"✓":String(i+1);
-   dot.setAttribute("aria-label",PICTURE_TIERS[i]+": "+
-     picture.clue+(progress.completed?", completed":", "+questionCount(picture)+" rows"));
-   track.append(dot);
- }
+   "Choose your difficulty, then paint a surprise in colour.":
+   "Choose the maths; uncover the picture one correct inequality at a time.";
+ renderDifficultyPicker();
  const cardFor=picture=>{
    const selected=activePicture().id===picture.id,
      progress=state.progress[progressKey(level,picture.id)]||blank(),
@@ -459,8 +525,8 @@ function renderPicturePicker(){
  for(const picture of core)picker.append(cardFor(picture));
  for(const picture of extras)bonus.append(cardFor(picture));
  $("morePicturesSection").hidden=extras.length===0;
- $("morePicturesToggle").textContent="More pictures ("+extras.length+")";
- if(extras.some(p=>p.id===activePicture().id))$("morePicturesSection").open=true;
+ $("morePicturesToggle").textContent="Picture gallery · "+(core.length+extras.length)+" pictures";
+ if(manualPicture)$("morePicturesSection").open=true;
 }
 function updateLevelSelector(){
  document.querySelectorAll("[data-level]").forEach(button=>{
@@ -489,14 +555,15 @@ function updateLevelSelector(){
  $("introArtCaption").textContent="A picture in progress";
  const step=progressionStep(picture,state.activeLevel);
  const colours=picture.paint?Object.keys(picture.paint.colours).length:null;
- $("pictureSummary").textContent=(step?PICTURE_TIERS[step-1]:"More pictures")+
+ $("pictureSummary").textContent=(step?PICTURE_TIERS[step-1]:tierNames(mysteryTier(picture,state.activeLevel)))+
    " · "+(colours===null?"":colours+" colours · ")+total+
    " rows"+(state.activeLevel==="mixed"?" · 3 skills":"")+
    (step===1?" · Quick win":"")+" · No login needed";
  renderPicturePicker();
  sprite($("introPixelArt"),{intro:true});
- $("startButton").textContent=save.completed?"View completed picture ↗":
-   count?"Continue picture ↗":"Start picture ↗";
+ $("startButton").textContent=manualPicture?(save.completed?"View completed picture ↗":
+   count?"Continue chosen picture ↗":"Play chosen picture ↗"):
+   "Start a "+tierNames(selectedTier)+" mystery ↗";
  $("practiceButton").hidden=state.activeLevel==="paint";
 }
 function chooseLevel(){
@@ -1442,7 +1509,9 @@ function saveArt(){
 document.querySelectorAll("[data-level]").forEach(button=>{
  button.addEventListener("click",()=>selectLevel(button.dataset.level));
 });
-$("startButton").onclick=start;
+$("startButton").onclick=startFromHome;
+$("mysteryStartButton").onclick=()=>beginMystery();
+$("mysteryContinueButton").onclick=()=>beginMystery({continueExisting:true});
 $("surprisePictureButton").onclick=surprisePicture;
 $("finishSurpriseButton").onclick=surprisePicture;
 $("practiceButton").onclick=startPractice;
