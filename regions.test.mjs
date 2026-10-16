@@ -421,7 +421,7 @@ test("Five unique cards switch between modes, track stage status and show saved 
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(legacy)}),{$}=s;
   assert.equal($("graphPictureCards").children.length,5);
   assert.equal($("graphStageTrack").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 5/);
+  assert.match($("graphGalleryProgress").textContent,/1 of 6 discovered/);
   assert.ok($("graphStageTrack").children[0].className.includes("is-complete"));
   assert.equal($("graphPictureCards").children[1].children[1].children[1].textContent,
     "Home Sweet Home");
@@ -634,12 +634,13 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify({
     mode:"fill",picture:"cosmic-rocket",records
   })}),{$}=s;
-  assert.match($("graphGalleryProgress").textContent,/5 of 5 completed/);
+  assert.match($("graphGalleryProgress").textContent,/5 of 6 discovered/);
   assert.equal($("graphStageTrack").children.length,5);
-  assert.ok($("graphStageTrack").children.every(x=>
-    x.className.includes("is-complete")));
+  assert.equal($("graphStageTrack").children.filter(x=>
+    x.className.includes("is-complete")).length,4,
+    "The extra Step Up practice artwork remains undiscovered");
   $("graphModeBuild").click();
-  assert.match($("graphGalleryProgress").textContent,/0 of 5 completed/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 6 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
 });
 
@@ -714,9 +715,9 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModeCurve").click();
   assert.equal($("graphModeCurve").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/1 of 5 completed/);
-  assert.ok($("graphPreviewSvg").children.some(n=>n.tagName==="path"),
-    "Curve gallery should preview actual curved regions");
+  assert.match($("graphGalleryProgress").textContent,/1 of 6 discovered/);
+  assert.ok(!$("graphPreviewSvg").children.some(n=>n.tagName==="path"),
+    "Difficulty-first start must hide unearned curved mystery art");
   assert.equal($("graphPreviewStage").textContent,"2 · Step Up",
     "Completed first stage should recommend the next challenge");
   $("graphPictureCards").children[0].click();
@@ -728,7 +729,7 @@ test("One Graph Art studio switches across four galleries without mixing progres
   $("graphModePlot").click();
   assert.equal($("graphModePlot").getAttribute("aria-pressed"),"true");
   assert.equal($("graphPictureCards").children.length,5);
-  assert.match($("graphGalleryProgress").textContent,/0 of 5 completed/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 6 discovered/);
   $("graphPictureCards").children[0].click();
   assert.match($("graphStartPicture").textContent,/Continue picture/);
   $("graphStartPicture").click();
@@ -797,8 +798,8 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
     $("graphCheckFill").click();
   }
   assert.equal($("graphSummary").hidden,false);
-  assert.equal($("graphNextPicture").hidden,true,
-    "Practice must not silently advance the five-stage journey");
+  assert.equal($("graphNextPicture").hidden,false,
+    "An optional practice reveal can now return to the difficulty-first chooser");
   assert.equal(s.app.readProgress().records["fill:"+tent.id].done,3);
   assert.ok(s.store.get(GRAPH_ART_SAVE_KEY));
   const after=session(Object.fromEntries(s.store));
