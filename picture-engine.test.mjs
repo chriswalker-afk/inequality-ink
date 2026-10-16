@@ -40,7 +40,7 @@ test("All 34 artworks validate with the original five-stage path in each mode",(
    assert.equal(defaultPictureForLevel(level).id,ids[0]);
  }
  for(const [level,expected] of Object.entries({
-   mirror:4,full:5,solve:5,mixed:10,paint:3
+   mirror:14,full:15,solve:15,mixed:20,paint:13
  })){
    assert.equal(extraPicturesForLevel(level).length,expected);
    assert.ok(extraPicturesForLevel(level).every(p=>!p.progression?.[level]));
@@ -253,7 +253,7 @@ test("Five new pictures are registered with exactly the intended modes and dimen
       id+" needs visually meaningful finishing details");
   }
   const combinations=PICTURE_LIBRARY.reduce((sum,p)=>sum+p.levels.length,0);
-  assert.equal(combinations,52);
+  assert.equal(combinations,102);
 });
 
 test("Mixed Challenge core contains five original pictures, no reused silhouettes",()=>{
