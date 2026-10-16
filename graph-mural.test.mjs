@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {
   GRAPH_MURAL_PICTURES,GRAPH_MURAL_ZONES,GRAPH_MURAL_ACHIEVEMENTS_KEY,
   graphMuralPlacements,graphMuralDiscoveredIds,rememberGraphMuralDiscoveries,
@@ -67,4 +68,33 @@ test("Graph mural supports legacy originals and valid direct replay links",()=>{
     assert.ok(url.includes("picture="+encodeURIComponent(e.picture.id)));
     assert.ok(url.includes(m==="curve"?"curve.html":m==="plot"?"plot.html":"mode="+m));
   }
+});
+
+
+test("Graph Art My Mural is a distinct, visible header control on every studio page",()=>{
+  const css=readFileSync(new URL("./regions/regions.css",import.meta.url),"utf8");
+  const shared=readFileSync(new URL("./styles.css",import.meta.url),"utf8");
+  assert.ok(shared.includes(".topbar .top-actions>.top-button"),
+    "The desktop grid places help buttons at the right edge");
+  assert.ok(shared.includes(".topbar .top-actions>.mural-nav-link"),
+    "The mural must use its own grid position rather than overlap help");
+  assert.ok(css.includes(".regions-page .graph-mural-link .mural-nav-label"),
+    "The mural label must remain visible on narrow screens");
+  for(const filename of ["index.html","curve.html","plot.html"]){
+    const html=readFileSync(
+      new URL("./regions/"+filename,import.meta.url),"utf8");
+    assert.match(html,/<a class="mural-nav-link graph-mural-link" href="\.\/graph-mural\.html"/,
+      filename+": mural must use distinct desktop grid placement");
+    assert.match(html,/aria-label="Open My Mural:/,
+      filename+": mural should be accessible");
+    assert.match(html,/<button[^>]*class="top-button graph-help-link"/,
+      filename+": How to play must remain a separate right-hand control");
+    assert.ok(!html.includes('class="top-button graph-mural-link"'),
+      filename+": regression: overlaps with the help button");
+    assert.match(html,/regions\.css\?v=graph-mural-nav-v2/,
+      filename+": latest layout stylesheet must be used");
+  }
+  const hub=readFileSync(new URL("./regions/index.html",import.meta.url),"utf8");
+  assert.ok(hub.includes('graph-mural-promo-action">Open mural ↗'),
+    "The clickable banner must present a clear action");
 });
