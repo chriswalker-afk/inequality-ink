@@ -30,6 +30,16 @@ export function extraPicturesForLevel(level){
   return PICTURE_LIBRARY.filter(p=>p.levels.includes(level)&&
     !Number.isInteger(progressionStep(p,level)));
 }
+// The student-facing difficulty groups include both original and new art.
+// Historical bonus maths keep their original mathematical stage.
+export function mysteryTier(picture,level){
+  return picture.progression?.[level]??picture.legacyMathStage?.[level]??5;
+}
+export function mysteryPool(level,tier){
+  if(!LEVELS_FOR_PICTURE.includes(level)||!Number.isInteger(tier)||tier<1||tier>5)
+    throw Error("Unknown mystery tier");
+  return PICTURE_LIBRARY.filter(p=>p.levels.includes(level)&&mysteryTier(p,level)===tier);
+}
 export function picturesForLevel(level){
   return [...progressionForLevel(level),...extraPicturesForLevel(level)];
 }
