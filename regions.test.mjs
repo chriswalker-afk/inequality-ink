@@ -641,7 +641,7 @@ test("Completing the full stage preserves a 5-of-5 milestone independently per m
     x.className.includes("is-complete")).length,3,
     "Quick Spark and Step Up still contain undiscovered extras");
   $("graphModeBuild").click();
-  assert.match($("graphGalleryProgress").textContent,/0 of 13 discovered/);
+  assert.match($("graphGalleryProgress").textContent,/0 of 14 discovered/);
   assert.equal($("graphPictureCards").children.length,5);
 });
 
@@ -811,7 +811,7 @@ test("Phase 6 leaves all five original stages untouched, with one fresh practice
 test("Optional reverse Build & Shade reads the shaded graph rather than showing the answer",()=>{
   const picture=graphPracticeGallery("build")[0];
   const s=session({}, "?mode=build"),{$}=s;
-  assert.equal($("graphPracticeCards").children.length,8);
+  assert.equal($("graphPracticeCards").children.length,9);
   $("graphPracticeCards").children[0].click();
   $("graphStartPicture").click();
   assert.equal($("graphPlay").hidden,false);
@@ -891,41 +891,43 @@ test("Difficulty selection restores per-mode levels and never alters student gam
   assert.equal(restored.$("graphDifficultyChoices").children[4].getAttribute("aria-pressed"),"true");
 });
 test("Step Up mystery randomiser skips solved art; Continue resumes exact partial work",()=>{
-  const core=graphModeGallery("fill")[1],bonus=graphPracticeGallery("fill")[0];
+  const pool=[graphModeGallery("fill")[1],
+    ...graphPracticeGallery("fill").filter(p=>p.step===2)];
+  assert.equal(pool.length,5);
+  const core=pool[0];
   const initial={mode:"fill",picture:core.id,records:{
     ["fill:"+core.id]:{done:1,line:0,replays:0}
   }};
   const s=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(initial)}),{$}=s;
   $("graphDifficultyChoices").children[1].click();
-  assert.match($("graphMysteryHint").textContent,/2 new or unfinished mysteries/);
+  assert.match($("graphMysteryHint").textContent,/5 new or unfinished mysteries/);
   assert.equal($("graphContinueMystery").hidden,false);
   $("graphStartMystery").click();
-  assert.equal(s.app.readProgress().picture,bonus.id,
-    "Untouched picture should be preferred to abandoning partially completed art");
+  assert.ok(pool.slice(1).some(p=>p.id===s.app.readProgress().picture),
+    "Start must prefer one of four untouched pictures to partial core work");
   $("graphBack").click();
   $("graphContinueMystery").click();
   assert.equal(s.app.readProgress().picture,core.id);
   assert.equal(s.app.readProgress().records["fill:"+core.id].done,1);
   $("graphBack").click();
-  // Completing the core cannot cause a repeated core picture via Start.
-  s.app.readProgress(); 
+  // Completed pictures never return from Start while other choices remain.
   const done={mode:"fill",picture:core.id,records:{
     ["fill:"+core.id]:{done:core.pieces.length,line:0,replays:0}
   }};
   const next=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(done)}),$next=next.$;
   $next("graphDifficultyChoices").children[1].click();
   $next("graphStartMystery").click();
-  assert.equal(next.app.readProgress().picture,bonus.id);
-  const allDone={mode:"fill",picture:core.id,records:{
-    ["fill:"+core.id]:{done:core.pieces.length,line:0,replays:0},
-    ["fill:"+bonus.id]:{done:bonus.pieces.length,line:0,replays:0}
-  }};
+  assert.ok(pool.slice(1).some(p=>p.id===next.app.readProgress().picture));
+  const allDone={mode:"fill",picture:core.id,records:Object.fromEntries(
+    pool.map(p=>["fill:"+p.id,
+      {done:p.pieces.length,line:0,replays:0}])
+  )};
   const complete=session({[GRAPH_ART_SAVE_KEY]:JSON.stringify(allDone)}),$all=complete.$;
   $all("graphDifficultyChoices").children[1].click();
   assert.equal($all("graphStartMystery").disabled,true);
   assert.equal($all("graphContinueMystery").hidden,true);
   assert.match($all("graphPreviewProgress").textContent,/All discovered/);
-  // A gallery replay remains available, but is never selected automatically.
+  // Gallery replay remains possible, but is never automatic.
   $all("graphPracticeCards").children[0].click();
   assert.match($all("graphStartPicture").textContent,/View completed picture/);
   $all("graphStartPicture").click();
