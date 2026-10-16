@@ -298,3 +298,24 @@ test("Mystery-launched curve challenges return to their chosen difficulty",()=>{
   back.$("curveBack").click();
   assert.equal(back.redirects.at(-1),"./?mode=curve&tier=2");
 });
+
+
+test("A new parabolic Quick Spark plays through both regions and all three finish stages",()=>{
+  const p=CURVE_PRACTICE_PICTURES.find(item=>item.id==="quick-curve-mushroom");
+  assert.ok(p);
+  const s=session({},true,"?picture="+p.id);
+  assert.equal(s.$("curvePlay").hidden,false);
+  assert.equal(s.$("curveGameTitle").textContent,p.name);
+  for(const part of p.pieces){
+    const {x,y}=interior(part);
+    s.app.pickAt(x,y);
+    s.$("graphCheckFill").click();
+  }
+  assert.equal(s.app.readProgress().records[p.id].done,2);
+  assert.equal(s.$("curveSummary").hidden,false);
+  s.$("curveRevealSkip").click();
+  assert.ok(details(s.$("graphRevealSvg")).length>=10);
+  assert.equal(s.$("curveDownload").hidden,false);
+  const resumed=session(Object.fromEntries(s.store),true,"?picture="+p.id);
+  assert.equal(resumed.$("curveSummary").hidden,false);
+});
