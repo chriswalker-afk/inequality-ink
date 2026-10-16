@@ -6,6 +6,37 @@ A no-login, browser-based pixel-art game for practising inequalities. Students r
 
 > **Difficulty-first mystery play:** Students choose one of five mathematics modes and a difficulty, then discover one of at least **five pictures** at that level. The original [five-stage progression](PICTURE_PROGRESSION_PLAN.md), optional gallery and saved picture records are preserved; no compulsory practice delays starting.
 
+## My Mural — a living collection of completed pictures
+
+[My Mural](mural.html) is an optional, connected landscape linking five
+areas: **Garden → Village → Coast → Highlands → Sky**. Students swipe or
+scroll across the panorama and may jump straight to any area.
+
+- **Only genuinely completed Pixel Art pictures appear in the mural.** No
+  outlines, empty frames, greyed-out objects, or future-mystery previews
+  appear in the world; the landscape itself is a softly illustrated backdrop.
+- Finished sprites have **transparent backgrounds**, reusing each picture's
+  exact completed pixels, colours and illustrated finishing details. They
+  become part of one large scene rather than framed gallery thumbnails.
+- Each of the 125 unique pictures has one stable, semantically chosen location,
+  determined from the complete catalogue. Collecting another picture never
+  rearranges existing discoveries. Pictures playable in multiple modes appear
+  **only once** in the mural.
+- Tapping or keyboard-activating an earned object opens optional details with
+  the completed image and a link to revisit the original game picture.
+- The **My Mural** link is accessible from the Pixel Art homepage. Finishing
+  a mystery shows a subtle **Added to My Mural** link on the results screen;
+  the familiar large picture reveal is never interrupted.
+- The persistent, versioned `inequality-ink-mural-v1` archive preserves
+  discoveries through later replays, while reading historical and existing
+  `inequality-ink-v5` progress. The archive **never changes the game save**.
+- Mural progress is on-device, with no accounts or cross-device sync.
+  Graph Art pictures are not part of this initial Pixel Art mural.
+
+Tests cover completed-only access, duplicate-mode achievements, archived
+replay, fixed placement of all 125 pictures, transparent artwork rendering,
+links, keyboard controls and the existing mathematical game suite.
+
 ## Five pictures per difficulty per mode (October 2026)
 
 The Pixel Art library now contains **125 distinct artworks**. Because some
