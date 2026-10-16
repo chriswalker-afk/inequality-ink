@@ -189,3 +189,56 @@ test("48 new artworks have unique identities, meaningful finishing details and r
       mode+" stage "+step+" repeats an identical mathematical artwork");
   }
 });
+
+
+test("Displayed standard-form, slope-form and fractional inequalities are mathematically equivalent to each new region edge",()=>{
+  const fractions={"½":.5,"⅓":1/3,"⅔":2/3,"¼":.25,"¾":.75,
+    "⅕":.2,"⅖":.4,"⅗":.6,"⅘":.8};
+  const value=raw=>{
+    let v=raw.trim().replaceAll("−","-"),sign=1;
+    if(v.startsWith("-")){sign=-1;v=v.slice(1);}
+    else if(v.startsWith("+"))v=v.slice(1);
+    if(v===""||v==="+")return sign;
+    if(Object.hasOwn(fractions,v))return sign*fractions[v];
+    if(v.includes("/")){
+      const [n,d]=v.split("/").map(Number);
+      return sign*n/d;
+    }
+    return sign*Number(v);
+  };
+  const displayed=rule=>{
+    const t=rule.text.replaceAll("−","-").replaceAll("≤","<=").replaceAll("≥",">=");
+    const standard=/^(-?\d*)x\s+([+-])\s+(\d*)y\s+(<=|>=|<|>)\s+(.+)$/.exec(t);
+    const slope=/^y\s+(<=|>=|<|>)\s+(.+?)x(?:\s+([+-])\s+(.+))?$/.exec(t);
+    const axis=/^([xy])\s+(<=|>=|<|>)\s+(.+)$/.exec(t);
+    if(standard){
+      const A=value(standard[1]),C=value(standard[3])*(standard[2]==="-"?-1:1);
+      const rhs=value(standard[5]);
+      return (x,y)=>[A*x+C*y,standard[4],rhs];
+    }
+    if(slope){
+      const m=value(slope[2]),k=slope[3]?value(slope[4])*
+        (slope[3]==="-"?-1:1):0;
+      return (x,y)=>[y,slope[1],m*x+k];
+    }
+    if(axis)return (x,y)=>[axis[1]==="x"?x:y,axis[2],value(axis[3])];
+    throw Error("Unparseable student-facing advanced inequality: "+rule.text);
+  };
+  let checked=0;
+  for(const p of ADVANCED_LINEAR_PICTURES)for(const part of p.pieces)
+    for(const rule of part.rules){
+      const truth=displayed(rule);
+      for(const [x,y]of [[-3.83,-3.11],[-2.71,1.23],[.35,2.81],
+        [3.27,-1.63],[1.46,.79],[-.69,-.47]]){
+        const [lhs,operator,rhs]=truth(x,y);
+        assert.ok([lhs,rhs].every(Number.isFinite),rule.text);
+        if(Math.abs(lhs-rhs)<1e-8)continue;
+        const said=operator==="<"||operator==="<="?lhs<rhs:lhs>rhs;
+        const real=pointSatisfiesAll([rule],x,y);
+        assert.equal(said,real,rule.id+": "+rule.text+
+          " must accurately tell the student which side to shade");
+        checked++;
+      }
+    }
+  assert.ok(checked>2500);
+});
