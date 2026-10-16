@@ -27,10 +27,11 @@ const rect=(l,b,r,t)=>[[l,b],[r,b],[r,t],[l,t]];
 const tri=(a,b,c)=>[a,b,c];
 const diamond=(x,y,rx,ry)=>[[x,y+ry],[x-rx,y],[x,y-ry],[x+rx,y]];
 const trap=(l,b,r,t,ul,ur)=>[[l,b],[r,b],[ur,t],[ul,t]];
-const hex=(x,y,rx,ry)=>[
- [x-rx*.6,y+ry],[x+rx*.6,y+ry],[x+rx,y],[x+rx*.6,y-ry],
- [x-rx*.6,y-ry],[x-rx,y]
-];
+const hex=(x,y,rx,ry)=>{
+ const inset=Math.round(rx*.6*4)/4;
+ return [[x-inset,y+ry],[x+inset,y+ry],[x+rx,y],
+   [x+inset,y-ry],[x-inset,y-ry],[x-rx,y]];
+};
 // All authored coordinates are multiples of .25; hex widths use increments .5.
 const sh=(name,group,points)=>({name,group,points});
 function motif(which){
