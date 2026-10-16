@@ -1,9 +1,10 @@
+import {rememberGraphMuralDiscoveries} from "./graph-mural-model.mjs";
 import {renderPieceMarkers,renderSummaryMetrics} from "./studio-ui.mjs";
 import {pictureSkills,explainRegionChoice} from "./learning-guide.mjs";
 import {
   WORLD,regionPaths,boundaryPoints,curvedCellAt,satisfiesAll
 } from "./curved-engine.mjs";
-import {PLOT_PICTURES,PLOT_PICTURE,PLOT_PRACTICE_PICTURES,plotAllPictures,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs?v=graph-advanced-v1";
+import {PLOT_PICTURES,PLOT_PICTURE,PLOT_PRACTICE_PICTURES,plotAllPictures,plotPicture,plotSteps,plotRule,ruleSignature,previousBoundaries,validatePlotGallery} from "./plot-pictures.mjs?v=graph-mural-v1";
 import {
   POINT_STEP,snapPoint,samePoint,constructBoundary,checkConstruction,
   checkBoundaryStyle,previewPaths,validSavedPoints
@@ -428,6 +429,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
   }
   function summaryView(){
     const p=picture();
+    $("plotMuralLink").href="./graph-mural.html?found="+encodeURIComponent("plot:"+p.id);
     $("plotSummaryTitle").textContent=p.name;
     $("plotSummaryText").textContent=
       "You constructed mathematical boundaries and found "+p.pieces.length+
@@ -585,7 +587,9 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     }
     save.done++;save.phase="plot";save.points=[];
     save.styleChoice=null;save.plotIndex=0;save.verified=[];
-    persist();selected=null;setWhy(null);clearFlash();drag=null;
+    persist();
+    if(save.done===picture().pieces.length)rememberGraphMuralDiscoveries(storage);
+    selected=null;setWhy(null);clearFlash();drag=null;
     activePoint=-1;cursor={x:0,y:0};hint="";
     if(!current()){setScreen("summary");openReveal();}
     else{
@@ -597,6 +601,7 @@ export function initPlotArt({doc=document,storage=localStorage,win=window}={}){
     if(typeof win.confirm==="function"&&!win.confirm(
       "Restart this picture? Only this picture's progress will be reset."))return;
     clearFlash();stopReveal();drag=null;
+    if(save.done===picture().pieces.length)rememberGraphMuralDiscoveries(storage);
     const replays=save.replays;
     save=fresh();save.replays=replays+1;
     selected=null;setWhy(null);activePoint=-1;cursor={x:0,y:0};hint="";hintStage=0;hintKey="";
