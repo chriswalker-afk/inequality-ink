@@ -367,9 +367,13 @@ export function initRegionsApp({doc=document,storage=localStorage,win=window}={}
     if(hubTiers[m])return hubTiers[m];
     const curve=records?.curve||readCurveSave(storage);
     const plot=records?.plot||readPlotSave(storage);
-    const next=hubGallery(m).find(p=>
-      !graphMysteryFinished(p,hubRecord(m,p,curve,plot)));
-    hubTiers[m]=(next||hubGallery(m)[4]).step;
+    // New same-difficulty pictures count too: a pupil who completed the old
+    // five-stage path should still be offered their unexplored starter art.
+    const next=GRAPH_MYSTERY_LEVELS.find(level=>{
+      const pool=graphMysteryPool(m,level.step,hubGallery(m),hubPracticeGallery(m));
+      return graphMysteryStatus(pool,p=>hubRecord(m,p,curve,plot)).remaining>0;
+    });
+    hubTiers[m]=next?.step||5;
     return hubTiers[m];
   }
   function currentHubRecord(p){
