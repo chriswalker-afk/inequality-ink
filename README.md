@@ -2,7 +2,18 @@
 
 A no-login, browser-based pixel-art game for practising inequalities. Students read, represent and solve exact real-number inequalities; the correct answers construct a mystery picture, which gains a background, colours and finishing details on completion.
 
-**Live site:** https://chriswalker-afk.github.io/inequality-ink/
+**Live site (custom domain):** https://inequalities.mrwalkermaths.com/
+
+**Original GitHub Pages address:** https://chriswalker-afk.github.io/inequality-ink/
+
+### Custom domain configuration
+
+- **Cloudflare DNS:** `inequalities.mrwalkermaths.com` is a DNS-only CNAME to `chriswalker-afk.github.io`.
+- **GitHub Pages:** This is a static site published from the repository branch. The root [`CNAME`](CNAME) contains `inequalities.mrwalkermaths.com`. Check [Settings → Pages](https://github.com/chriswalker-afk/inequality-ink/settings/pages) to ensure `main / (root)` is selected, save `inequalities.mrwalkermaths.com` under **Custom domain** if needed, and enable **Enforce HTTPS** after certificate provisioning.
+- **Portable links:** Pixel Art, Graph Art, both mural pages and challenge links use relative paths, allowing navigation on both the original GitHub Pages project URL and the new custom-domain root. The regression test `custom-domain.test.mjs` checks these paths and local assets.
+- **Saved student progress:** Progress is stored in browser local storage (`inequality-ink-v5`, `inequality-ink-mural-v1`, plus Graph Art progress). Browser storage does **not** automatically transfer from `chriswalker-afk.github.io` to `inequalities.mrwalkermaths.com`, so completed pictures and mural discoveries may appear empty at the new address. Keep the original site accessible while transitioning; do not promise automatic migration or synchronization.
+
+
 
 > **Difficulty-first mystery play:** Students choose one of five mathematics modes and a difficulty, then discover one of at least **five pictures** at that level. The original [five-stage progression](PICTURE_PROGRESSION_PLAN.md), optional gallery and saved picture records are preserved; no compulsory practice delays starting.
 
