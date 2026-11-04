@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync,existsSync} from "node:fs";
 
-const read=path=>readFileSync(new URL("../"+path,import.meta.url),"utf8");
+const read=path=>readFileSync(new URL("./"+path,import.meta.url),"utf8");
 const roots=[
   "https://chriswalker-afk.github.io/inequality-ink/",
   "https://inequalities.mrwalkermaths.com/"
@@ -40,7 +40,7 @@ test("Pixel Art, Graph Art and murals use portable relative links",()=>{
       const fromProject=new URL(value,new URL(page,roots[0]));
       const asset=decodeURIComponent(fromProject.pathname.slice(new URL(roots[0]).pathname.length));
       if(/\.(?:css|mjs|js)$/i.test(asset)){
-        assert.ok(existsSync(new URL("../"+asset,import.meta.url)),
+        assert.ok(existsSync(new URL("./"+asset,import.meta.url)),
           "Linked JavaScript/CSS asset must exist: "+page+" -> "+value);
       }
       if(attribute==="href" && /\.html(?:\?|$)/i.test(value))names.add(asset);
